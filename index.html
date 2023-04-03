@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>My Pentest Tools</title>
+  <link rel="icon" href="favicon.ico">
+
+  <link rel="stylesheet" href="lib/bootstrap-5.0.2.min.css">
+  <style>
+    .list-group-item:hover {
+      border-left-width: 3px;
+      border-left-color: #60a0ff;
+      border-right-width: 3px;
+      border-right-color: #60a0ff;
+      padding-left: calc(.5rem + 6px);
+      padding-right: calc(.5rem + 6px);
+    }
+    .list-group-item.my-active {
+      border-left-width: 5px;
+      border-left-color: #0d6efd;
+      border-right-width: 5px;
+      border-right-color: #0d6efd;
+      padding-left: calc(.5rem + 4px);
+      padding-right: calc(.5rem + 4px);
+    }
+  </style>
+  <script src="lib/jquery-3.6.0.slim.min.js"></script>
+  <script src="lib/bootstrap-5.0.2.bundle.min.js"></script>
+
+  <script src="main.js"></script>
+</head>
+<body>
+
+  <div style="height: 5px;"></div>
+
+  <!-- Menu -->
+  <ul class="nav nav-tabs" id="myTab" role="tablist">
+    <li class="nav-item" role="presentation">
+      <button class="nav-link" id="mytoolOsint-tab" data-bs-toggle="tab" data-bs-target="#mytoolOsint"
+        type="button" role="tab" aria-controls="mytoolOsint" aria-selected="false">🔍 OSINT</button>
+    </li>
+    <li class="nav-item" role="presentation">
+      <button class="nav-link" id="mytoolRecon-tab" data-bs-toggle="tab" data-bs-target="#mytoolRecon"
+        type="button" role="tab" aria-controls="mytoolRecon" aria-selected="false">👁 Recon</button>
+    </li>
+    <li class="nav-item" role="presentation">
+      <button class="nav-link" id="mytoolWeb-tab" data-bs-toggle="tab" data-bs-target="#mytoolWeb"
+        type="button" role="tab" aria-controls="mytoolWeb" aria-selected="false">🕷 Web</button>
+    </li>
+    <li class="nav-item" role="presentation">
+      <button class="nav-link" id="mytoolSqlInj-tab" data-bs-toggle="tab" data-bs-target="#mytoolSqlInj"
+        type="button" role="tab" aria-controls="mytoolSqlInj" aria-selected="false">💉 SQL</button>
+    </li>
+    <li class="nav-item" role="presentation">
+      <button class="nav-link active" id="mytoolRevShell-tab" data-bs-toggle="tab" data-bs-target="#mytoolRevShell"
+        type="button" role="tab" aria-controls="mytoolRevShell" aria-selected="true">🐚 RevShell</button>
+    </li>
+    <li class="nav-item" role="presentation">
+      <button class="nav-link" id="mytoolUpDown-tab" data-bs-toggle="tab" data-bs-target="#mytoolUpDown"
+        type="button" role="tab" aria-controls="mytoolUpDown" aria-selected="false">⬆ Upload</button>
+    </li>
+    <li class="nav-item" role="presentation">
+      <button class="nav-link" id="mytoolPassCrack-tab" data-bs-toggle="tab" data-bs-target="#mytoolPassCrack"
+        type="button" role="tab" aria-controls="mytoolPassCrack" aria-selected="false">🔑 Password</button>
+    </li>
+    <li class="nav-item" role="presentation">
+      <button class="nav-link" id="mytoolPrivEsc-tab" data-bs-toggle="tab" data-bs-target="#mytoolPrivEsc" type="button"
+        role="tab" aria-controls="mytoolPrivEsc" aria-selected="false">🔪 PrivEsc</button>
+    </li>
+    <!--
+    <li class="nav-item" role="presentation">
+      <button class="nav-link" id="mytool0-tab" data-bs-toggle="tab" data-bs-target="#mytool0"
+        type="button" role="tab" aria-controls="mytool0" aria-selected="false">AAA</button>
+    </li>
+    -->
+  </ul>
+  <div class="tab-content" id="myTabContent">
+    <!-- Begin: OSINT -->
+    <div class="tab-pane fade" id="mytoolOsint" role="tabpanel" aria-labelledby="mytoolOsint-tab">
+      <div class="container">
+        <h2 class="mt-3">🔍 OSINT</h2>
+
+        <!-- Input -->
+        <div class="mt-2 row g-3 align-items-center">
+          <div class="col-auto"><label for="osintInputRHOST" class="col-form-label">RHOST</label></div>
+          <div class="col-4"><input type="text" id="osintInputRHOST" class="form-control" name="RHOST"></div>
+          <div class="col-auto"><button type="submit" id="osintInputSubmit" class="btn btn-primary">Submit</button></div>
+        </div>
+
+        <h5 class="mt-3">1. DNS</h5>
+        <ol id="osintDnsList" class="list-group"></ol>
+
+        <h5 class="mt-3">2. Google Dorks</h5>
+        <ol id="osintGoogleDorksList" class="list-group"></ol>
+      </div>
+    </div>
+    <!-- End: OSINT -->
+    <!-- Begin: Recon -->
+    <div class="tab-pane fade" id="mytoolRecon" role="tabpanel" aria-labelledby="mytoolRecon-tab">
+      <div class="container">
+        <h2 class="mt-3">👁 Reconnaissance</h2>
+
+        <!-- Input -->
+        <div class="mt-2 row g-3 align-items-center">
+          <div class="col-auto"><label for="reconInputRHOST" class="col-form-label">RHOST</label></div>
+          <div class="col-auto"><input type="text" id="reconInputRHOST" class="form-control" name="RHOST"></div>
+          <div class="col-auto"><label for="reconInputRPORT" class="col-form-label">RPORT</label></div>
+          <div class="col-auto"><input type="number" id="reconInputRPORT" class="form-control" name="RPORT"></div>
+          <div class="col-auto"><button type="submit" id="reconInputSubmit" class="btn btn-primary">Submit</button></div>
+        </div>
+
+        <h5 class="mt-3">1. Nmap</h5>
+        <ol id="reconNmapList" class="list-group"></ol>
+
+        <h5 class="mt-3">2. LDAP</h5>
+        <ol id="reconLDAPList" class="list-group"></ol>
+      </div>
+    </div>
+    <!-- End: Recon -->
+    <!-- Begin: Web -->
+    <div class="tab-pane fade" id="mytoolWeb" role="tabpanel" aria-labelledby="mytoolWeb-tab">
+      <div class="container">
+        <h2 class="mt-3">🕷 Web Application Penetration Test</h2>
+
+        <!-- Input -->
+        <div class="mt-2 row g-3 align-items-center">
+          <div class="col-auto"><label for="webInputURL" class="col-form-label">URL</label></div>
+          <div class="col-6"><input type="text" id="webInputURL" class="form-control" name="URL"></div>
+          <div class="col-auto"><label for="webInputFILENAME" class="col-form-label">FILENAME</label></div>
+          <div class="col-auto"><input type="text" id="webInputFILENAME" class="form-control" name="FILENAME"></div>
+          <div class="col-auto"><button type="submit" id="webInputSubmit" class="btn btn-primary">Submit</button></div>
+        </div>
+
+        <h5 class="mt-3">1. WAPT</h5>
+        <ol id="webList" class="list-group"></ol>
+
+        <h5 class="mt-3">2. WebShell (KaliLinux)</h5>
+        <ol id="webShellList" class="list-group"></ol>
+      </div>
+    </div>
+    <!-- End: Web -->
+    <!-- Begin: Sql -->
+    <div class="tab-pane fade" id="mytoolSqlInj" role="tabpanel" aria-labelledby="mytoolSqlInj-tab">
+      <div class="container">
+        <h2 class="mt-3">💉 SQL Injection</h2>
+
+        <h5 class="mt-3">1. General</h5>
+        <ol id="sqlinjList" class="list-group"></ol>
+      </div>
+    </div>
+    <!-- End: Web -->
+    <!-- Begin: Reverse Shells Generator -->
+    <div class="tab-pane fade show active" id="mytoolRevShell" role="tabpanel" aria-labelledby="mytoolRevShell-tab">
+      <div class="container">
+        <h2 class="mt-3">🐚 Reverse Shells Generator</h2>
+
+        <!-- Input -->
+        <div class="mt-2 row g-3 align-items-center">
+          <div class="col-auto"><label for="revshInputLHOST" class="col-form-label">LHOST</label></div>
+          <div class="col-auto"><input type="text" id="revshInputLHOST" class="form-control" name="LHOST"></div>
+          <div class="col-auto"><label for="revshInputLPORT" class="col-form-label">LPORT</label></div>
+          <div class="col-auto"><input type="number" id="revshInputLPORT" class="form-control" name="LPORT"></div>
+          <div class="col-auto"><button type="submit" id="revshInputSubmit" class="btn btn-primary">Submit</button></div>
+        </div>
+
+        <h5 class="mt-3">1. Listen</h5>
+        <ol id="revshListener" class="list-group"></ol>
+
+        <h5 class="mt-3">2. Connect back</h5>
+        <ol id="revshList" class="list-group"></ol>
+
+        <h5 class="mt-3">3. Reverse Shell Files</h5>
+        <ol id="revshFileList" class="list-group"></ol>
+      </div>
+    </div>
+    <!-- End: Reverse Shells Generator -->
+    <!-- Begin: Upload and Download -->
+    <div class="tab-pane fade" id="mytoolUpDown" role="tabpanel" aria-labelledby="mytoolUpDown-tab">
+      <div class="container">
+        <h2 class="mt-3">⬆ Upload and Download</h2>
+
+        <!-- Input -->
+        <div class="mt-2 row g-3 align-items-center">
+          <div class="col-auto"><label for="updownInputLHOST" class="col-form-label">LHOST</label></div>
+          <div class="col-auto"><input type="text" id="updownInputLHOST" class="form-control" name="LHOST"></div>
+          <div class="col-auto"><label for="updownInputLPORT" class="col-form-label">LPORT</label></div>
+          <div class="col-auto"><input type="number" id="updownInputLPORT" class="form-control" name="LPORT"></div>
+          <div class="col-auto"><label for="updownInputFILENAME" class="col-form-label">FILENAME</label></div>
+          <div class="col-auto"><input type="text" id="updownInputFILENAME" class="form-control" name="FILENAME"></div>
+          <div class="col-auto"><button type="submit" id="updownInputSubmit" class="btn btn-primary">Submit</button></div>
+        </div>
+
+        <h5 class="mt-3">1. Upload</h5>
+        <ol id="updownUpList" class="list-group"></ol>
+        
+        <h5 class="mt-3">2. Download</h5>
+        <ol id="updownDownList" class="list-group"></ol>
+      </div>
+    </div>
+    <!-- End: Upload and Download -->
+    <!-- Begin: Password Cracking -->
+    <div class="tab-pane fade" id="mytoolPassCrack" role="tabpanel" aria-labelledby="mytoolPassCrack-tab">
+      <div class="container">
+        <h2 class="mt-3">🔑 Password Cracking</h2>
+
+        <!-- Input -->
+        <div class="mt-2 row g-3 align-items-center">
+          <div class="col-auto"><label for="passcrackInputFILENAME" class="col-form-label">FILENAME</label></div>
+          <div class="col-auto"><input type="text" id="passcrackInputFILENAME" class="form-control" name="FILENAME"></div>
+          <div class="col-auto"><button type="submit" id="passcrackInputSubmit" class="btn btn-primary">Submit</button></div>
+        </div>
+
+        <h5 class="mt-3">1. Hashcat</h5>
+        <ol id="passcrackList" class="list-group"></ol>
+      </div>
+    </div>
+    <!-- End: Password Cracking -->
+    <!-- Begin: Privilege Escalation -->
+    <div class="tab-pane fade" id="mytoolPrivEsc" role="tabpanel" aria-labelledby="mytoolPrivEsc-tab">
+      <div class="container">
+        <h2 class="mt-3">🔪 Privilege Escalation</h2>
+
+        <!-- Input -->
+        <div class="mt-2 row g-3 align-items-center">
+          <div class="col-auto"><label for="privescInputLHOST" class="col-form-label">LHOST</label></div>
+          <div class="col-auto"><input type="text" id="privescInputLHOST" class="form-control" name="LHOST"></div>
+          <div class="col-auto"><label for="privescInputLPORT" class="col-form-label">LPORT</label></div>
+          <div class="col-auto"><input type="number" id="privescInputLPORT" class="form-control" name="LPORT"></div>
+          <div class="col-auto"><button type="submit" id="privescInputSubmit" class="btn btn-primary">Submit</button></div>
+        </div>
+
+        <h5 class="mt-3">1. Linux Privilege Escalation</h5>
+        <ol id="privescLinuxList" class="list-group"></ol>
+
+        <h5 class="mt-3">2. Windows Privilege Escalation</h5>
+        <ol id="privescWindowsList" class="list-group"></ol>
+      </div>
+    </div>
+    <!-- End: Privilege Escalation -->
+    <!--
+    <div class="tab-pane fade" id="mytool0" role="tabpanel" aria-labelledby="mytool0-tab">
+      <div class="container">
+        <span>Under Construction</span>
+      </div>
+    </div>
+    -->
+  </div>
+
+  <!-- Copy -->
+  <!-- <input id="input" class="visually-hidden" type="text" /> -->
+  <textarea id="input" class="visually-hidden" type="text"></textarea>
+  <button id="copy" class="visually-hidden">Copy</button>
+
+  <br>
+
+  <div class="text-center text-secondary">
+    @tex2e
+  </div>
+
+  <br>
+
+</body>
+</html>
