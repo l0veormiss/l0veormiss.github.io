@@ -1,4 +1,4 @@
 
 # Reverse Shells Generator
 
-:shell: https://l0veormiss.github.io/reverse-shell-generator/index.html :shell:
+:shell: https://l0veormiss.github.io/index.html :shell:
