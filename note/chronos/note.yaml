@@ -1,0 +1,62 @@
+#ip
+192.168.1.27
+
+nmap -sS -P0 -A 192.168.1.27
+# 22/tcp   open  ssh     OpenSSH 7.6p1 Ubuntu 4ubuntu0.3 (Ubuntu Linux; protocol 2.0)
+# | ssh-hostkey: 
+# |   2048 e4f283a438898d86a5e13176eb9d5fea (RSA)
+# |   256 415a21c458f22be48a2f3173cefd37ad (ECDSA)
+# |_  256 9b3428c2b9334b37d501306f87c46b23 (ED25519)
+# 80/tcp   open  http    Apache httpd 2.4.29 ((Ubuntu))
+# |_http-title: Site doesn't have a title (text/html).
+# |_http-server-header: Apache/2.4.29 (Ubuntu)
+# 8000/tcp open  http    Node.js Express framework
+# |_http-title: Site doesn't have a title (text/html; charset=UTF-8).
+# |_http-open-proxy: Proxy might be redirecting requests
+# |_http-cors: HEAD GET POST PUT DELETE PATCH
+# MAC Address: 08:00:27:7B:12:85 (Oracle VirtualBox virtual NIC)
+# Device type: general purpose
+# Running: Linux 4.X|5.X
+# OS CPE: cpe:/o:linux:linux_kernel:4 cpe:/o:linux:linux_kernel:5
+# OS details: Linux 4.15 - 5.6
+# Network Distance: 1 hop
+# Service Info: OS: Linux; CPE: cpe:/o:linux:linux_kernel
+
+dirsearch -u http://192.168.1.27
+# [00:32:30] 301 -  310B  - /css  ->  http://192.168.1.27/css/                
+# [00:32:32] 200 -    2KB - /index.html 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
