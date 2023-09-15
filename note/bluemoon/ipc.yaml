@@ -58,7 +58,9 @@ type \\10.30.30.128\c$\windows\temp\test.bat
 net use \\10.30.30.128\c$ /del
 
 
+https://s1.bnpublicsub.net/api/v1/client/subscribe?token=6db967a71096e54ee22b576df58a22df
 
+https://s1.bnpublicsub.net/api/v1/client/subscribe?token=6db967a71096e54ee22b576df58a22df
 
 
 

