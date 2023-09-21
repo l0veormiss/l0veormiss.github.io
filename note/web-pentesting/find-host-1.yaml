@@ -1,0 +1,71 @@
+从外部发现主机:
+# 这将是一个关于如何从互联网中找到响应的IP地址的简短部分。
+# 在这种情况下，你有一些IP范围（甚至可能有几个范围），你只需要找出哪些IP地址正在响应。
+
+ICMP:
+# 这是发现主机是否启动的最简单和最快的方法。
+# 你可以尝试发送一些ICMP数据包并期望响应。最简单的方法就是发送一个回显请求并期望响应。你可以使用简单的ping命
+# 令或者使用fping命令来处理范围。
+# 你也可以使用nmap发送其他类型的ICMP数据包（这将避免常见的ICMP回显请求-响应的过滤器）。
+ping -c 1 199.66.11.4    # 1 echo request to a host
+fping -g 199.66.11.0/24  # Send echo requests to ranges
+nmap -PEPM -sP -n 199.66.11.0/24 #Send echo, timestamp requests and subnet mask requests
+
+TCP端口发现:
+# 很常见的情况是发现所有类型的ICMP数据包都被过滤了。那么，你可以做的就是尝试查找开放的端口来检查主机是否在线。
+# 每个主机有65535个端口，所以，如果你有一个"大"的范围，你不能测试每个主机的每个端口是否开放，那将花费太多时间。
+# 因此，你需要一个快速的端口扫描器（masscan）和一个常用端口的列表：
+#Using masscan to scan top20ports of nmap in a /24 range (less than 5min)
+masscan -p20,21-23,25,53,80,110,111,135,139,143,443,445,993,995,1723,3306,3389,5900,8080 199.66.11.0/24
+
+#你也可以使用nmap执行这一步骤，但它速度较慢，而且nmap在识别主机上存在问题。
+
+HTTP端口发现:
+# 这只是一个TCP端口发现，当你想要专注于发现HTTP服务时非常有用：
+masscan -p80,443,8000-8100,8443 199.66.11.0/24
+
+UDP端口发现:
+# 您还可以尝试检查一些UDP端口是否开放，以决定是否应该对一个主机给予更多关注。由于UDP服务通常不会对常规的
+# 空UDP探测数据包做出任何响应，因此很难确定端口是被过滤还是开放的。最简单的方法是发送与正在运行的服务相关
+# 的数据包，但由于您不知道运行的是哪个服务，您应该根据端口号尝试最有可能的服务：
+nmap -sU -sV --version-intensity 0 -F -n 199.66.11.53/24
+# The -sV will make nmap test each possible known UDP service packet
+# The "--version-intensity 0" will make nmap only test the most probable
+
+# 之前提到的nmap命令将测试**/24范围内每个主机的前1000个UDP端口**，但即使只有这样，也需要**>20分钟**。
+
+# 如果需要更快的结果，可以使用udp-proto-scanner：
+./udp-proto-scanner.pl 199.66.11.53/24
+
+# 这将向它们的预期端口发送这些UDP探测（对于/24范围，只需1分钟）：
+# DNSStatusRequest, DNSVersionBindReq, NBTStat, NTPRequest, RPCCheck, SNMPv3GetRequest,
+#  chargen, citrix, daytime, db2, echo, gtpv1, ike,ms-sql, ms-sql-slam, netop, ntp, rpc, 
+#  snmp-public, systat, tftp, time, xdmcp.
+
+SCTP端口发现:
+#Probably useless, but it's pretty fast, why not trying?
+nmap -T4 -sY -n --open -Pn <IP/range>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

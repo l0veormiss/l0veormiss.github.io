@@ -1,0 +1,370 @@
+ARP欺骗:
+# ARP欺骗是指发送虚假的ARP响应，以指示某台机器的IP地址与我们的设备的MAC地址相对应。
+# 然后，受害者将更改ARP表，并在每次想要与伪造的IP地址通信时与我们的机器联系。
+
+Bettercap:
+arp.spoof on
+
+set arp.spoof.targets <IP> 
+#Specific targets to ARP spoof (default=<entire subnet>)
+
+set arp.spoof.whitelist 
+#Specific targets to skip while spoofing
+
+set arp.spoof.fullduplex true 
+#If true, both the targets and the gateway will be attacked, otherwise only the target (default=false)
+
+set arp.spoof.internal true 
+#If true, local connections among computers of the network will be spoofed,
+# otherwise only connections going to and coming from the Internet (default=false)
+
+Arpspoof:
+# Arpspoof是一种网络欺骗技术，通过伪造ARP（地址解析协议）响应，欺骗目标设备与网关之间的通信。这种攻击技
+# 术可以用于中间人攻击，使攻击者能够拦截、篡改或窃取目标设备和网关之间的通信数据。
+
+# Arpspoof工具是一个命令行工具，可以在Linux和Unix系统上使用。它允许攻击者将自己伪装成网络中的其他
+# 设备，并发送虚假的ARP响应，欺骗目标设备将其网络流量发送到攻击者的机器上。
+
+# 使用Arpspoof时，攻击者需要在同一局域网中，具有网络访问权限，并且能够截获目标设备和网关之间的
+# 通信。通过欺骗目标设备，攻击者可以监视、篡改或窃取目标设备与网关之间的通信数据。
+
+# 要使用Arpspoof进行ARP欺骗攻击，可以使用以下命令：
+arpspoof -i <interface> -t <target> <gateway>
+
+# 其中，<interface>是攻击者所在的网络接口，<target>是目标设备的IP地址，<gateway>是网关的IP地址。
+
+# 请注意，使用Arpspoof进行ARP欺骗攻击是非法的，除非您有合法的授权和目的。本书仅提供技术信息，不鼓励或
+# 支持任何非法活动。
+echo 1 > /proc/sys/net/ipv4/ip_forward
+arpspoof -t 192.168.1.1 192.168.1.2
+arpspoof -t 192.168.1.2 192.168.1.1
+
+MAC Flooding - CAM溢出:
+# 通过发送大量具有不同源MAC地址的数据包来溢出交换机的CAM表。当CAM表已满时，交换机将开始
+# 像集线器一样行为（广播所有流量）。
+macof -i <interface>
+
+802.1Q VLAN / DTP 攻击:
+动态中继:
+# DTP（动态中继协议）是一种链路层协议，旨在提供自动中继系统。通过DTP，交换机决定哪个端口将工作
+# 在中继模式（Trunk），哪个端口将不工作在中继模式。使用DTP表示网络设计不佳。中继应该严格限制在需
+# 要的地方，并且应该有文档记录。
+
+# **默认情况下，所有交换机端口都在动态自动模式下运行。**这表示交换机端口处于与相邻交换机的中继初始化
+# 模式。渗透测试人员需要物理连接到交换机并发送一个DTP Desirable帧，触发端口切换到中继模式。攻击者
+# 随后可以使用STP帧分析枚举VLAN，并通过创建虚拟接口绕过VLAN分割。
+
+# 许多交换机默认支持动态中继协议（DTP），然而，攻击者可以滥用它来模拟交换机并接收所有VLAN的流量。
+# 工具dtpscan.sh可以嗅探接口并报告交换机是否处于默认模式、中继模式、动态模式、自动模式或接入模式
+# （只有接入模式才能避免VLAN跳跃）。该工具将指示交换机是否存在漏洞。
+
+# 如果发现网络存在漏洞，可以使用_Yersinia_发起一个使用协议“DTP”的“启用中继”，从而能够查看所有VLAN的
+# 网络数据包。
+apt-get install yersinia #Installation
+sudo apt install kali-linux-large #Another way to install it in Kali
+yersinia -I #Interactive mode
+#In interactive mode you will need to select a interface first
+#Then, you can select the protocol to attack using letter "g"
+#Finally, you can select the attack using letter "x"
+yersinia -G #For graphic mode
+
+# 要枚举VLAN，还可以使用脚本DTPHijacking.py生成DTP Desirable帧。在任何情况下都不要中断脚本。
+# 它每三秒注入一个DTP Desirable帧。交换机上动态创建的trunk通道只会持续五分钟。五分钟后，
+# trunk会断开连接。
+sudo python3 DTPHijacking.py --interface eth0
+# 我想指出的是，Access/Desirable (0x03) 表示 DTP 帧是 Desirable 类型，它告诉端口切换到
+#  Trunk 模式。而 802.1Q/802.1Q (0xa5) 表示 802.1Q 封装类型。
+# 通过分析 STP 帧，我们了解到 VLAN 30 和 VLAN 60 的存在。
+
+攻击特定的 VLAN:
+# 一旦你知道了 VLAN ID 和 IP 值，你可以配置一个虚拟接口来攻击特定的 VLAN。
+# 如果没有 DHCP，那么使用 ifconfig 来设置静态 IP 地址。
+root@kali:~# modprobe 8021q
+
+root@kali:~# vconfig add eth1 250
+#Added VLAN with VID == 250 to IF -:eth1:-
+
+root@kali:~# dhclient eth1.250
+#Reloading /etc/samba/smb.conf: smbd only.
+
+root@kali:~# ifconfig eth1.250
+# eth1.250  Link encap:Ethernet  HWaddr 00:0e:c6:f0:29:65
+# inet addr:10.121.5.86  Bcast:10.121.5.255  Mask:255.255.255.0
+# $inet6 addr: fe80::20e:c6ff:fef0:2965/64 Scope:Link
+# UP BROADCAST RUNNING MULTICAST  MTU:1500  Metric:1
+# RX packets:19 errors:0 dropped:0 overruns:0 frame:0
+# TX packets:13 errors:0 dropped:0 overruns:0 carrier:0
+# collisions:0 txqueuelen:0
+# RX bytes:2206 (2.1 KiB)  TX bytes:1654 (1.6 KiB)
+root@kali:~# arp-scan -I eth1.250 10.121.5.0/24
+
+
+# Another configuration example
+modprobe 8021q
+vconfig add eth1 20
+ifconfig eth1.20 192.168.1.2 netmask 255.255.255.0 up
+
+
+# Another configuration example
+sudo vconfig add eth0 30
+sudo ip link set eth0.30 up
+sudo dhclient -v eth0.30
+
+
+自动VLAN跳跃:
+#讨论中提到的动态干线和创建虚拟接口以及发现其他VLAN中的主机的攻击是由工具自动执行的：
+https://github.com/nccgroup/vlan-hopping---frogger
+
+
+双标记:
+# 如果攻击者知道受害主机的MAC、IP和VLAN ID的值，他可以尝试使用指定的VLAN和受害者的VLAN对帧
+# 进行双标记，然后发送一个数据包。由于受害者无法与攻击者建立连接，所以攻击者最好的选择是通过UDP
+# 与可以执行一些有趣操作的协议进行通信（如SNMP）。
+
+# 攻击者的另一个选择是通过欺骗受攻击者可访问的由攻击者控制的IP来发起TCP端口扫描（可能通过互联
+# 网）。然后，攻击者可以在自己拥有的第二个主机上嗅探是否接收到来自受害者的一些数据包。
+
+#要执行此攻击，您可以使用scapy：
+pip install scapy
+
+from scapy.all import *
+# Double tagging with ICMP packet (the response from the victim isn't double tagged so it will never reach the attacker)
+packet = Ether()/Dot1Q(vlan=1)/Dot1Q(vlan=20)/IP(dst='192.168.1.10')/ICMP()
+sendp(packet)
+
+
+侧向VLAN分段绕过:
+# 如果您可以访问直接连接的交换机，则可以在网络中绕过VLAN分段。只需将端口切换到trunk模式（也称
+# 为trunk），使用目标VLAN的ID创建虚拟接口，并配置IP地址。您可以尝试动态请求地址（DHCP），也可
+# 以静态配置。这取决于具体情况。
+lateral vlan segmenttation bypass
+
+
+第三层 私有vlan绕过:
+# 在客用无线网络和其他环境中，使用私有VLAN（也称为_端口隔离_）设置来防止对等方互动（即，客
+# 户端连接到无线接入点但无法相互通信）。根据网络ACL（或缺乏ACL），可能可以将IP数据包发送到路由
+# 器，然后将其转发回相邻的对等方。
+
+# 此攻击将向客户端的IP发送特制数据包，但使用路由器的MAC地址。然后，路由器将将数据包重定向到客
+# 户端。与_双标记攻击_一样，您可以通过控制受害者可访问的主机来利用此漏洞。
+
+
+VTP攻击:
+# **VTP（VLAN Trunking Protocol）**是一种用于集中管理VLAN的协议。为了跟踪当前的VLAN数据库
+# ，交换机会检查特殊的修订号。当发生任何表更新时，修订号会增加一。如果交换机检测到具有较高修订号的
+# 配置，它将自动更新其VLAN数据库
+
+VTP域中的角色
+    # VTP服务器。 VTP服务器角色的交换机可以创建新的VLAN，删除旧的VLAN或更改VLAN本身的信息。
+    # 它还为域中的其他成员生成VTP公告。
+
+    # VTP客户端。 处于此角色的交换机将从域中的其他交换机接收特定的VTP公告，以更新其自己
+    # 的VLAN数据库。客户端在创建VLAN方面受到限制，甚至不允许在本地更改VLAN配置。换句话说，只读访问。
+
+    # VTP透明。 在此模式下，交换机不参与VTP过程，并可以完全和本地管理整个VLAN配置。在透明模式
+    # 下运行时，交换机仅传输来自其他交换机的VTP公告，而不影响其VLAN配置。此类交换机的修订号始终为零，无法受到攻击
+
+广告类型
+    # 摘要广告 — VTP服务器每**300秒（5分钟）**发送的VTP公告。此公告存储VTP域名、协议版本、时间戳
+    # 和MD5配置哈希值。
+
+    # 子集广告 — 每当发生VLAN配置更改时发送的VTP广告。
+
+    # 广告请求 — VTP客户端向VTP服务器请求摘要广告消息。通常作为对交换机检测到具有较高配置
+    # 修订号的摘要广告的响应消息发送。
+
+# VTP只能从trunk端口进行攻击，因为VTP公告只在trunk端口上广播和接收。**因此，在攻击DTP后，
+# 您的下一个目标可能是VTP。**要攻击VTP域，您可以使用Yersinia运行VTP注入，从而删除整个VLAN数
+# 据库，从而使网络瘫痪。
+
+VTP协议有多达三个版本  本文攻击的是第一个版本 VTPv1
+yersinia -G #For graphic mode
+
+# 要删除整个VLAN数据库，请选择删除所有VTP VLAN选项
+
+STP攻击:
+如果您无法在接口上捕获BPDU帧，则很难成功进行STP攻击。
+
+STP BPDU DoS:
+# 通过发送大量的BPDUs（拓扑变化通知）或Conf（在创建拓扑时发送的BPDUs）来使交换机过载并
+# 停止正常工作
+yersinia stp -attack 2
+yersinia stp -attack 3
+#Use -M to disable MAC spoofing
+
+STP TCP攻击:
+# 当发送 TCP 时，交换机的 CAM 表将在 15 秒内被删除。然后，如果您持续发送这种类型的数据包，
+# CAM 表将不断重新启动（或每 15 秒一次），并且在重新启动时，交换机的行为类似于集线器。
+yersinia stp -attack 1 #Will send 1 TCP packet and the switch should restore the CAM in 15 seconds
+yersinia stp -attack 0 #Will send 1 CONF packet, nothing else will happen
+
+STP根攻击:
+# 攻击者模拟交换机的行为，成为网络的STP根。然后，更多的数据将通过他传递。当您连接到两个不同的
+# 交换机时，这是很有趣的。
+# 这是通过发送BPDUs CONF数据包，声称优先级值小于实际根交换机的优先级来完成的。
+yersinia stp -attack 4 #Behaves like the root switch
+yersinia stp -attack 5 #This will make the device behaves as a switch but will not be root
+
+# 如果攻击者连接到2个交换机，他可以成为新树的根节点，所有这两个交换机之间的流量都将通过他
+# 传递（将执行中间人攻击）。
+yersinia stp -attack 6 #This will cause a DoS as the layer 2 packets wont be forwarded. You can use Ettercap to forward those packets "Sniff" --> "Bridged sniffing"
+ettercap -T -i eth1 -B eth2 -q #Set a bridge between 2 interfaces to forwardpackages
+
+CDP攻击:
+# CISCO Discovery Protocol是CISCO设备之间进行通信的协议，用于发现设备是否在线以及它们具有哪些功能
+
+信息收集
+# 默认情况下，CDP会向所有端口发送通告。但是，如果入侵者连接到同一交换机上的一个端口，他可以使用网络嗅探
+# 器（如Wireshark、tcpdump或Yersinia）提取有关设备本身的有价值信息，从其型号到Cisco IOS版本。
+# 利用这些信息，他将能够枚举相同版本的Cisco IOS并找到漏洞，然后利用它
+
+CDP洪泛攻击
+# 您可以通过耗尽设备内存来模拟真实的CISCO设备，对CISCO交换机进行拒绝服务（DoS）攻击
+sudo yersinia cdp -attack 1 #DoS Attack simulating new CISCO devices
+# Or you could use the GUI
+sudo yersinia -G
+# 选择泛洪CDP表选项并开始攻击。交换机的CPU将被过载，CDP邻居表也将被过载，导致“网络瘫痪”
+
+CDP冒充攻击
+sudo yersinia cdp -attack 2 #Simulate a new CISCO device
+sudo yersinia cdp -attack 0 #Send a CDP packet
+# 你也可以使用scapy。确保使用scapy/contrib软件包进行安装
+
+volp攻击:
+# 尽管旨在供员工使用的互联网电话（VoIP）电话，但现代VoIP设备越来越多地与物联网设备集成。
+# 许多员工现在可以使用特殊电话号码解锁门禁，控制房间的恒温器...
+
+# 工具voiphopper模拟了Cisco、Avaya、Nortel和Alcatel-Lucent环境中VoIP电话的行为。它使用其
+# 支持的设备发现协议之一（如Cisco Discovery Protocol（CDP）、动态主机配置协议（DHCP）、链
+# 路层发现协议媒体端点发现（LLDP-MED）和802.1Q ARP）自动发现语音网络的正确VLAN ID。
+
+# VoIP Hopper支持三种CDP模式。sniff模式检查网络数据包并尝试定位VLAN ID。要使用它，请
+# 将**-c参数设置为0。spoof模式生成类似于真实VoIP设备在企业网络中传输的自定义数据包。要使
+# 用它，请将-c参数设置为1。带有pre-madepacket的欺骗模式发送与Cisco 7971G-GE IP电话相同
+# 的数据包。要使用它，请将-c参数设置为2**。
+
+# 我们使用最后一种方法，因为它是最快的方法。-i参数指定攻击者的网络接口，-E参数指定正在模拟的VOIP
+# 设备的名称。我们选择了与Cisco VoIP电话的命名格式兼容的名称SEP001EEEEEEEEE。该格式
+# 由“SEP”一词后跟MAC地址组成。在企业环境中，您可以通过查看电话背面的MAC标签；通过按下设置按钮并
+# 在电话的显示屏上选择模型信息选项；或通过将VoIP设备的以太网电缆连接到您的笔记本电脑并使用
+# Wireshark观察设备的CDP请求来模拟现有的VoIP设备
+
+voiphopper -i eth1 -E 'SEP001EEEEEEEEE ' -c 2
+# 如果工具成功执行，VLAN网络将为攻击者的设备分配一个IPv4地址
+
+DHCP攻击:
+枚举
+nmap --script broadcast-dhcp-discover
+# Starting Nmap 7.80 ( https://nmap.org ) at 2019-10-16 05:30 EDT
+# WARNING: No targets were specified, so 0 hosts scanned.
+# Pre-scan script results:
+# | broadcast-dhcp-discover:
+# |   Response 1 of 1:
+# |     IP Offered: 192.168.1.250
+# |     DHCP Message Type: DHCPOFFER
+# |     Server Identifier: 192.168.1.1
+# |     IP Address Lease Time: 1m00s
+# |     Subnet Mask: 255.255.255.0
+# |     Router: 192.168.1.1
+# |     Domain Name Server: 192.168.1.1
+# |_    Domain Name: mynet
+# Nmap done: 0 IP addresses (0 hosts up) scanned in 5.27 seconds
+
+Dos
+# 对DHCP服务器可以执行两种类型的DoS攻击。第一种类型是模拟足够多的虚假主机以使用所有可能的IP地址。
+
+# 只有在您能够看到DHCP服务器的响应并完成协议
+# （Discover（计算机）-> Offer（服务器）-> Request（计算机）-> ACK（服务器））时，此攻击才能生效。
+# 例如，在Wifi网络中是不可能的。
+
+# 执行DHCP DoS的另一种方法是使用每个可能的IP地址作为源代码发送DHCP-RELEASE数据包。然后，服务器将
+# 认为每个人都已经完成了对IP的使用。
+yersinia dhcp -attack 1
+yersinia dhcp -attack 3 #More parameters are needed
+
+# 一种更自动化的方法是使用工具DHCPing
+# 您可以使用上述的DoS攻击来迫使客户端在环境中获取新的租约，并耗尽合法服务器使其无法响应。因此，当
+# 合法服务器尝试重新连接时，您可以提供下一个攻击中提到的恶意值。
+
+设置恶意值
+# 您可以使用Responder DHCP脚本（/usr/share/responder/DHCP.py）来建立一个恶意的DHCP服务器。
+# 设置恶意网关并不理想，因为劫持的连接只是半双工的（即，我们只捕获客户端的出站数据包，而无法捕获合
+# 法网关的响应）。因此，我建议设置一个恶意的DNS或WPAD服务器来捕获HTTP流量和凭据。
+  描述                    示例
+我们作为网关广播的IP地址     -i 10.10.10.100
+本地DNS域名 /可选          -d example.org
+原路由器/网关的IP地址       -r 10.10.10.1
+主DNS服务器IP地址          -p 10.10.10.100
+辅助DNS服务器IP地址 /可选   -s 10.10.10.1
+本地网络的网络掩码          -n 255.255.255.0
+用于侦听DHCP流量的接口      -l eth1
+WPAD配置地址 URL          -w "http://10.10.10.100/wpad.dat\n"
+欺骗默认网关IP地址          -S
+响应所有DHCP请求 非常嘈杂    -R
+
+
+EAP攻击:
+#以下是针对802.1X实现可用的一些攻击策略：
+  通过EAP进行主动暴力密码破解
+  使用恶意的EAP内容攻击RADIUS服务器 **(利用漏洞)
+  捕获EAP消息并离线破解密码（EAP-MD5和PEAP）
+  强制使用EAP-MD5身份验证绕过TLS证书验证
+  在使用集线器或类似设备进行身份验证后注入恶意网络流量
+
+# 如果攻击者位于受害者和认证服务器之间，他可以尝试将认证协议降级（如果需要）为EAP-MD5并捕获认证
+# 尝试。然后，他可以使用以下方法进行暴力破解：
+eapmd5pass –r pcap.dump –w /usr/share/wordlist/sqlmap.txt
+
+
+FHRP  GLBP和HSRP 攻击:
+# FHRP（First Hop Redundancy Protocol）是一类用于创建热备份路由系统的网络协议。通过FHRP，物理
+# 路由器可以组合成一个单一的逻辑设备，从而增加容错性并帮助分担负载。
+
+# 思科系统的工程师开发了两种FHRP协议，即GLBP和HSRP
+GLBP & HSRP Attacks
+
+
+RIP:
+# 路由信息协议（RIP）有三个版本——RIP、RIPv2和RIPng。RIP和RIPv2使用通过端口520发送到对等方
+# 的UDP数据报，而RIPng通过IPv6组播将数据报广播到UDP端口521。RIPv2引入了MD5身份验证支持
+# 。RIPng不包含本地身份验证，而是依赖于IPv6中的可选IPsec AH和ESP头。
+
+# 有关如何攻击此协议的更多信息，请参阅书籍
+# Network Security Assessment: Know Your Network (第3版)_。
+
+EIGRP攻击:
+# EIGRP（Enhanced Interior Gateway Routing Protocol）是一种动态路由协议。它是一种距
+# 离矢量协议。如果没有身份验证和被动接口的配置，入侵者可以干扰EIGRP路由并导致路由表污染。
+# 此外，EIGRP网络（换句话说，自治系统）是平坦的，没有分段成任何区域。如果攻击者注入一条路由，
+# 很可能这条路由会在自治EIGRP系统中传播
+
+# 攻击EIGRP系统需要与合法的EIGRP路由器建立邻居关系，这打开了许多可能性，从基本的侦察到各种注入。
+
+# ****FRRouting允许您实现支持BGP、OSPF、EIGRP、RIP和其他协议的虚拟路由器。您只需在攻击者
+# 的系统上部署它，就可以假装成路由域中的合法路由器。
+EIGRP Attacks
+
+# ****Coly还支持捕获EIGRP广播和注入数据包以操纵路由配置。有关如何使用Coly攻击它的更多信息，请参阅_
+# Network Security Assessment: Know Your Network (第3版)_。
+
+OSPF:
+# 大多数Open Shortest Path First（OSPF）实现使用MD5提供路由器之间的身份验证。
+# Loki和John the Ripper可以捕获和攻击MD5哈希以揭示密钥，然后可以使用该密钥来广告
+# 新路由。可以使用“注入”选项卡设置路由参数，并在“连接”下设置密钥。
+
+# 有关如何攻击此协议的更多信息，请参阅书籍_
+# Network Security Assessment: Know Your Network (第3版)_。
+
+其他通用工具和资源
+# Above：用于扫描网络流量并查找漏洞的工具
+# 您可以在此处找到有关网络攻击的更多信息。（TODO：阅读所有内容和任何新攻击）
+
+
+
+
+
+
+
+
+
+
