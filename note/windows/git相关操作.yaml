@@ -1,0 +1,73 @@
+# 配置git用户和邮箱
+git config --global user.name "Your name"	
+git config --global user.email "Your eamil"
+
+# 查看git用户和邮箱
+git config user.name
+git config user.email
+
+#git生成密钥
+ssh-keygen -t rsa -C "eamil"
+
+#git绑定密钥
+ssh -T git@gitee.com
+
+# git关联仓库
+git remote add origin ssh地址
+
+#移除关联的origin的远程库
+$ git remote rm origin
+
+# 查看git版本
+$ git --version
+
+# 初始化一个git仓库
+$ git init
+
+#查看当前状态
+$ git status
+
+# 添加一个文件到缓存区
+$ git add <file>
+
+# 添加所有文件到缓存区
+$ git add .
+
+# 提交代码
+$ git commit -m 'some comments'
+# 如果不加`-m`参数，会自动打开vim编辑器，填写注释。
+
+# 提交之前先从服务器拉一下
+$ git pull
+
+# 提交代码
+$ git push
+
+# 查看当前所在分支
+$ git branch
+* develop
+   master
+
+# 查看所有分支：
+$ git branch --all
+
+# 删除分支
+$ git brach -d xxx
+
+# 切换分支（第一次克隆后可以从master分支切换到develop分支）
+$ git brach checkout xxx
+
+#拉取关联所有远程分支
+$ git fetch
+
+# 撤销文修改
+$ git checkout -- <file>
+
+# 查看git日志
+$ gitk
+
+# 合并当前分支到myBranch（对应gitee的PR）
+$ git merger myBranch
+
+# git修改上一次提交（不小心写错了）
+$ git commit --amend

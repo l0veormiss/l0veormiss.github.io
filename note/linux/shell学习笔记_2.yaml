@@ -1,0 +1,320 @@
+3. 输入输出:
+三个内置命令，简单说下。
+#输出:
+echo: 打印内容到标准输出。
+printf: 格式化输出，类似 C 的 printf 函数。
+
+printf "保留2位小数：Pi= %1.2f" $PI
+# 3.14
+
+输入:
+read: 从标准输入读取用户输入
+# 展示输入提示，用户输入值被保存到变量name中
+read -p "请输入任意值" name
+
+# 利用重定向，从文件中读取输入值
+read name1 name2 < file.txt
+
+4. 流程控制:
+4.1. 顺序结构:
+命令默认以从上到下顺序执行，除非一些特殊的运算符和复合命令作用。
+即使某条命令执行异常，也会继续执行后面的命令。这点与大部分编程语言不同。
+分号 ; 是命令的结束标识，标志着命令的结束，或者复合命令中的一部分结束。换行符前面的分号是可以省略的。常见
+的风格是使用换行，省略分号，即一条（简单）命令占一行。
+#在命令行中，回车用于表示执行命令，用分号可以做到一行中键入多个命令，或者执行复合命令。
+# 一次性输入多个命令
+command1; command2; command3
+
+# 执行 if 命令
+if true; then echo "true";fi
+
+4.2. 条件结构:
+4.2.1. && 和 || 运算符:
+test-command && command1 || command2
+#是一种简单实用的条件执行写法。如果 test-command 为真（状态码为 0）就执行 command1，否则，执行 command2。
+
+4.2.2. if 命令:
+if test-commands; then
+    branch-commands;
+[elif more-test-commands; then
+    more-brach-commands;
+]
+[else
+    alternative-commands;
+]
+fi
+#为了强调语法，我会在这些复合语句中使用了显式的分号 ; 。记住，一行中最后的分号是可以省略的，你
+# 可以调整分号和换行，选择不同的风格写法。下同。
+
+[ ] 表示 elif 和 else 分支是可选的部分,不是语法的一部分。
+单词 commands 用了复数，代表这部分可以是多个命令。
+if ... fi 用关键字的镜像作为该结构的起止标志符，是一种常见做法。
+
+每个 if/elif 分支，先执行 test-commands ，如果最后退出码为 0，即条件为 true，执行对应的分支命令，否则进入下一分支。
+Shell 没有表达式语法，使用命令执行后的退出码进行条件判断，退出码为 0 表示 true，非 0 表示 false。
+test 命令是一个专门用于条件判断的内置命令，它支持一系列条件表达式，当条件成立时退出码为 0，不成立时为 1。
+
+test expr
+
+# 或者使用简写
+[ expr ]
+
+# 还有一种拓展的test，在原有的基础上支持了正则匹配
+[[ expr ]]
+
+#当判断条件为算术运算时，也经常使用算术表达式 (( expr ))
+#!/bin/bash
+
+filename=$1
+
+if [ -e $filename ]; then
+    echo "文件${filename}存在"
+    if [ -d $filename ]; then
+        echo "这是一个文件目录"
+    elif [ -b $filename ]; then
+        echo "这是一个块文件"
+    elif [ -c $filename ]; then
+        echo "这是一个字符文件"
+    else
+        ls -l $filename
+    fi
+else
+    echo "文件${filename}不存在"
+fi
+
+bash file-exist.sh shell-basis.md
+# 文件 shell-basis.md 存在
+# -rw-r--r--  1 me  staff  23040 Jun 16 18:11 shell-basis.md
+
+使用 shift 命令来挪移变量值:
+# shift.sh（具体内容）
+#!/bin/bash
+echo "第一个参数是 $1"
+shift
+echo "第一个参数是 $1"
+
+# 控制台
+./shift.sh p1 p2 p3
+第一个参数是 p1
+第一个参数是 p2
+#同样是 $1 ，通过 shift 使得它的值会变成原本是 $2 的值。因此 shift 命令常被用在循环中，使得参数一个接一个地被处理。
+
+数组:
+#!/bin/bash
+# 定义数组
+array=('v1' 'v2' 'v3') 
+
+# 访问数组
+echo ${array[2]} # 访问数组（bash下标是从0开始）
+echo ${array[*]} # 使用*号访问数组所有的值
+
+数学运算:
+#在 Bash 中，所有的变量都是字符串， Bash 本身不会操作数字，因此它也不会做运算。不过可以使用 let 命令来实现运算。
+#!/bin/bash
+let "a = 5"
+let "b = 2"
+let "c = a + b"
+echo "c = $c" # 输出 c = 7
+
+read:
+#请求输入， read 命令读取到的文本会立即被存储在一个变量里。
+read.sh 
+#!/bin/bash
+read name
+echo "hello $name !"
+
+同时给几个变量赋值:
+#可以用 read 命令一次性给多个变量赋值， read 命令一个单词一个单词（空格分开）地读取你输入的参数，并且把每个参数赋值给对应的变量。
+#!/bin/bash
+read oneName towName
+echo "hello $oneName $towName !"
+
+限制字符数目:
+#用 -n 参数可以限制用户输入的字符串的最大长度（字符数）
+read -p "请输入您的姓名：" -n 5 name
+# -p 显示提示信息 prompt
+
+隐藏输入内容:
+#用 -s 参数可以隐藏输入内容，在用户输入密码时使用。
+#!/bin/bash
+read -p "请输入密码：" -s password
+echo -e "password = $password"
+
+if 格式:
+if [ 条件测试 ] # 条件测试左右必须要有空格
+then
+    ...
+fi # 结束符
+#或者
+if [ 条件测试 ]; then
+    ...
+fi 
+# 示例：
+#!/bin/bash
+name="lion"
+if [ $name = 'lion' ]; then # 这里使用 = 做判断条件，而不是 ==
+    echo "hello $name"
+fi
+
+if else 格式:
+if [ 条件测试 ]
+then
+    ...
+else
+    ...
+fi
+# 实例：
+#!/bin/bash
+if [ $n1 = $n2 ]
+then
+    echo "n1=n2"
+else
+    echo "n1!=n2"
+fi 
+
+if else elif 格式:
+if [ 条件测试1 ]
+then
+ ....
+elif [ 条件测试2 ]
+then
+    ...
+elif [ 条件测试3 ]
+then
+    ...
+else
+    ...default
+fi  
+# 实例：
+#!/bin/bash
+if [ $1 = "lion" ]
+then
+    echo "hello lion"
+elif [ $1 = "frank" ]  
+then 
+    echo "hello frank"
+else
+    echo "我不认识你"
+fi 
+
+条件测试 test:
+#不同的测试类型：
+    测试字符串
+    测试数字
+    测试文件
+
+1.测试字符串:
+    $string1 = $string2     表示两个字符串是否相等
+    $string1 != $string2    表示两个字符串是否不相等
+    -z $string              表示字符串是否为空
+    -n $string              表示字符串是否不为空
+
+2.测试数字:
+    $num1 -eq $num2     equal 的缩写，表示两个数字是否相等。
+    $num1 -ne $num2     not equal 的缩写，表示两个数字是否不相等。
+    $num1 -lt $num2     lower than 的缩写，表示 num1 是否小于 num2 。
+    $num1 -le $num2     lower or equal 的缩写，表示 num1 是否小于或等于 num2 。
+    $num1 -gt $num2     greater than 的缩写，表示 num1 是否大于 num2 。
+    $num1 -ge $num2     greate or equal 的缩写，表示 num1 是否大于或等于 num2 。
+
+3.测试文件:
+    -e $file    exist 的缩写，表示文件是否存在。
+    -d $file    directory 的缩写，表示文件是否为一个目录。
+    -f $file    file 的缩写，表示文件是否是一个文件。
+    -L $file    Link 的缩写，表示链接。
+    -r $file    readable 的缩写，表示文件是否可读。
+    -w $file    writable 的缩写，表示文件是否可写。
+    -x $file    executable 的缩写，表示文件是否可执行。
+    $file1 -nt $file2       表示文件 file1 是否比 file2 更新。
+    $file1 -ot $file2       表示文件 file1 是否比 file2 更旧。
+
+同时测试多个条件:
+&&      表示逻辑与，只要有一个不为真，整个条件测试为假。
+||      表示逻辑或，只要有一个为真，整个条件测试就为真。
+!       表示反转测试条件。  逻辑非
+#!/bin/bash
+read -p "输入文件路径：" file
+if [ ! -e $file ]  
+then
+    echo "$file 不存在"
+else
+    echo "$file 存在"
+fi  
+
+case 测试多个条件:
+#!/bin/bash
+case $1 in
+    "lion")
+    echo "hello lion"
+    ;;
+   "frank" | "frank1" | "frank2") # 这里的逻辑或是一根竖线
+    echo "hello frank*"
+    ;;
+   *)
+    echo "我不认识你"
+    ;;
+esac 
+#把它理解成普通编程语言中的 swtich ... case 即可。
+
+循环语句:
+#使我们可以重复一个代码块任意多次。
+Bash 中有3中类型的循环语句：
+    while 循环
+    until 循环
+    for 循环
+
+
+while 循环:
+while [ 条件测试 ]
+do
+    ...
+done # 结束  
+复制代码
+实例：
+#!/bin/bash
+while [ -z $response ] || [ $response != 'yes' ] # 输入的语句为空或者不是yes就会一直循环
+do
+    read -p 'Say yes：' response
+done 
+
+统计字符:
+grep 命令可以帮助我们找到 words.txt 文本中所有出现的字母 a ，并且希望忽略大小写， grep-io a words.txt。
+通过管道符传递给 wc -l 命令这样就可以统计到数据了， grep -io a words.txt | wc -l ，这样就能统计到 a 字母的出现次数了。
+结合 for 循环，我们可以遍历字母 a - z ，去统计每个字母出现次数。
+最后对统计结果使用 sort 命令进行排序，就可以获取到我们想要的结果。
+#代码实现
+#!/bin/bash
+# 判断是否有参数
+if [ -z $1 ]
+then 
+    echo "请输入文件"
+    exit # 没有参数则退出
+fi
+
+# 判断文件是否存在
+if [ ! -e $1 ]
+then
+    echo "文件为空"
+    exit # 文件为空则退出
+fi
+
+# 定义统计函数
+statistics(){
+    for char in {a..z} # 循环字母a-z
+    do
+      # 这里的echo起的不是打印的作用，而是输出一个字符串，从而可以使用管道符进行转换，最后输出到tmp.txt文件中
+      echo "$char - `grep -io "$char" $1 | wc -l`" | tr /a-z/ /A-Z/ >> tmp.txt
+    done # 循环结束
+    sort -rn -k 2 -t - tmp.txt # 排序并打印到控制台
+    rm tmp.txt # 删除tem.txt
+}
+
+statistics $1 # 调用函数并传入 $1 参数
+
+# tr /a-z/ /A-Z/ 是用来转换所有小写字母为大写。
+# >> 重定向输出追加到一个临时文件末尾。
+# sort -rn -k 2 -t - tmp.txt  对这个临时文件按数字进行排序并打印到控制台。
+
+
+
+

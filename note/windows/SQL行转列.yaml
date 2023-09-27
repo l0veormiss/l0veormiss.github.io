@@ -1,0 +1,135 @@
+alter table emps add constraint FK_deptno foreign key(deptno) references dept(deptno);
+
+insert into dept values
+(10,'生产部','武汉'),
+(20,'销售部','成都'),
+(30,'管理部','深圳');
+
+
+insert into emps values
+(1,'momoda1','p1',111,NOW(),1100,1,10),
+(2,'momoda2','p2',222,NOW(),2200,2,10),
+(3,'yangman3','p3',333,NOW(),3300,3,20),
+(4,'yangman4','p4',444,NOW(),4400,4,20),
+(5,'mingzhu5','p5',555,NOW(),5500,5,30),
+(6,'mingzhu6','p6',666,NOW(),6600,6,30);
+
+create table salgrade(
+grade int(11),
+losal int(11),
+hisal int(11)
+)ENGINE=INNODB default charset=utf8;
+
+create table dept(
+deptno int(2) not null auto_increment,
+dname varchar(14),
+loc varchar(13),
+primary key(deptno)
+)ENGINE=INNODB DEFAULT charset=utf8;
+
+create table emps(
+empno int(4) not null auto_increment,
+ename varchar(10),
+job varchar(9),
+mgr int(4),
+hiredate datetime,
+sal double(7,2),
+comm double(7,2),
+deptno int(2),
+primary key(empno)
+)ENGINE=INNODB default charset=utf8;
+
+********************************************** 数据创建完成  ************************************************
+
+
+--------------------------------------mysql行转列 和 列转行--------------------------------------------------
+> mysql 行转列:
+insert into my_test(name,class,score) values 
+('momoda','语文',11),
+('momoda','数学',22),
+('momoda','英语',33),
+('yangman','语文',44),
+('yangman','数学',55),
+('yangman','英语',66),
+('mingzhu','语文',77),
+('mingzhu','数学',88),
+('mingzhu','英语',99);
+普通查询 select * from my_test;
+---
+1	momoda	语文	11
+2	momoda	数学	22
+3	momoda	英语	33
+4	yangman	语文	44
+5	yangman	数学	55
+6	yangman	英语	66
+7	mingzhu	语文	77
+8	mingzhu	数学	88
+9	mingzhu	英语	99
+
+--- 行转列查询:
+SELECT name,
+	SUM(CASE class WHEN '语文' THEN score ELSE 0 END) AS '语文',
+	SUM(CASE class WHEN '数学' THEN score ELSE 0 END) AS '数学',
+	SUM(CASE class WHEN '英语' THEN score ELSE 0 END) AS '英语'
+FROM my_test
+GROUP BY name;
+-----
+momoda	11	22	33
+yangman	44	55	66
+mingzhu	77	88	99
+--- 行转列 计算总分:
+SELECT name,
+	SUM(CASE class WHEN '语文' THEN score ELSE 0 END) AS '语文',
+	SUM(CASE class WHEN '数学' THEN score ELSE 0 END) AS '数学',
+	SUM(CASE class WHEN '英语' THEN score ELSE 0 END) AS '英语',
+	SUM(score) as 'total'  //总分字段
+FROM my_test
+GROUP BY name;
+---
+momoda	11	22	33	66
+yangman	44	55	66	165
+mingzhu	77	88	99	264
+--- 行转列分组:
+SELECT name,
+GROUP_CONCAT(`class`,":",score) AS 成绩 
+FROM my_test 
+GROUP BY name;
+---
+mingzhu	语文:77,数学:88,英语:99
+momoda	语文:11,数学:22,英语:33
+yangman	语文:44,数学:55,英语:66
+
+
+>列转行 跟上面的数据格式相反
+create table my_test1(
+id int(2) not null auto_increment,
+name varchar(20) not null,
+cn_score int(2) not null, //语文分数
+math_score int(2) not null, //数学分数
+en_score int(2) not null, //英语分数
+primary key(id)
+)ENGINE=INNODB default charset=utf8;
+---
+1	momoda	11	22	33
+2	yangman	44	55	66
+3	mingzhu	77	88	99
+---
+select name,'语文' as class ,cn_score as score from my_test1
+union select name,'数学' as class,math_score as score from my_test1 //联合查询  
+union select name,'英语' as class,en_score as score from my_test1
+order by name DESC,class DESC;// 两次排序  先按名称倒叙 再按课程倒叙 不写默认升序
+---
+yangman	语文	44
+yangman	英语	66
+yangman	数学	55
+momoda	语文	11
+momoda	英语	33
+momoda	数学	22
+mingzhu	语文	77
+mingzhu	英语	99
+mingzhu	数学	88
+
+-- union all + 子查询
+SELECT id, SUM( num ) AS num FROM 
+( SELECT * FROM num_a a UNION ALL SELECT * FROM num_b b ) tmp //子查询里面  包含union all（不过滤重复行）查询
+GROUP BY id;

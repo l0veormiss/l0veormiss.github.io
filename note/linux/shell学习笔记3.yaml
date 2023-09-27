@@ -1,0 +1,459 @@
+字符串替换:
+替换规则：
+    ${变量名#匹配规则}         从变量开头进行规则匹配，将符合最短的数据删除。
+    ${变量名##匹配规则}        从变量开头进行规则匹配，将符合最长的数据删除。
+    ${变量名%匹配规则}         从变量尾部进行规则匹配，将符合最短的数据删除。
+    ${变量名%%匹配规则}        从变量尾部进行规则匹配，将符合最长的数据删除。
+    ${变量名/旧字符串/新字符串}        变量内容符合旧字符串，则第一个旧字符串会被新字符串取代。
+    ${变量名//旧字符串/新字符串}       变量内容符合旧字符串，则全部旧字符串会被新字符串取代。
+
+#示例
+var_1="I love you, Do you love me"
+
+var=${var_1#*ov} # e you, Do you love me
+
+var=${var_1##*ov} # e me
+
+var=${var_1%ov*} # I love you, Do you l
+
+var=${var_1%%ov*} # I l
+
+var_2="/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
+
+# 第一个小写bin被替换为大写的BIN
+var=${var_2/bin/BIN} # /usr/local/BIN:/usr/bin:/bin:/usr/sbin:/sbin 
+
+# 所有小写bin会被替换为大写的BIN
+var=${var_2//bin/BIN} # /usr/local/BIN:/usr/BIN:/BIN:/usr/sBIN:/sBIN
+
+
+计算字符串的长度:
+${#string} 
+expr length "$string" 如果 string 有空格则必须加双引号。
+
+var_1="Hello world"
+
+len=${#var_1} # 11
+
+len=`expr length "$var_1"` # 11
+
+
+获取子串在字符串中的索引位置:
+expr index $string $substring 从1开始计算索引位置。
+
+var_1="quickstart is an app"
+
+ind=`expr index "$var_1" start` # 6
+ind=`expr index "$var_1" uniq` # 1
+ind=`expr index "$var_1" f` # 0
+#它其实是按照子串的每个字符每个字符去进行匹配
+    第一个例子匹配到的是 s 位置6。
+    第二个匹配到的是 q 位置1。
+    第三个例子什么都没有匹配到所以位置是0。
+
+计算字串长度:
+expr match $string substr从头开始匹配字串长度,如果没有匹配到则返回0，匹配到了则返回 匹配的字串长度
+var_1="quickstart is an app"
+sub_len='expr match "$var_1" app' #0
+sub_len='expr match "$var_1" quic' #4
+sub_len='expr match "$var_1" quic.*' #18
+
+
+抽取子串:
+${string:position} 从 string 的 position 开始。
+${string:position:length} 从 position 开始，匹配长度为 length 。
+${string: -position} 从右边开始匹配。
+${string:(position)} 从左边开始匹配。
+expr substr $string $postion $length 从 position 开始，匹配长度为 length 。
+
+var_1="quickstartisanapp"
+
+# 从索引10到最后提取子串，这种方式的索引是从0开始计算的
+substr=${var_1:10} # isanapp
+
+substr=${var_1:10:2} # is
+
+# -5 前面需要添加空格，如果不添加空格也可以使用括号
+substr=${var_1: -5} # anapp
+substr=${var_1:(-5)} # anapp
+
+# expr 这种方式的索引是从1开始
+substr=`expr substr "$var_1" 10 5` # tisan
+
+
+字符串实战练习:
+变量 string="Bigdata process framework is Hadoop,Hadoop is an open source project" 
+执行脚本后，打印输出 string 字符串变量，并给用户以下选项：
+
+(1)、打印 string 长度
+(2)、删除字符串中所有的 Hadoop 
+(3)、替换第一个 Hadoop 为 Mapreduce 
+(4)、替换全部 Hadoop 为 Mapreduce 
+
+用户输入数字 1|2|3|4 ，可以执行对应项的功能；输入 q|Q 则退出交互模式。
+思路分析
+
+打印字符串很简单，直接 echo 打印即可。
+删除字符串也不难，使用 ${变量名//旧字符串/新字符串} ，把 Hadoop 替换为空就从原字符串中删除了。
+至于替换也是使用 ${变量名/旧字符串//新字符串}
+用户输入，则使用的是上一篇文章讲到的 read 命令。
+
+好了这个练习的思路非常简单，下面就让我们直接编写代码吧。
+代码实现
+#!/bin/bash
+
+string="Bigdata process framework is Hadoop,Hadoop is an open source project"
+
+#打印提示函数
+print_tips(){
+    echo "(1)   打印字符串长度"
+    echo "(2)   删除字符串中所有的Hadoop"
+    echo "(3)   替换第一个Hadoop为Mapreduce"
+    echo "(4)   替换所有的Hadoop为Mapreduce"
+    echo "(q|Q) 退出控制台"
+}
+
+#计算字符串的长度
+len_of_string(){
+    echo "${#string}"
+}
+
+#删除所有Hadoop的字串  将Hadoop替换为空，表示删除
+delete_Hadoop(){
+    echo "${string//Hadoop/}"
+}
+
+#替换第一个Hadoop为Mapreduce
+replace_first_Hadoop(){
+    echo "${string/Hadoop/Mapreduce}"
+}
+
+#替换所有的Hadoop为Mapreduce
+replace_all_Hadoop(){
+    echo "${string//Hadoop/Mapreduce}"
+}
+
+#控制台循环 接收指令并输出
+while
+do
+    echo -e "\n$string" # -e 解析换行\n
+    print_tips  #打印提示
+    read -p "请输入您的指令： " data   # 读取控制台输入到 data
+    case $data
+        1）
+            len_of_string
+            ;;
+        2)
+            delete_Hadoop
+            ;;
+        3)
+            replace_first_Hadoop
+            ;;
+        4)
+            replace_all_Hadoop
+            ;;
+        q|Q)
+            echo -e "- Bye -\n"
+            exit #退出控制台
+            ;;
+        *)
+            echo "无效指令..."
+            ;;
+    esac  # case循环结尾
+done  # while循环结尾
+
+##############################
+
+数学运算 $(()):
+示例:
+echo $((2 + 2)) # 加法 4
+echo $((5 / 2)) # 除法 2
+
+i=0
+echo $((i++)) # 先返回值后运算 0
+echo $((++i)) # 先运算后返回值 2
+
+echo $(( (2 + 3) * 4 )) # 圆括号改变运算顺序
+
+echo $((0xff)) # 16进制转成10进制的运算
+
+echo $((16>>2)) # 位运算 4
+
+echo $((3 > 2)) # 1 逻辑运算，如果逻辑表达式为真，返回1，否则返回0 
+
+a=0
+echo $((a<1 ? 1 : 0)) # 三元运算符 1
+echo $((a=1)) # 变量赋值
+
+
+数学运算 expr:
+语法格式： expr $num1 operator $num2
+操作符概览：
+    num1 | num2 -- num1 不为空且非0，返回 num1 ; 否则返回 num2  
+    num1 & num2 -- num1 不为空且非0，返回 num1 ；否则返回0
+    num1 < num2 -- num1 小于 num2 ，返回1；否则返回0
+    num1 <= num2 -- num1 小于等于 num2 ，返回1；否则返回0
+    num1 = num2 -- num1 等于 num2 ，返回1；否则返回0
+    num1 != num2 -- num1 不等于 num2 ，返回1；否则返回0
+    num1 > num2  -- num1 大于 num2 ，返回1；否则返回0
+    num1 >= num2  -- num1   大于等于 num2 ，返回1；否则返回0
+    num1 + num2 -- 求和
+    num1 - num2 -- 求差
+    num1 * num2 -- 求积
+    num1 / num2 -- 求商
+    num1 % num2 -- 求余
+示例:
+$num1=30; $num2=50
+expr $num1 \> $num2 # 大于不成立，返回0
+expr $num1 \< $num2 # 小于成立，返回1
+expr $num1 \| $num2 # 返回 num1
+expr $num1 \& $num2 # 返回 num1
+expr $num1 + $num2 # 计算加法
+num3=`expr $num1 + $num2` # 计算结果赋值给num3
+expr $num1 - $num2 # 计算减法
+# [注意] >、< 等操作符是 Shell 中的保留关键字，因此需要进行转义。否则就变成输出和输入重定向了。
+
+提示用户输入一个正整数 num ，然后计算从 1+2+3 加到给定正整数。
+必须对给定的 num 值进行是否为正整数判断，如果不是正整数则重新输入。
+代码实现:
+#!/bin/bash
+
+while true # 无限循环接收用户输入
+do
+    read -p "pls input a positive number " num # 接收到用户的输入，存为num值
+
+    expr $num + 1 2>&1 /dev/null # 对num进行加1的运算，运算结果重定向到/dev/null
+    
+      # 由于 expr 只能运算整数，如果运算浮点数的话会报错，$?获取的是表达式执行结果，并非运算结果
+      # 执行结果如果是正常的返回0
+    if [ $? -eq 0 ];then # $? 获取到上一次运算结果
+        if [ `expr $num \> 0` -eq 1 ];then # 上面判断了是否为整数，这里判断是否为正整数
+        # 类似JavaScript循环的写法遍历一个数值
+            for((i=1;i<=$num;i++))
+            do
+                sum=`expr $sum + $i` # 获取运算结果总和
+            done    
+            echo "1+2+3+....+$num = $sum" # 输出运算结果
+            exit # 退出循环
+        fi
+    fi
+    echo "error,input enlegal" # 表示输入的值有误
+    continue # 如果输入有误继续循环让用户输入
+done
+
+let 命令:
+let 命令声明变量时，可以直接执行算术表达式。
+let "foo = 1 + 2"
+echo $foo # 3
+
+bc 支持浮点运算:
+echo "scale=2;23/5" | bc # scale表示浮点位数
+num1=`echo "scale=2;23/5" | bc` # 运算结果保存为变量
+
+declare -i 命令:
+-i 参数声明整数变量以后，可以直接进行数学运算。
+declare -i val1=12 val2=5
+declare -i result
+result=val1*val2
+echo $result # 60
+
+命令替换:
+获取某一段命令的执行结果，它的方式有两种：
+`command`
+$(command) 
+all_files=`ls` # 获取ls命令的执行结果
+all_files=$(ls) # 效果同上
+
+获取系统用户并输出:
+#!/bin/bash
+index=1
+for user in `cat /etc/passwd | cut -d ":" -f 1`
+do
+    #cut -d ":" -f 1  根据：切分字符串，获取切好后的第一部分
+    echo "this is $index user- $user"
+    index=$(($index+1))
+done 
+
+获取今年已经过了多少天和周:
+echo "This year have passed $(date +%j) days"
+echo "This year have passed $(($(date +%j)/7)) weeks"
+
+declare 声明特殊变量:
+declare 命令可以声明一些特殊类型的变量，为变量设置一些限制，比如声明只读类型的变量和整数类型的变量。
+#语法格式
+declare OPTION VARIABLE=value
+#常用参数
+    -r 将变量设为只读；
+    -i 将变量设为整数；
+    -a 将变量定义为数组；
+    -f 显示此脚本前定义过的所有函数及内容；
+    -F 仅显示此脚本前定义过的函数名；
+    -x 将变量声明为环境变量。
+declare命令如果用在函数中，声明的变量只在函数内部有效，等同于local命令。
+不带任何参数时，declare命令输出当前环境的所有变量，包括函数在内，等同于不带有任何参数的set命令。
+
+-i 参数声明整数变量以后，可以直接进行数学运算。:
+declare -i val1=12 val2=5
+declare -i result
+result=val1*val2
+echo $result # 60
+
+-x 参数等同于 export 命令，可以输出一个变量为子 Shell 的环境变量。:
+declare -x foo=3 
+# 等同于
+
+export foo=3 
+
+-r 参数可以声明只读变量，无法改变变量值，也不能 unset 变量。:
+declare -r bar=1
+# 如果此时更改bar
+bar=2 # -bash: bar：只读变量
+
+-u 参数声明变量为大写字母，可以自动把变量值转成大写字母。:
+declare -u foo
+foo=upper
+echo $foo # UPPER
+
+-l 参数声明变量为小写字母，可以自动把变量值转成小写字母。:
+declare -l bar
+bar=LOWER
+echo $bar # lower
+
+-p 参数输出变量信息。:
+foo=hello
+declare -p foo #控制台输出：declare -x foo="hello"
+
+数组:
+array=('v1','v2','v3')
+${array[@]}  #输出全部内容
+${array[*]}  #输出全部内容
+${array[1]}  #输出下标索引为1的内容
+
+${#array}    #数组内元素个数
+${#array[2]} #数组下标为2的元素长度
+
+array[0]="456"      #给数组下标为1的元素赋值为456
+array[20]="123"     #在数组尾部添加一个元素
+
+unset array【2】  #清楚下标为2的元素
+unset array     #清空整个数组
+
+数组遍历:
+for v in ${array[@]}
+do
+    echo $v
+done
+
+grep 使用:
+ll | grep 11-02   #查找11-02的所有日志文件
+#常用参数
+    -i 忽略大小写， grep -i path /etc/profile
+    -n 显示行号，grep -n path /etc/profile
+    -v 只显示搜索文本不在的那些行，grep -v path /etc/profile
+    -r 递归查找， grep -r hello /etc ， Linux 中还有一个 rgrep 命令，作用相当于 grep -r
+
+#grep 可以配合正则表达式使用。
+    grep -E path /etc/profile --> 完全匹配path
+    grep -E ^path /etc/profile --> 匹配path开头的字符串
+    grep -E [Pp]ath /etc/profile --> 匹配path或Path
+
+sed 流编辑器使用:
+stream Editor 的缩写，流编辑器，对标准输出或文件逐行进行处理。
+sed [option] "pattern/command" file
+#例如：
+sed '/python/p' name.txt # 省略了option，/python/为pattern正则，p为command命令打印的意思
+#[注意] 匹配模式中存在变量要使用双引号
+
+选项 option:
+#-n 只打印模式匹配行
+sed 'p' name.txt # 会对没一行字符串输出两遍，第一遍是原文本，第二遍是模式匹配到的文本
+sed -n 'p' name.txt # 加了-n参数后就只打印模式匹配到的行
+
+-e 默认选项:
+支持多个 pattern command 的形式
+sed -e "pattern command" -e "pattern command" file
+
+-f 指定动作文件:
+# 简单命令
+sed -n '/python/p' name.txt # 但是一旦正则比较复杂，我们就可以把它保存在一个单独文件中，
+#使用-f进行指定
+# edit.sed 内容为 /python/p
+sed -n -f edit.sed name.txt # '/python/p'这个命令保存在edit.sed文件中，使用-f指定
+
+-E 扩展表达式:
+sed -n -E '/python|PYTHON/p' name.txt
+
+-i 直接修改文件内容:
+sed -i 's/love/like/g' name.txt # -i修改原文件，全局love替换为like
+
+模式匹配 pattern:
+pattern 用法表
+10command           匹配到第10行                         sed -n "17p" name.txt  打印 name 文件的第17行
+10,20command        匹配从第10行开始，到第20行结束       sed -n "10,20p" name.txt 打印 name 文件的10到20行
+10,+5command        匹配从第10行开始，到第15行结束       sed -n "10,+5p" name.txt 
+/pattern1/command   匹配到 pattern1 的行               sed -n "/^root/p" name.txt 打印 root 开头的行
+/pattern1/,/pattern2/command    匹配到 pattern1 的行开始，至匹配到 pattern2 的行结束    sed -n "/^ftp/,/^mail/p" name.txt  
+10,/pattern1/command    匹配从第10行开始，到匹配到 pattern1 的行结束        sed -n "4,/^ok/p" name.txt 打印 name 文件从第4行开始匹配，直到以 ok 开头的行结束
+/pattern1/,10command    匹配到 pattern1 的行开始，到第10行匹配结束     sed -n "/root/,10p" name.txt 
+
+命令conmmand:
+查询
+    p -- 打印
+增加
+    a -- 行后追加
+    i -- 行前追加
+    r -- 外部文件读入，行后追加
+    w -- 匹配行写入外部文件
+删除
+    d -- 删除
+修改
+    s/old/new -- 将行内第一个 old 替换为 new
+    s/old/new/g -- 将行内全部的 old 替换为 new
+    s/old/new/2g --同一行，只替换从第二个开始到剩下所有的
+    s/old/new/ig -- 将行内 old 全部替换为 new ，忽略大小写
+
+# sed 实例
+sed '/python/p' name.txt  #打印
+sed '2d' name.txt   #删除第二行 2表示第二行 d表示删除
+sed -i '/frank/a hello' name.txt #匹配到字符串frank就在这一行后面插入 "hello"
+sed -i '/frank/r list' name.txt #把list文件内容追加到匹配frank字符串后面的行
+sed -n '/frank/w tmp.txt' name #将匹配到frank的行全部写入tmp.txt文件中
+sed -i 's/love/like/g' name.txt #全局替换love为like，并修改源文件
+
+反向应用:
+引用前面的匹配到的字符。
+假设有一个文件 test.txt 内容为：
+a heAAo vbv
+c heBBo sdsad
+k heCCo mnh
+
+现在需要匹配到 heAAo heBBo heCCo 并在他们后面添加 s 。
+使用反向引用可以这样做：
+sed -i 's/he..o/&s/g' test.txt  #其中就是引用前面匹配到的字符
+sed -i 's/\(he..0\)/\ls/g' test.txt  #与上面的写法等价
+
+#输出结果
+a heAAos vbv
+c heBBos sdsad
+k heCCos mnh
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

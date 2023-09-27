@@ -1,0 +1,66 @@
+探索目标主机是否在线:
+   主机发现的原理与Ping命令类似，发送探测包到目标主机，如果收到回复，那么说明目标主机是开启的。
+   Nmap支持十多种不同的主机探测方式，
+#用户可以在不同的条件下灵活选用不同的方式来探测目标机。主机发现常用参数如下
+    -sn 						Ping Scan 只进行主机发现，不进行端口扫描。
+    -PE/PP/PM 					使用ICMP echo、 ICMP timestamp、ICMP netmask 请求包发现主机。
+    -PS/PA/PU/PY[portlist] 		使用TCP SYN/TCP ACK或SCTP INIT/ECHO方式进行发现。 
+    -sL 						List Scan 列表扫描，仅将指定的目标的IP列举出来，不进行主机发现。 
+    -Pn 						将所有指定的主机视作开启的，跳过主机发现的过程。
+    -PO[protocollist] 			使用IP协议包探测对方主机是否开启。  
+    -n/-R 						-n表示不进行DNS解析；-R表示总是进行DNS解析。  
+    --dns-servers server1 		指定DNS服务器。   
+    --system-dns 				指定使用系统的DNS服务器   
+    --traceroute 				追踪每个路由节点 
+
+探测该主机所在网段内所有主机的在线情况，使用的是 nmap -sn 网段/子网掩码:
+    nmap  -sn  10.96.10.0/24		网段
+    nmap  -sn  10.96.10.100-200		子网掩码
+
+
+端口扫描及其原理:
+    端口扫描是Nmap最基本最核心的功能，用于确定目标主机的TCP/UDP端口的开放情况。
+    默认情况下，Nmap会扫描1000个最有可能开放的TCP端口
+
+Nmap通过探测将端口划分为  6个状态:
+		   open            端口是开放的。
+		  closed           端口是关闭的。
+		  filtered         端口被防火墙IDS/IPS屏蔽，无法确定其状态。
+		  unfiltered       端口没有被屏蔽，但是否开放需要进一步确定。
+		open | filtered    端口是开放的或被屏蔽，Nmap不能识别。
+		closed | filtered  端口是关闭的或被屏蔽，Nmap不能识别
+
+#扫描方式
+TCP SYN 扫描(-sS):
+    这是Nmap默认的扫描方式，通常被称作半开放扫描。该方式发送SYN到目标端口，如果收到SYN/ACK回复，
+    那么可以判断端口是开放的；如果收到RST包，说明该端口是关闭的。如果没有收到回复，那么可以判断该端口被屏蔽了。
+    因为该方式仅发送SYN包对目标主机的特定端口，但不建立完整的TCP连接，所以相对比较隐蔽，而且效率比较高，适用范围广。
+
+TCP connent 扫描(-sT):
+    TCP connect方式使用系统网络API connect向目标主机的端口发起连接，如果无法连接，说明该端口关闭。
+    该方式扫描速度比较慢，而且由于建立完整的TCP连接会在目标主机上留下记录信息，不够隐蔽。所以，
+    TCP connect是TCP SYN无法使用才考虑使用的方式
+
+TCP ACK 扫描(-sA):
+    向目标主机的端口发送ACK包，如果收到RST包，说明该端口没有被防火墙屏蔽；没有收到RST包，说明被屏蔽。
+    该方式只能用于确定防火墙是否屏蔽某个端口，可以辅助TCP SYN的方式来判断目标主机防火墙的状况
+
+TCP FIN/Xmas/NULL 扫描(-sN/sF/sX):
+    这三种扫描方式被称为秘密扫描，因为相对比较隐蔽。FIN扫描向目标主机的端口发送的TCP FIN 包或Xmas tree包或NULL包，
+    如果收到对方的RST回复包，那么说明该端口是关闭的；没有收到RST包说明该端口可能是开放的或者被屏蔽了。其中Xmas 
+    tree包是指flags中FIN URG PUSH被置为1的TCP包；NULL包是指所有的flags都为0的TCP包。
+
+UDP扫描(-sU):
+    UDP扫描用于判断UDP端口的情况，向目标主机的UDP端口发送探测包，如果收到回复ICMP port 
+    unreachable就说明该端口是关闭的；如果没有收到回复，那说明该UDP端口可能是开放的或者屏蔽的。因此，
+    通过反向排除法的方式来判断哪些UDP端口是可能处于开放状态的。
+
+其他方式(-sY/-sZ):
+    除了以上几种常用的方式外，Nmap还支持多种其他的探测方式。例如使用SCTP 
+    INIT/Cookie-ECHO方式是来探测SCTP的端口开放情况；使用IP protocol方式来探测目标主机支持的
+    协议类型(tcp/udp/icmp/sctp等等)；使用idle scan方式借助僵尸主机来扫描目标主机，
+    以达到隐蔽自己的目的；或者使用FTP bounce scan，借助FTP允许的代理服务扫描其他的主机，同样达到隐蔽自己的目的
+
+
+
+

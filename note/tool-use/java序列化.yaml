@@ -1,0 +1,219 @@
+java序列化有两种方式:
+
+方式一：实现Serializable接口:
+1. 实现序列化接口Serializable，这个使用的比较多，Serializable接口是一个空的接口，它的主要作用就是标识这个类的对象是可
+    序列化的。
+2. 实现接口Externalizable。Exterinable继承了Serializable，是Serializable的一个扩展，对于那些属性可以序列化，那些可以
+    反序列化可以做详细地约束。
+
+相关工具类:
+1. java.io.ObjectOutputStream 表示对象输出流
+    它是OutputStream类的一个子类，对应的ObjectOutputStream.WriteObject(Object object)就要求参数object实现Serializable接口
+#使用方式如下
+    import java.io.FileOutputStream;
+    import java.io.ObjectOutputStream;
+
+    String fileName="test.txt" #文件名
+    LoginInfo info=new LoginInfo("chen","123") #某个待序列化对象，LoginInfo类实现Serializable接口
+    ObjectOutputStream oos=new ObjectOutputStream(new FileOutputStream(fileName)); #创建输出流
+    oos.writeObject(info); #序列化
+    oos.close(); #关闭流
+
+2. java.io.ObjectInputStream 表示对象输入流
+    相应的，它的readObject(Object object)方法从输入流中读取字节序列，再把它们反序列化成为一个对象，并返回。
+#使用方式如下
+    import java.io.FileInputStream;
+    import java..io.ObjectInputStream;
+
+    String fileName="test.txt";
+    ObjectInputStream ois=new ObjectInputStream(new FileInputStream(fileName));
+    LoginInfo info2=(LoginInfo)ois.readObject();
+    ois.close();
+
+serialVersionUID的作用:
+    1. 实现Serializable接口前后并没有增加新方法，只是多了一个serialVersionUID，其实这个字段也不是必须的。若不写serialVersionUID。
+    程序也能运行成功，不过eclipe会显示警告。
+
+    2. 其实，Java的序列化机制是通过在运行时判断类的serialVersionUID来验证版本一致性的。在进行反序列化时，JVM会把传来的字节流中的se
+    ialVersionUID与本地相应实体类的serialVersionUID进行比较，如果相同就认为是一致的，可以进行反序列化，否则就会出现序列化版本不一
+    致的异常(InvalidCastException)。
+
+#所以最好有这个字段，那么要如何添加呢？鼠标移动到警告处，eclipse在给出警告的同时也给出了解决方法：
+    添加默认值，即1L;
+    添加自动产生的ID值，我的是8685376332791485990L;（推荐）
+    通过@SuppressWarnings 批注取消特定代码段（即，类或方法）中的警告。
+
+
+java实现1:
+package serialize;
+
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.ObjectOutputStream;
+import java.io.ObjectInputStream;
+import java..io.Serializable;
+import java.util.Date;
+
+public class LoginInfo implements Serializable{
+    private static final long serialVersionUID = 8685376332791485990L;
+    private String username;
+    private String password;
+    private Date loginDate;
+
+    public LoginInfo() {
+        System.out.println("non-parameter constructor");
+    }
+
+    public LoginInfo(String username,String password){
+        System..out.println("parameter constructor");
+        this.username=username;
+        this.password=password;
+        this.loginDate=new Date();
+    }
+
+    public String toString(){
+        return "username="+username+",password="+password+",loginDate="+loginDate;
+    }
+}
+
+public static void main(String[] args) throws Execption{
+    LoginInfo info=new LoginInfo("chen","123");
+    System.out.println(info);
+    String fileName="info_serializable.txt";
+    
+    #serialize obejct
+    ObjectOutputStream oos=new ObjectOutputStream(new FileOutputStream(fileName));
+    oos.writeObject(info);
+    oos.close();
+
+    #deserialize object
+    ObjectInputStream ois=new ObjectInputStream(new FileInputStream(fileName));
+    LoginInfo info2=(LoginInfo)ois.readObject;
+    ois.close();
+}
+#之后会在项目目录下生成文件info_serializable.txt，虽然存成了txt格式，但并不能使用普通文本格式打开，会出现乱码
+#运行结果
+parameter constructor
+username=chen,password=123,logindate=Sun Feb 19 09:33:38 CST 2017
+
+transient的作用:
+#如果，不希望某些字段被序列化，如LoginInfo中的username，只需在对应字段的定义时使用关键词transient
+private transient String password;  
+#运行结果
+username=chen,password=null,logindate=Sun Feb 19 09:33:38 CST 2017
+#password反序列化后的结果为null，达到了保护密码的目的s
+
+
+
+方式二：实现Externalizable接口:
+    Externalizable继承了Serializable接口，并添加了两个新的方法，分别表示在那些字段能被序列化和那些字段能被反序列化
+
+java实现2:
+package serialize;
+
+import java.io.Externalizable;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.ObjectInput;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutput;
+import java.io.ObjectOutputStream;
+import java.util.Date;
+
+public class LoginInfo2 implements Externalizable{
+    private static final long serialVersionUID = 4297291454171868241L;
+    private String username;
+    private String password;
+    private Date logindate;
+    public LoginInfo2(){
+        System.out.println("non-parameter constructor");
+    }
+    public LoginInfo2(String username, String password){
+        System.out.println("parameter constructor");
+        this.username = username;
+        this.password = password;
+        this.logindate = new Date();
+    }
+    public String toString(){
+        return "username="+username+
+                ",password="+password+
+                ",logindate="+logindate;
+    }
+
+    # 新方法1表示 指定那些字段能够被 序列化
+    @Override
+    public void writeExternal(ObjectOutput out) throws IOException {
+        out.writeObject(logindate);
+        out.writeUTF(username);
+        
+    }
+
+    # 新方法2表示 指定那些字段能够被 反序列化
+    @Override
+    public void readExternal(ObjectInput in) throws IOException,
+            ClassNotFoundException {
+        logindate = (Date)in.readObject();
+        username = (String)in.readUTF();        
+    }
+    
+    public static void main(String[] args) throws Exception{
+        LoginInfo2 info = new LoginInfo2("chen","123");
+        System.out.println(info);
+        String fileName = "info_externalizable.txt";
+        
+        #序列化对象
+        System.out.println("Serialize object");
+        ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(fileName));
+        oos.writeObject(info);
+        oos.close();
+
+        #反序列化对象
+        System.out.println("Deserialize object");
+        ObjectInputStream ois = new ObjectInputStream(new FileInputStream(fileName));
+        LoginInfo2 info2 = (LoginInfo2)ois.readObject();
+        ois.close();
+        System.out.println(info2);
+    }
+}
+#运行结果
+username=chen,password=null,logindate=Sun Feb 19 10:53:57 CST 2017
+
+
+序列化与反序列化 总结:
+1. 两个流： ObjectOutputStream(序列化) ObjectInputStream(反序列化) 
+    ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(fileName));
+    oos.writeObject(info);  
+    oos.close(); 
+
+    ObjectInputStream ois = new ObjectInputStream(new FileInputStream(fileName));
+    LoginInfo info2 = (LoginInfo)ois.readObject();
+    ois.close();
+
+2. serialVersionUID的作用
+    Java的序列化机制是通过在运行时判断类的serialVersionUID来验证一致性的，所以实现Serializable或Externalizable接口
+    都最好有serialVersionUID这一字段，没有会报警告。
+
+3. Serializable 与 Externalizable 的关系
+    Serializable 是个空接口，用于指示某类的对象是否可以序列化
+    Externalizable 接口继承了 Serializable 接口，添加了 writeExternal() 、 readExternal() 方法
+
+4. transient 关键字
+    在Serializable接口的实现类中，transient 修饰的字段不参与序列化过程，在Externalizable接口实现类中，transient无效。
+    所以： transient 只能与与 Serializable 搭配使用
+
+5. writeExternal 、 readExternal 与无参构造函数
+    Externalizable实现的类对象，序列化与反序列化由writeExternal与readExternal两个函数控制（内部操作的字段要对应），
+    而且反序列时会先调用无参构造函数创建实例对象，再通过readExternal读取数据。所以Externalizable实现的类若想反序列化，必须有无参构造函数。而恢复Serializable对象，完全以之前存储的二进制为基础来构造，不调用构造函数。
+
+
+
+
+
+
+
+
+
+
+
+

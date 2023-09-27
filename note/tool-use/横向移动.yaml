@@ -1,0 +1,94 @@
+三、横向移动:
+通常进入内网后，同样会进行内网信息收集、域内信息收集，在通过收集的信息进行内网漫游横向渗透扩大战果，在内网漫游过程中，
+会重点关注邮件服务器权限、OA系统权限、版本控制服务器权限、集中运维管理平台权限、统一认证系统权限、域控权限等位置，
+尝试突破核心系统权限、控制核心业务、获取核心数据，最终完成目标突破工作。
+
+内网主机存活探测:
+1.ICMP:
+#Windows：
+for /l %i in (1,1,255) do @ping 192.168.1.%i -w 1 -n 1|find /i "ttl="
+​
+C:\Users\test>for /l %i in (1,1,255) do @ping 192.168.1.%i -w 1 -n 1|find /i "ttl="
+来自 192.168.1.1 的回复: 字节=32 时间=2ms TTL=254
+来自 192.168.1.3 的回复: 字节=32 时间=127ms TTL=64
+来自 192.168.1.5 的回复: 字节=32 时间=14ms TTL=64
+#Linux：
+for i in $( seq 1 255);do ping -c 2 192.168.1.$i|grep "ttl"|awk -F "[ :]+" '{print $4}'; done
+​
+root@localhost:~# for i in $( seq 1 255);do ping -c 2 192.168.1.$i|grep "ttl"|awk -F "[ :]+" '{print $4}'; done
+192.168.1.1
+192.168.1.3
+192.168.1.5
+
+1.1 fscan:
+github：https://github.com/shadow1ng/fscan
+fscan.exe -h 192.168.1.1/24  (默认使用全部模块)
+
+2.ARP:
+2.1 arp-scan:
+github：https://github.com/royhills/arp-scan  #下载后编译
+C:\Users\test>arp-scan.exe -t 10.10.10.0/24
+Reply that 20:65:8E:9C:11:EB is 10.10.10.1 in 13.379200
+Reply that 88:52:EB:3A:3C:A5 is 10.10.10.14 in 139.440900
+
+2.2 arp-ping:
+下载地址：https://www.elifulkerson.com/projects/arp-ping.php
+Arp-ping.exe 使用 ARP 解析来查找主机。使用这种方法，它能够“ping”受防火墙保护的主机 - 
+特别是发现使用 Windows 防火墙的主机以及在 Mac OSX 防火墙中使用“隐身模式”的主机。由于 ARP 协议仅
+在 OSI 模型的第 2 层起作用，因此 arp-ping.exe 只能对与您位于同一本地网络上的主机执行此任务。如果它们位于
+路由器或其他第 3 层设备的另一侧，您将得不到任何结果。
+
+for /l %i in (1,1,255) do @arp-ping.exe 10.10.10.%i -w 1 -n 1|find /i "Reply"
+
+E:\ipscan>for /l %i in (1,1,255) do @arp-ping.exe 10.10.10.%i -w 1 -n 1|find /i "Reply"
+Reply that 20:65:8E:9C:11:EB is 10.10.10.1 in 6.357ms
+Reply that F4:5C:89:93:C2:A9 is
+Reply that 80:30:49:3A:5D:BD is 10.10.10.176 in 0.175ms
+
+3.nbtscan:
+NBTscan 是一个用于扫描 IP 网络以获取 NetBIOS 名称的程序。
+github：https://github.com/lifenjoiner/nbtscan
+E:\ipscan>nbtscan.exe 10.10.10.0/24
+Doing NBT name scan for addresses from 10.10.10.0/24
+​
+IP address       NetBIOS Name     Server    User             MAC address
+------------------------------------------------------------------------------
+10.10.10.59      MACBOOKPRO-ED46            <unknown>        90-9c-4a-d0-ed-46
+10.10.10.119     MACBOOKPRO-C2A9  <server>  <unknown>        f4-5c-89-93-c2-a9
+
+4.nmap:
+ARP 扫描：     nmap -PR -sn 192.168.1.0/24
+ICMP 扫描：    nmap ‐sP ‐PI 192.168.1.0/24 ‐T4
+SNMP 扫描：    nmap -sU --script snmp-brute 192.168.1.0/24 -T4
+UDP 扫描：     nmap -sU -T5 -sV --max-retries 1 192.168.1.1 -p 500
+NetBIOS 扫描：     nmap --script nbstat.nse -sU -p137 192.168.1.0/24 -T4
+
+内网主机端口探测:
+#1.单个端口探测
+telnet
+E:\ipscan>telnet 10.10.25.176 80
+正在连接10.10.25.176...无法打开到主机的连接。 在端口 80: 连接失败
+​
+# NC
+root@localhost:~# nc -vv 10.10.12.162 22
+Connection to 10.10.12.162 22 port [tcp/ssh] succeeded!
+SSH-2.0-OpenSSH_8.2p1 Ubuntu-4ubuntu0.5
+
+#2.多个端口探测
+fscan    https://github.com/shadow1ng/fscan
+fscan.exe -h 192.168.1.1/24 -p 1-65535
+​
+#通过代理后使用nmap、msf进行扫描
+
+
+横向移动方法:
+  利用ms17010等系统漏洞
+  对跳板机密码进行抓取，使用抓取到密码爆破内网其他主机
+  利用EDR、堡垒机、云管平台、vmware esxi等集权系统漏洞
+  使用内网邮件服务进行邮件钓鱼
+  利用IPC$横向移动
+  smb爆破
+  对管理端口、数据库进行弱口令爆破
+  未授权访问漏洞
+  域渗透相关漏洞
+  虚拟机逃逸

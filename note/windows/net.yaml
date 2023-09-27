@@ -1,0 +1,55 @@
+net view			显示当前域的计算机列表
+net view \ip		查看指定计算机的共享资源列表
+net time \IP		查看远程主机的当前时间
+net view /domain:XYZ    查看XYZ域中的机器列表
+nbtstat -A IP		得到远程主机的用户名列表
+
+net share			查看共享的资源
+net share DataShare=c:\Data /remark:"For department 123." 	要使用共享名 DataShare 共享计算机的 C:\Data 目录并包括注释
+net share DataShare /delete		要停止上例中创建的 DataShare 文件夹共享
+net share list="c:\art lst"		使用共享名 List 共享计算机的 C:\Art Lst 目录
+实例:
+	net share app$=d:\config	#添加app$共享
+	net use \\172.168.68.191\app$ "ffcs" /user:"administrator" 	 #复制文件1
+	copy \\172.168.68.191\app$\php.ini d:\copy 			#复制文件2
+
+net use				显示网络连接
+net use f: \\192.168.0.2t\testdir		将testdir挂载为f盘
+net use f: \\192.168.0.2t\testdir /delete	断开连接
+net use \\192.168.0.2\ipc$ "" /user:"" 		建立空连接
+net use \\192.168.0.2\ipc$ "密码" /user:"用户名" 	建立非空连接
+net use z: \\192.168.0.2\c$ "密码" /user:"用户名"	 即可将对方的c盘映射为自己的z盘，其他盘类推
+net use \\192.168.0.2\ipc$ /del		删除一个ipc$连接
+net use c: /del 	删除映射的c盘，其他盘类推
+net use * /del 	删除全部,会有提示要求按y确认
+net statistics workstation		显示统计记录
+
+net user				查看计算机上的用户
+net user UserName		查看指定用户的信息
+net user UserName passwd /add    添加一个用户
+Net user lenovo /delete		删除用户
+net localgroup administrators zhang /add    添加用户zhang到管理员组
+net user guest /active:yes       激活guest用户
+net user [UserName [Password | *] [Options]] [/domain]
+net user [UserName {Password | *} /add [Options] [/domain]]
+net user [UserName [/delete] [/domain]]
+
+net start ServiceName		开启指定服务
+net stop ServiceName		停止指定服务
+net pause ServiceName		暂停指定服务
+net continue ServiceName	重新激活挂起服务
+
+net accounts	显示当前密码设置、登录时限及域信息:
+还可以用来更新用户帐号数据库、更改密码及所有帐号的登录要求
+可选参数：
+	/forcelogoff:{minutes | no}	设置当用户帐号或有效登录时间过期时
+	/minpwlen:length			设置用户帐号密码的最少字符数
+	/maxpwage:{days | unlimited}	设置用户帐号密码有效的最大天数
+	/minpwage:days			设置用户必须保持原密码的最小天数
+	/uniquepw:number		要求用户更改密码时，必须在经过number次后才能重复使用与之相同的密码
+	/domain					在当前域的主域控制器上执行该操作
+	/sync					当用于主域控制器时，该命令使域中所有备份域控制器同步
+举例:
+
+net accounts /minpwlen:8 		#将用户帐号密码的最少字符数设置为8
+net config workstation/server	#显示当前运行的可配置服务

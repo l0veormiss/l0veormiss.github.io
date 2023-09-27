@@ -1,0 +1,40 @@
+结束进程前:
+lsof -i:8848 中控项目后端jar包运行端口
+kill -9 Pid
+
+vim 常用命令:
+编辑模式下，按下esc，可以回到命令模式
+命令模式下，按下i、a等键，可以计入编辑模式
+查找： /关键词  （N n 可以切换上下结果）
+保存文件：“:w”
+保存并退出：“:wq”
+
+linux 常用命令:
+查找文件： find -name ‘*test*’ 匹配查找
+输出中查找： top | find -name ‘*test*’
+Ctrl+shift+上或下 终端上下滚动
+Ctrl+shift+pgup或pgdown 终端上下翻页滚动
+Alt+Ctrl+T 打开终端 [常用]
+Ctrl+L 清空屏幕
+安装： apt-get install softname1
+卸载并清除配置： apt-get remove --purge softname1
+关闭防火墙： systemctl disable firewalld && systemctl stop firewalld
+
+
+jar 更改jar包配置:
+列出jar包中的文件清单： jar tvf zhongkong.jar
+提取： xvf zhongkong.jar test.txt
+修改配置文件： vim test.txt
+更新写入jar包 jar uvf zhongkong.jar test.txt
+
+1.解压:
+unzip genesys_data_etl-0.0.1-SNAPSHOT.jar 
+2.移除jar包,最好备份:
+rm genesys_data_etl-0.0.1-SNAPSHOT.jar
+3.重新打包:
+ jar -cfM0 new-genesys_data_etl-0.0.1-SNAPSHOT.jar *
+ 或者
+ jar -cvfm0 genesys_data_etl-0.0.1-SNAPSHOT.jar ./META-INF/MANIFEST.MF ./
+4.运行:
+java -jar new-genesys_data_etl-0.0.1-SNAPSHOT.jar
+

@@ -1,0 +1,325 @@
+将可执行文件弄成终端命令使用:
+1.将文件移动到/usr/local/bin目录下
+mv hello.sh /usr/local/bin/hello
+#这样就可以用hello在终端执行了
+
+2.创建一个文件软链  有错误
+ln -s ./hello.sh /usr/local/bin/hello
+#这样就可以用hello在终端执行了
+
+3.使用别名
+alias hello="bash /home/xiaobendan2/mydata/hello.sh"
+
+#if...else...结构
+false && echo true || echo false
+# false
+
+# history 返回数百条用户历史命令
+# grep 匹配出只带有"echo"单词的历史
+# less 会将过滤后的历史以滚动查看的方式展示
+history | grep echo | less
+
+#在命令后添加运算符 & 表示启动一个子 shell 进程在后台异步执行这个命令，结果输出到当前 shell。
+# & 也可以拼接命令。
+command1 & command2 & command3  
+# 命令 1，2 在后台运行，3 在前台运行
+
+{}代码块:
+代码块可以把几个代码放到一个相同的执行上下文中。不过，这个并不影响变量作用域，也就是没有块作用域。
+代码块用得不多，一般见于函数声明处。还有一个场景是实现多条命令的重定向：
+#{ echo "file content: "; cat source_file } > target_file
+如果去掉大括号，重定向的优先级更高，只会影响 cat 命令。
+
+Tab:        自动补全，支持文件、命令、参数、用户名、主机名等。两次 Tab 可列出所有可选的自动补全项。
+Ctrl + A/E: 移动到行首/尾。
+Ctrl + U/K: 清除光标位置到行首/尾的字符。
+Ctrl + C:   中止正在执行的命令。
+Ctrl + L:   清空 shell 打印内容。同命令 clear。
+Ctrl + D:   关闭 shell 会话。
+
+!!: 指代上一条命令。
+!-n: 指代前 n 条命令，比如 !-1 即表示 !!。
+!n: 指代 history 列出的命令中行号为 n 的命令。
+
+除了命令，还能指代上一条命令的参数：
+    !$: 上一个命令的最后一个参数。
+    !*: 上一个命令的所有参数
+
+# 回车后，展开为 cd long-dir-name
+mkdir long-dir-name
+cd !*  # 回车后，展开为 cd long-dir-name
+
+还有一个非常实用的功能：根据关键字查找最近执行的命令，称为 reverse-i-search。按下快捷键 
+Ctrl + R，出现提示后，输入关键字，会匹配出历史中最近的一个命令。此时，回车可以立即执行，再按 Ctrl + R 会继续向上搜索。
+
+alias创建别名:
+alias ll='ls -al'
+# ll 会被替换成 ls -al 执行
+
+alias 创建的别名只在当前会话有效，重启终端后，别名就不存在了。如果希望创建一个持久化的别名
+，可以在 shell 的配置文件中加入别名声明。bash 的配置文件是 ~/.bashrc
+#创建持久性alias别名
+~/.bashrc
+# ...
+# Aliases
+# alias alias_name="command_to_run"
+# Long format list
+alias ll="ls -al"
+#每次启动时，shell 都会读取该配置进行初始化，这些别名就可以使用了
+
+引号:
+#Shell 不存在数据类型（有数组），只有字符串一种值。
+有多种方式可以表示字符串：
+    无引号：简单情况下，字符串内不含有空白时不需要引号，因为空白会被识别成分隔符。
+    双引号：除了 $（变量展开）, `（命令替换） 和 \（转义）仍然有特殊功能，其它都被解析为普通字符。
+    单引号：纯字符串，各种字符都会变成普通字符。
+
+变量赋值:
+variable=value # 注意 = 左右没有空格
+
+# 使用命令替换语法能把命令的输出赋给变量：
+# 把 ls 的输出结果赋给 files
+files=`ls`
+
+6.2. 使用变量:
+#变量前加美元符号，${variable}表示取对应的变量值，其中大括号在不导致歧义时是可省略的。
+echo $files
+echo "${files}_end" # 这里大括号是必须的
+
+6.3. 变量的作用域:
+#变量的作用域可以分成三类：
+    环境变量：能在当前 shell 及其子 shell 中使用，使用 declare -x 或 export 导出。
+    全局变量：只能在当前 shell 进程内使用，默认。
+    局部变量：只能在函数内使用，使用命令 local 声明。
+
+6.4. declare 命令:
+#变量除了保存值以外，还可能绑定某些属性，比如 只读、只能存储数值、作用域。
+#declare 命令可以赋予变量一些特殊的属性。
+declare -r CONST_INT=2      # 设置只读变量，同 readonly 命令声明的变量
+declare -i a_int=3          # 数字类型变量
+declare -x ENV_VAR=value    # 设置为环境变量
+
+#尽管这看起来像是变量声明，不过也可以作用于已有变量。
+var=val
+declare -r var
+
+6.5. set 与 unset 命令:
+#当一个变量被赋值，就称为被 set 的。
+#set 命令在不接参数会输出所有的变量。使用 unset 命令可以删除变量。
+temp_var=temp_val
+set | grep temp
+# temp_var=temp_val
+unset temp_var
+set | grep temp
+# nothing
+
+6.6. 位置变量和特殊变量:
+#Shell 使用一些位置变量和特殊变量来表示命令及其参数相关的值。
+变量          含义及说明
+$0          命令行下表示用户当前的 shell；脚本内表示执行的脚本名称。
+$N (N>0)    表示执行脚本或函数时的第 N 个参数。N>9 时用 ${N} 表示。
+$#          执行脚本或函数时的参数个数。
+$@          执行脚本时的参数。"$@" 等效于 "$1" "$2" ... "$N"
+$*          执行脚本时的参数。"$*" 等效于 "$1 $2 ... $N"，是一个整体
+$?          上一命令的退出状态码
+#$@ 和 $* 不被双引号包裹时，没有区别。只有在双引号内并且执行 分割 的上下文中才会有差别。
+
+#示例
+#!/bin/bash
+echo "use \$*:"
+for arg in "$*"
+do
+        echo "Hello $arg"
+done
+
+echo "-------------------"
+echo "use \$@:"
+for arg in "$@"
+do
+        echo "Hello $arg"
+done
+#执行
+./hello.sh java python c++
+#输出
+use $*:
+hello java python c++
+-------------------
+use $@:
+hello java
+hello python
+hello c++
+#解释 $1 $2 $3 等于执行脚本时，后面跟的参数 ...  $0 被运行的脚本名称  $# 参数的数量
+
+6.7. 变量展开语法:
+#变量语法 ${variable} 其实是变量展开的基本形式，还有一些特殊的展开形式，比如：
+    ${#variable}: 展开为变量的内容长度或数组的长度。
+    ${variable:=default}: 为变量设置默认值，当变量内容为空时，展开为默认值。
+    ${variable:offset:length}: 字符串或数组切片。
+
+
+shell启动时 加载如下配置文件:
++----------------+-----------+-----------+------+
+|                |Interactive|Interactive|Script|
+|                |login      |non-login  |      |
++----------------+-----------+-----------+------+
+|/etc/profile    |   A       |           |      |
++----------------+-----------+-----------+------+
+|/etc/bash.bashrc|           |    A      |      |
++----------------+-----------+-----------+------+
+|~/.bashrc       |           |    B      |      |
++----------------+-----------+-----------+------+
+|~/.bash_profile |   B1      |           |      |
++----------------+-----------+-----------+------+
+|~/.bash_login   |   B2      |           |      |
++----------------+-----------+-----------+------+
+|~/.profile      |   B3      |           |      |
++----------------+-----------+-----------+------+
+|BASH_ENV        |           |           |  A   |
++----------------+-----------+-----------+------+
+|                |           |           |      |
++----------------+-----------+-----------+------+
+|                |           |           |      |
++----------------+-----------+-----------+------+
+|~/.bash_logout  |    C      |           |      |
++----------------+-----------+-----------+------+
+
+7.1. 查看环境变量:
+#可以通过 printenv 命令查看环境变量：
+printenv PATH
+# /usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:/opt/puppetlabs/bin
+
+7.2. 设置环境变量:
+有几种方式可以设置环境变量：
+# a) 修改启动时的配置文件，对系统/用户永久生效（不同的 shell 配置文件有所不同）。
+# ~/.bashrc
+# ...
+USER_ENV="HELLO"
+
+# b) 使用 export 命令，仅当前会话有效。
+export MODE=production # 同 declare -x MODE=production
+
+#c) 在执行命令前设置，仅对该命令有效。
+VAR1=V1 VAR2=V2 command arguments
+
+7.3. 子 shell:
+执行脚本或者 bash 命令时，会创建一个子 shell，子 shell 会继承父 shell 的环境
+变量（不包括普通变量），子 shell 中设置的环境变量不会影响到父 shell。
+
+8. 展开:
+#在命令执行前，shell 会先对命令进行展开，即把命令中的特殊模式替换成实际的内容。按顺序依次进行：
+    大括号展开：ab{c?, d*, ef}g 展开为 abc?g abd*g abefg
+    变量展开：${var} 展开为对应变量值
+    算术展开：$(( expression )) 展开为表达式计算后的值。
+    命令替换：`$(command)` 或者 `command` 展开为命令执行后的输出。
+    单词分割：把上面的结果根据环境变量 IFS 分割成多个单词，默认使用空白。
+    文件名展开：含有字符 * ? [] 的部分会被认为是文件名模式，展开为匹配的文件名(见下)。
+#在双引号内，只有 $ 和 ` 还有特殊作用，所以只有变量展开、算术展开和命令替换还有效。
+
+8.1. Glob 模式:
+#大括号和文件名展开是一种很方便的文件匹配方法，它有一个名称叫 glob。
+#Glob 在很多语言和工具中都有应用，比如 gitignore 文件，ESLint 配置。
+常见的通配符和模式有：
+通配符或模式          含义和例子
+*                  匹配任意字符串（含空串），但是不能跨越目录层级。
+**                  匹配任意层级目录。
+?                   匹配一个字符。
+[abc]           匹配中括号内的字符集合中的一个。排除法用 [^abc] 或 [!abc]。
+a{b,c*}d        先展开成模式 abd，ac*d，再分别匹配，只要能满足一个就算匹配。
+
+9. I/O 重定向:
+Shell 的标准输入输出包括 stdin 、stdout、stderr，分别对应文件描述符 0，1，2。
+
+9.1. 重定向输出:
+#使用 > 把命令的输出重定向到文件：
+ls > files.txt
+
+#如果文件不存在，会创建该文件，所以可以用来很方便地创建一个小文件：
+echo "{}" > config.json
+
+#如果文件存在，则会先清空再写入。如果希望保留文件原内容，从文件末添加（append），可以使用 >>:
+ls >> files.txt
+
+9.2. 重定向错误输出:
+#在 > 前加上文件描述符 2：
+ls 2> ls-err.text
+
+#如果希望同时重定向输出和错误输出，使用 &>：
+ls &> files.txt # 同 ls > files 2>&1
+
+9.3. 重定向输入:
+#重定向输入用 < 。输入重定向用得比较少，大部分情况都是直接支持用文件做参数。
+#下面的 read-print.sh 从标准输入读取输入，并打印
+#!/bin/bash
+read var;
+echo $var;
+
+#重定向标准输入，把一个文件内容作为输入：
+bash read-print.sh < files.txt
+
+9.4. Here 文档和 here 字符串:
+#Here 文档允许我们把一段字符串作为输入源。语法如下：
+command << token
+# 中间这里是字符串的内容
+text ...
+token
+
+#其中 token 是一段标识，不固定，收尾一致即可，结束标识必须顶格。Here 文档内部支持变量展开 ($ 仍然具有特殊意义）。
+适合用于引用一些带格式的长文本。比如，一段 html 字符串：
+title="Simple HTML"
+content="Hello"
+
+# cat 命令默认从标准输入读取内容
+cat << _EOF_
+<html>
+<head>
+    <title>
+    The title of page:$title
+    </title>
+</head>
+<body>
+    $content
+</body>
+</html>
+_EOF_
+
+#如果字符串内容较短，可以使用 here 文档的变体 here 字符串：
+alias echo-hello="bash read-print.sh <<< 'Hello'"
+echo-hello
+# Hello
+
+10.获取帮助:
+help    帮助命令
+man     帮助命令
+
+10.3. info 命令:
+man page 是一种过时（但仍然使用广泛）的文档格式，Unix 已经采用能支持超链接的 info 格式来提供帮助文档。
+如果 man 命令失效，你可以试试 info，在大多数时候，它们两个都能生效。
+#查看 info     手册需要使用一些特殊的子命令：
+空格键/PgDn：   向下翻页。
+PgUp:        向上翻页。
+x：          关闭窗口。
+Tab：        跳转到下个超文本链接。
+q：          退出。
+
+10.4. apropos 命令:
+#apropos 能够根据关键字搜索出相关的命令。
+apropos rename file
+# ...
+# mv(1)                    - move files
+# ...
+
+echo 命令:
+echo 命令的作用是在屏幕输出一行文本，可以将该命令的参数原样输出。
+echo hello world # 输出当行文本
+# 输出多行文本
+echo "
+  hello
+  world
+
+解析转义字符:
+用 -e 参数使得 echo 可以解析转义字符
+echo -e "hello \n world" # 如果不添加 -e 则会原样输出，添加了 -e 输出则会换行
+
+
+
+

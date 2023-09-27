@@ -1,0 +1,299 @@
+> 取得每个部门的最高薪水的人员名称 编号  单表emps  
+select t.deptno,t.maxsal,e.deptno,e.ename
+from emps e
+inner join # 内连接 只返回两个表中联结字段相等的行  emps 和 临时emps
+(select deptno,max(sal) maxsal from emps group by deptno) t # t表示 子查询 临时表
+on (e.deptno=t.deptno and t.maxsal=e.sal); # 判断是一个部门  and  薪水是最高薪水
+order by t.maxsal desc; # 最高薪水降序
+
+先每个部门的最高薪水:
+select deptno,max(sal) maxsal
+from emps
+group by deptno;
+
+select * from emps order by deptno asc ,sal desc;
+
+> 那些人的薪水在部门平均薪水之上 单表emps
+select t.deptno,t.avgsal,e.ename,e.sal
+from emps e
+inner join 
+(select deptno,avg(sal) avgsal from emps group by deptno) t
+on (e.deptno = t.deptno and e.sal > t.avgsal) 
+order by e.sal desc;
+
+先查询部门平均薪水:
+select deptno,avg(sal) avgsal from emps group by deptno;
+
+> 取得部门中所有人的平均薪水等级 表emps salgrade
+select t.deptno,t.avgsal,s.grade,s.losal,s.hisal
+from salgrade s
+inner join (select deptno,avg(sal) avgsal from emps group by deptno) t
+on (t.avgsal between s.losal and s.hisal);
+
+取得部门所有人的平均薪水:
+select deptno,avg(sal) avgsal from emps group by deptno;
+
+select * from salgrade;
+
+> 取得平均薪水最高的部门编号 表emps
+select deptno,avg(sal) avgsal from emps group by deptno order by avgsal desc limit 0,1;
+
+获取部门的平均薪水:
+select deptno,avg(sal) from emps group by deptno;
+
+
+取第三到五条数据 5-3=2  2+1 = 3 :
+select * from emps;
+
+select * from emps limit 2,3;
+ 
+面试题  取11-20条记录 20-11=9 9+1=10 :
+select * from emps limit 10,10;
+
+> 取得平均薪水最高的部门名称 表 emps dept
+select t.deptno,t.avgsal,d.dname
+from dept d
+inner join (select deptno,avg(sal) avgsal from emps group by deptno order by avgsal desc limit 0,1) t
+on d.deptno=t.deptno;
+
+取得平均薪水最高的部门编号:
+select deptno,avg(sal) avgsal from emps group by deptno order by avgsal desc limit 0,1;
+
+> 取得平均薪水 等级最高 的部门的部门名称 表emps salgrade dept
+select e.deptno,e.avgsal,s.grade,d.dname
+from salgrade s
+inner join (select deptno,avg(sal) avgsal from emps group by deptno order by avgsal DESC limit 1) e
+on (e.avgsal between s.losal and s.hisal)
+inner join dept d
+on (d.deptno=e.deptno);
+
+再获取平均薪水最高的部门等级:
+select e.deptno,e.avgsal,s.grade
+from salgrade s
+inner join (select deptno,avg(sal) avgsal from emps group by deptno order by avgsal desc limit 1) e
+on (e.avgsal between s.losal and s.hisal);
+
+先取得平均薪水最高的:
+select deptno,avg(sal) avgsal from emps group by deptno order by avgsal desc limit 1;
+
+> 取得平均薪水 等级最低 的部门的部门名称 表emps salgrade dept
+select e.deptno,e.avgsal,s.grade,d.dname
+from salgrade s
+inner join (select deptno,avg(sal) avgsal from emps group by deptno order by avgsal ASC limit 1) e
+on (e.avgsal between s.losal and s.hisal)
+inner join dept d
+on (d.deptno=e.deptno);
+
+> 取得每个部门的平均薪水等级和部门名称 表emps salgrade dept
+select e.deptno,e.avgsal,s.grade,d.dname
+from salgrade s
+inner join (select deptno,avg(sal) avgsal from emps group by deptno order by avgsal ASC) e
+on (e.avgsal between s.losal and s.hisal)
+inner join dept d
+on (d.deptno=e.deptno);
+
+
+> 取得比普通员工的（员工代码没有在mgr上出现）的最高薪水还要高的经理人姓名
+select *
+from emps
+where empno not in (select distinct mgr from emps where mgr >0);
+
+查询员工编号姓名以及所属的经理的编号姓名:
+select e.empno,e.ename,t.mgrempno,t.mgrname
+from emps e
+inner join (select DISTINCT mgr mgrno,empno mgrempno,ename mgrname from emps where mgr>0) t
+on e.empno=t.mgrno;
+
+先查询出所有的经理的编号  出现在mgr中的员工编号  mgr 经理编号  对应 empno手下员工编号:
+select DISTINCT mgr mgrno,empno mgrempno,ename mgrname from emps where mgr>0; 
+DISTINCT 去除重复数据:
+
+> 取得薪水最高的前2名员工
+select e.empno,e.ename,e.sal
+from emps e
+inner join (select distinct mgr mgrno from emps where mgr>0) t
+on e.empno=t.mgrno
+order by sal desc limit 0,2;
+
+获取经理编号:
+select distinct mgr mgrno from emps where mgr>0;
+
+> 取得薪水最高的第二名 第三名员工
+select e.empno,e.ename,e.sal
+from emps e
+inner join (select distinct mgr mgrno from emps where mgr>0) t
+on e.empno=t.mgrno
+order by sal desc limit 1,2;
+
+> 取得员工的编号，姓名，薪水，薪水级别
+select e.empno,e.ename,e.sal,s.grade salgrade
+from emps e
+inner join (select distinct mgr mgrno from emps where mgr>0) t
+on e.empno=t.mgrno
+inner join salgrade s #跟薪水表做内连接
+on (e.sal between s.losal and s.hisal);
+
+取得员工数据 把不是普通员工的记录排除:
+select e.empno,e.ename,e.sal
+from emps e
+inner join (select distinct mgr mgrno from emps where mgr>0) t
+on e.empno=t.mgrno;
+
+> 取得员工薪水最高的编号，姓名，薪水，薪水等级
+select e.empno,e.ename,e.sal,s.grade salgrade
+from emps e
+inner join (select distinct mgr mgrno from emps where mgr>0) t
+on e.empno=t.mgrno
+inner join salgrade s #跟薪水表做内连接
+on (e.sal between s.losal and s.hisal)
+order by e.sal desc limit 1;
+
+> 取得员工薪水最高的编号，姓名，薪水，薪水等级 和部门名称
+select e.empno '员工编号',e.ename '员工姓名',e.sal '员工薪水',s.grade '薪水等级',d.dname '部门名称'
+from emps e
+inner join (select distinct mgr mgrno from emps where mgr>0) t
+on e.empno=t.mgrno
+inner join salgrade s #跟薪水表做内连接
+on (e.sal between s.losal and s.hisal)
+inner join dept d
+on (e.deptno=d.deptno)
+order by e.sal desc limit 1;
+
+> 列出部门和这些部门员工信息，还列出没有员工的部门
+select e.empno,e.ename,d.deptno,dname
+from emps e
+right join dept d
+on (e.deptno=d.deptno);
+
+> 列出至少有2个员工的部门
+select d.deptno,d.dname,count(e.empno) total
+from emps e
+right JOIN dept d
+on d.deptno=e.deptno
+group by d.deptno
+having total>=1;  # having对分组后的数据进行过滤
+
+select d.deptno,d.dname,count(e.empno) '部门人数' 
+from emps e
+right JOIN dept d
+on d.deptno=e.deptno
+group by d.deptno;
+
+> 取得比yangman3 工资高的员工信息
+select e.ename,e.sal
+from emps e
+where e.sal > (select sal ym_sal from emps where ename='yangman3');
+
+先查出yangman3 的工资:
+select sal ym_sal from emps where ename='yangman3';
+
+> 查询p3等级的部门名称 部门人数
+select d.dname,d.deptno,count(d.deptno) count
+from dept d
+inner join (select job,ename,deptno from emps where job='p3') e
+on (d.deptno=e.deptno)
+group by d.deptno;
+
+> 查询p3等级的姓名及其部门名称
+select e.job,e.ename,e.deptno,d.dname
+from dept d
+inner join (select job,ename,deptno from emps where job='p3') e
+on (d.deptno=e.deptno);
+
+先查出p3:
+select job,ename,deptno from emps where job='p3';
+
+> 查询p3等级的员工姓名，部门编号部门名称 部门人数
+将1 和 2的结果当做临时表 然后再做连接查询:
+select t1.ename,t1.job,t1.deptno,t2.deptsum
+from (select e.job,e.ename,e.deptno,d.dname from dept d inner join (select job,ename,deptno from emps where job='p3') e
+on d.deptno=e.deptno) t1 #临时表 t1
+inner join (select e.deptno,count(e.deptno) deptsum from emps e group by e.deptno) t2 #临时表 t2
+on t1.deptno=t2.deptno; # t1 和 t2 做内连接
+
+1.查询部门分组:
+select e.deptno,count(e.deptno) deptsum
+from emps e group by e.deptno;
+
+2.查询p3的员工信息 部门信息:
+select e.job,e.ename,e.deptno,d.dname
+from dept d
+inner join (select job,ename,deptno from emps where job='p3') e
+on (d.deptno=e.deptno);
+
+先查出p3:
+select job,ename,deptno from emps where job='p3';
+
+
+> 查询在管理部工作的员工信息
+select e.empno,e.ename,t.deptno,t.dname
+from emps e
+inner join (select deptno,dname from dept where dname='管理部') t
+on e.deptno=t.deptno;
+
+先查出管理部:
+select deptno,dname from dept where dname='管理部';
+
+
+> 列出薪水高于公司平均薪水的所有员工，所在部门，上级领导，薪水等级
+将薪水高于 公司所有员工的平均薪水 的员工 所在部门 以及:
+  薪水等级  和 对应的领导 做左连接  因为有的员工没有直属领导:
+select t3.empno '员工编号',t3.ename '员工名称',t4.mgrno '领导编号',t4.mgrname '领导名称',
+t3.deptno '部门编号',t3.dname '部门名称',t3.grade '薪水等级' from 
+
+薪水高于 公司所有员工的平均薪水 的员工 所在部门 以及薪水等级 临时表t3:
+(select t1.empno,t1.ename,t1.sal,t1.deptno,d.dname,s.grade
+from dept d
+inner join (select e.empno,e.ename,e.sal,e.deptno
+from emps e where e.sal> (select avg(sal) avgsal from emps)) t1
+on d.deptno=t1.deptno
+inner join salgrade s
+on t1.sal between s.losal and s.hisal) t3
+left join #左连接
+
+对应的领导 临时表t4:
+(select e1.empno,e1.ename,t2.mgrno,t2.ename mgrname
+from emps e1
+inner join (select ename,mgr mgrno from emps where mgr>0) t2
+on e1.empno=t2.mgrno) t4
+on t3.empno=t4.empno;
+
+----------------------------------查询结果------------------------------------------------
+员工编号  员工名称    领导编号  领导名称    部门编号  部门名称  薪水等级
+4   yangman4            20    销售部 4
+5   mingzhu5  5   mingzhu6  30    管理部 5
+6   mingzhu6            30    管理部 6
+----------------------------------4 和 6的员工没有直属领导  为空 -------------------
+
+查出员工以及对应的领导:
+select e1.empno,e1.ename,t2.mgrno,t2.ename mgrname
+from emps e1
+inner join (select ename,mgr mgrno from emps where mgr>0) t2
+on e1.empno=t2.mgrno;
+
+查找领导名称:
+select ename,mgr mgrno from emps where mgr>0; # t2
+
+> 找出薪水高于 公司所有员工的平均薪水 的员工 所在部门 以及薪水等级:
+select t1.empno,t1.ename,t1.sal,t1.deptno,d.dname,s.grade
+from dept d
+inner join (select e.empno,e.ename,e.sal,e.deptno
+from emps e where e.sal> (select avg(sal) avgsal from emps)) t1
+on d.deptno=t1.deptno
+inner join salgrade s
+on t1.sal between s.losal and s.hisal;
+
+找出薪水高于 公司所有员工的平均薪水 的员工 所在部门:
+select t1.ename,t1.sal,t1.deptno,d.dname
+from dept d
+inner join (select e.ename,e.sal,e.deptno
+from emps e where e.sal> (select avg(sal) avgsal from emps)) t1
+on d.deptno=t1.deptno;
+
+找出薪水高于 公司所有员工的平均薪水 的员工:
+select e.ename,e.sal
+from emps e where e.sal> (select avg(sal) avgsal from emps);
+
+
+先查出公司所有员工的平均薪水:
+select avg(sal) avgsal from emps;

