@@ -1,0 +1,157 @@
+信息收集:
+	大型网站可以用天眼查，启信宝查询法人股份信息
+	小型网站查询使用那些CMS
+
+whois查询，获取注册者邮箱姓名电话:
+	1.域名信息
+	2.注册商
+	3.联系人
+	4.联系邮箱
+	5.网站创建时间
+	6.网站过期时间
+	7.DNS信息
+	8.网站状态
+whois查询网站:
+	全球whois查询		https://www.whois365.com
+	百度云whois查询		https://cloud.baidu.com/product/bcd.html?track=cp:aladdin%7Ckw:148
+	新网whois查询		http://whois.xinnet.com/domain/
+	8.时代互联网址地址	http://www.now.cn/
+	9.alexa.cn 			http://whois.alexa.cn/
+	10.whoissoft.com    http://whoissoft.com/
+	11.爱名网whois查询   https://whois.22.cn/
+	12.网络工具大全  		http://tools.now.cn/
+	13.网站建设			http://www.zw.cn/
+	14.中国万网whois 	http://whois.zw.cn/
+查找点:	
+	查询服务器旁站和子域名站点
+	查看服务器操作系统版本，web中间件，看看是否存在已知的漏洞 （IIS，apache，nginx 解析漏洞）
+	查看IP，进行ip地址端口扫描，对响应的端口进行漏洞探测 （rsync 心脏滴血 mysql ftp ssh弱口令）
+	扫描网站目录结构，看看是否可以遍历目录，敏感文件泄露 php探针
+	google hack 探测网站后台，敏感文件
+	查看网站具有那些功能， 去查找是否存在对应的漏洞
+	站长之家:http://whois.chinaz.com/
+	邮箱反查、注册人反查、电话反查。
+	推荐个项目:https://github.com/code-scan/BroDomain 兄弟域名查询。
+	https://www.qimai.cn/
+	七麦数据，可以查到企业下一些比较冷门的app。
+
+常用漏洞点:
+绕过限制导致的爆破、撞库、用户遍历漏洞
+最常见的一种漏洞，尤其是一些老旧的后台系统，可能验证码抓个包就绕过去了。下面是一些常见的绕过姿势
+验证码不刷新
+验证码抓包绕过
+验证码删除绕过
+验证码置空绕过
+修改xff头绕过:推荐个burp插件,https://github.com/TheKingOfDuck/burpFakeIP
+账号后加空格绕过账号错误次数限制。
+
+windows:
+C:\boot.ini  //查看系统版本
+C:\Windows\System32\inetsrv\metabase.xml //IIS配置文件
+C:\Widnows\repair\sam    //存储系统初次安装的密码
+C:\Program Files\mysql\mysql.ini   //mysql配置
+C:\Program Files\mysql\data\mysql\user.myd   //mysql root
+C:\windows\php.ini    //php配置信息
+C:\Windows\my.ini  //mysql配置信息
+
+linux:
+/root/.ssh/authorized_keys
+/root/.ssh/id_rsa
+/root/.ssh/id_rsa.keystore
+/root/.ssh/known_hosts
+/etc/passwd
+/etc/shadow
+/etc/my.cnf
+/etc/httpd/conf/httpd.conf
+/root/.bash_history
+/root/.mysql_history
+/proc/self/fd/fd(0-9)* 文件标识符
+/proc/mounts
+/proc/config.gz
+
+网站常见容器有哪些:
+weblogic
+websphere
+jboss
+tomcat
+IIS
+apache
+nginx
+
+IIS常见漏洞:
+put漏洞
+段文件名猜解
+远程代码执行
+解析漏洞
+
+发现IIS的网站，怎样测试漏洞:
+1. IIS6.0/7.5解析漏洞
+2. IIS7.5 .NET源代码泄露和身份验证漏洞
+3. IIS7.5经典的ASP验证绕过
+4. IIS6.0安装PHP绕过认证漏洞
+
+weblogic的网站容器，如何测试漏洞:
+weblogic反序列化漏洞
+
+
+内网如何实现跨域:
+#1. jsonp跨域
+利用了script不受同源策略的限制
+缺点：只能get方式，容易受到XSS攻击
+#2. cors跨域
+当使用XMLHttpRequest发送请求时，如果浏览器发现违反了同源策略就会自动加上一个请求头 origin
+后端在接收到请求确认响应后会在Response	Headers中加入一个属性Access-Control-Allow-Origin
+浏览器判断响应中的Access-Control-Allow-origin值是否和当前的地址相同，匹配成功后才继续响应处理，否则报错
+缺点：忽略cookie，浏览器版本有一定要求
+#3.	代理跨域请求
+前端向后端发送请求时，经过代理，请求需要的服务器资源
+缺点：需要额外的代理服务器
+#4.	html5 postMessage	方法
+允许来自不同源的脚本采用异步方式进行有限的通信，可以实现跨文本，多窗口，跨域消息传递
+缺点：浏览器版本要求，部分浏览器要配置开放跨域限制
+#5.	修改document	domain	跨子域
+相同主域名下的不同子域名资源，设置document domain为相同的一级域名
+缺点：同一个一个域名，相同协议，相同端口
+#6. 	基于html5 websocket协议
+websocket是html5一种新的协议，基于该协议可以做到浏览器与服务器全双工通信，允许跨域请求
+缺点：浏览器需要一定版本，服务器需要支持websocket协议
+#7.	document.xxx + iframe
+通过iframe是浏览器非同源标签，加载内容中转，传到当前页面的属性中
+缺点：页面的属性值有大小限制
+
+用什么方法实现反向代理:
+EarthWorm
+reGeorg
+Tunna
+proxifier
+
+外网渗透会用到那些工具:
+metasploit
+sqlmap
+nmap
+beef
+social	Engineer Toolkit(set)  #CS也可以克隆制作钓鱼站点
+wireshark
+w3af
+core impact
+owasp zap
+canvas
+aircrack-ng
+burpsuite
+hydra
+john the ripper
+awvs
+yujian
+
+有哪些上传绕过的方式:
+1.	客户端js验证
+2.	服务器端验证
+3.  配合文件包含漏洞
+4.  配合服务器解析漏洞绕过
+5.  配合操作系统文件命令规则
+6.  CMS、编辑器漏洞
+7.  配合其他规则
+8.  WAF绕过
+9.  文件后缀名绕过
+10. 文件内容头校验（gif89a）
+11. 文件头content-type字段校验（image/gif）

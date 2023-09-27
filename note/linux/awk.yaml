@@ -1,0 +1,366 @@
+awk 文本处理:
+    awk 是一个文本处理工具，通常用于处理数据并生成结果报告。
+    命令组成分三个部分：BEGIN、BODY、END
+    BEGIN和END需要关键字进行声明，而且是命令中的可选部分，其在命令执行时之后执行一次
+    BODY部分不需要关键字声明，但是在命令执行时BODY部分会根据输入的行数而执行多次
+#语法格式
+awk 'BEGIN{}pattern{commands}END{}' file_name
+    # BEGIN{}   正式处理数据之前执行；
+    # pattern   匹配模式；
+    # {commands}    处理命令，可能多行；
+    # END{}     处理完所有匹配数据后执行。
+
+#内置变量
+    $0 -- 整行内容。
+    $1-$n -- 当前行的第 1-n 个字段。
+    NF -- Number Field 的缩写，表示当前行的字段个数，也就是有多少列。
+    NR -- Number Row 的缩写，表示当前行的行号，从1开始计数。
+    FNR -- File Number Row 的缩写，表示多文本处理时，每个文件行号单独计数，都是从1开始。
+    FS -- Field Separator 的缩写，表示输入字段分隔符，不指定默认以空格或 tab 键分割。
+    RS -- Row Separator 的缩写，表示输入行分隔符，默认回车换行 \n 。
+    OFS -- Output Field Separator ，表示输出字段分隔符，默认为空格。
+    ORS -- Output Row Separator 的缩写，表示输出行分隔符，默认为回车换行。
+    FILENAME -- 当前输入的文件名字。
+    ARGC -- 命令行参数个数。
+    ARGV -- 命令行参数数组。
+#[注意] 字段个数，非字符个数，例如 "frank lion alan" 这一行有3个字段。
+
+示例:
+# test.txt 操作前
+1) PHP 大象 10
+2) Golang 地鼠 20
+3) MySql 海豚 30
+
+#使用命令
+awk `BEGIN{printf "序号   名称  吉祥物 数值\n"} {print} END{print "下一页"}` test.txt
+
+#操作后
+序号    名称     吉祥物
+1)     PHP       大象
+2)     Golang    地鼠
+3)     MySql     海豚
+
+
+#sub 查找替换
+awk '{sub("hello","sub");print $0}' str.txt
+
+#next 类似于continue
+awk '{if($1 == "200") next;print $0}' data.txt
+
+print awk输出:
+awk '{print $0}' /etc/passwd #只有处理命令，输出每一行的内容
+
+awk 'BEGIN{FS=":"}{print $1}' /etc/passwd
+#处理文本之前先定义好分隔符为冒号，然后打印每一行被冒号分割后的文本的第一个字段
+
+awk 'BEGIN{FS=":"}{print $NF}' /etc/passwd
+#输出每一行的最后一列，NF中存的总列数，因此$NF表示最后一列的字段
+
+awk '{print $NF}' /etc/passwd #输出每一行的字段个数(默认以空格分割后的字段个数）
+
+awk '{print NR}' /etc/passwd  #输出文件的行号
+
+awk '{print FNR}' /etc/passwd name.txt  #输出两个文件的行号，每个文件单独计数
+
+awk 'BEGIN{RS="---"}{print $0}' /etc/passwd  #行分隔符设置为---
+
+awk 'BEGIN{ORS="---"}{print $0}' /etc/passwd #定义输出的每一行的分隔符为---
+
+awk 'BEGIN{ORS="---";RS="---"}{print $0}' /etc/passwd #BEGIN 中定义多个变量需要；分割
+
+awk '{print FILENAME}' name.txt #输出name.txt
+#[备注] /etc/passwd 就是 Linux 系统中的密码文本，后续会一直使用，大概是如下格式：
+
+printf  awk格式化输出:
+格式符：
+    %s -- 打印字符串；
+    %d -- 打印10进制数；
+    %f -- 打印浮点数；
+    %x -- 打印16进制数；
+    %o -- 打印8进制数；
+    %e -- 打印数字的科学计数法格式；
+    %c -- 打印单个字符的 ASCII 码。
+修饰符：
+    - -- 左对齐；
+    + -- 右对齐；
+    # -- 显示8进制在前面加0，显示16进制在前面加 0x 。
+
+#示例
+awk 'BEGIN{FS=":"}{printf $1}' /etc/passwd  #输出在一行
+
+awk 'BEGIN{FS=":"}{printf "%s\n",$1}' /etc/passwd  # %s表示打印字符串  \n表示换行
+
+awk 'BEGIN{FS=":"}{printf "%20s %20s\n",$1,$7}' /etc/passwd
+# %20s 表示 20 个字符，如果实际字符不够会默认使用空格补全
+# $1 表示第一部分， $7 表示第 7 部分
+
+awk 'BEGIN{FS=":"}{printf "%-20s %-20s\n",$1,$7}' /etc/passwd
+#默认是右对齐，我们也可以添加修饰符，使其左对齐输出
+
+#其他示例
+awk 'BEGIN{FS=":"} {printf "%d\n",$3}' /etc/passwd #打印十进制数字，默认是左对齐
+
+awk 'BEGIN{FS=":"} {printf "%20d\n",$3}' /etc/passwd #%20d 不够的位数默认补全空格，因此它是右对齐
+
+awk 'BEGIN{FS=":"} {printf "%f\n",$3}' /etc/passwd #打印浮点数，默认保留小数点后6位数
+
+awk 'BEGIN{FS=":"} {printf "%0.2f\n",$3' /etc/passwd #打印浮点数，保留小数点后面2位
+
+awk 模式匹配 pattern:
+它与 sed 的 pattern 非常类似，都是按行进行匹配。
+模式匹配的两种用法：
+    按正则表达式匹配。
+    运算符匹配。
+
+正则匹配:
+# 匹配/etc/passwd文件行中包含root字符串的所有行
+awk '/root/{print $0}' /etc/passwd
+
+# 匹配/etc/passwd文件行中以lion开头的所有行
+awk '/^lion/{print $0}' /etc/passwd
+
+运算符匹配:
+    < 小于
+    > 大于
+    <= 小于等于
+    >= 大于等于
+    == 等于
+    != 不等于
+    ~ 匹配正则表达式
+    !~ 不匹配正则表达式
+    || 或
+    && 与
+    ! 非
+
+# 以:为分隔符，匹配/etc/passwd文件中第三个字段小于50的所有信息
+awk 'BEGIN{FS=":"}$3<50{print $0}' /etc/passwd
+
+# 输出第三个字段值等于1的行
+awk 'BEGIN{FS=":"}$3==1{print $0}' /etc/passwd
+
+# 输出第七个字段值等于 /bin/bash 的行
+awk 'BEGIN{FS=":"}$7=="/bin/bash"{print $0}' /etc/passwd
+
+# 输出第三个字段值的位数大于3的行
+awk 'BEGIN{FS=":"}$3~/[0-9]{3,}/{print $0}' /etc/passwd
+
+# 以:为分隔符，匹配/etc/passwd文件中第一个字段包含hdfs或yarn的所有行信息
+awk 'BEGIN{FS=":"}$1=="lion" || $1=="frank" {print $0}' /etc/passwd
+
+# 以:为分隔符，匹配/etc/passwd文件中第三个字段小于50并且第四个字段大于50的所有行信息
+awk 'BEGIN{FS=":"}$3<50 && $4>50{print $0}' /etc/passwd
+
+
+awk 中的表达式:
+awk 'BEGIN{var=20;var1="aaa";print var,var1}' # 输出 20 aaa
+
+awk 'BEGIN{n1=20;n2+=n1;print n1,n2}' # 20 20
+
+awk 'BEGIN{n1=20;n2=30;printf "%0.2f\n",n1/n2}' # 输出浮点数，精确到小数点后两位
+#[注意] 在 BEGIN 和 END 中都可以正常执行表达式。
+
+# 巩固习题：使用 awk 计算 /etc/services 中的空白行数量
+# BEGIN 定义变量，通过正则/^$/匹配到空行后，执行sum++，全面匹配结束后在打印sum的值
+awk 'BEGIN{sum=0}/^$/{sum++}END{print sum}' /etc/services 
+
+awk 中的条件语句:
+#语法格式：
+if(条件表达式)
+    {动作1} 
+else if(条件表达式)
+    {动作2}
+else
+    {动作3}
+
+# 练习：以冒号为分隔符，只打印 /etc/passwd 中第3个字段的数值在 50-100 范围内的行信息
+awk 'BEGIN{FS=":"}{ if($3>50 && $3<100){print $0} }' /etc/passwd
+
+awk 中的循环语句:
+#语法格式：
+
+# while 循环
+while(条件表达式)
+  动作
+    
+# do while 循环
+do
+  动作
+while(条件表达式)
+  
+# for循环
+for(初始化计数器;计数器测试;计数器变更)
+  动作
+
+计算 1+2+3+...+100 的和:
+#while 循环：
+创建文件：while.awk
+BEGIN{
+  while(i<=100){
+    sum+=i
+    i++
+  }
+  print sum
+}
+执行命令：awk -f while.awk # 以脚本的方式执行awk动作
+
+#for 循环：
+创建文件：for.awk
+BEGIN{
+  for(i=0;i<=100;i++)
+  {
+    sum+=i
+  }
+  print sum
+}
+执行命令：awk -f for.awk # 以脚本的方式执行awk动作
+
+#do...while 循环：
+创建文件：do-while.awk
+BEGIN{
+  do
+  {
+    sum+=i
+    i++
+  }while(i<=100)
+  print sum
+}
+执行命令：awk -f do-while.awk # 以脚本的方式执行awk动作
+
+awk 字符串函数:
+    length(str) 计算长度；
+    index(str1,str2) 返回在 str1 中查询到的 str2 的位置；
+    tolower(str) 小写转换；
+    toupper(str) 大写转换；
+    split(str,arr,fs) 分隔符字符串，并保存到数组中；
+    match(str,RE) 返回正则表达式匹配到的子串位置；
+    substr(str,m,n) 截取子串，从 m 个字符开始，截取 n 位。若 n 不指定，则默认截取到字符串末尾；
+    sub(RE,ReqStr,str) 替换查找到的第一个子串；
+    gsub(RE,ReqStr,str) 替换查找到的所有子串。
+
+
+length(str):
+计算字符长度
+awk 'BEGIN{FS=":"}{print length($3)}' /etc/passwd # 计算第三个字段的长度
+
+index(str1,str2):
+返回在 str1 中查询到的 str2 的位置
+awk 'BEGIN{print index("I have a dream","ea")}' # 查找ea在字符串中的位置
+
+tolower(str):
+转换为小写字符
+awk 'BEGIN{print tolower("I have a dream")}' # i have a dream
+
+toupper(str):
+转换为大写字符
+awk 'BEGIN{print toupper("I have a dream")}' # I HAVE A DREAM
+
+split(str,arr,fs):
+分隔符字符串，并保存到数组中
+# 将字符串"I have a dream"按照空格进行分割
+awk 'BEGIN{str="I have a dream";split(str,arr," ");for(a in arr) print arr[a]}'
+# 输出
+# dream
+# I
+# have
+# a
+
+#通过 for…in 得到是无序的数组。如果需要得到有序数组，需要通过下标获得：
+awk 'BEGIN{str="I have a dream";len = split(str,arr," ");for(i=1;i<=len;i++) print arr[i]}'
+
+match(str,RE):
+返回正则表达式匹配到的子串位置
+# 输出字符串第一个数字出现所在的位置
+awk 'BEGIN{str="I have 1 dream";print match(str,/[0-9]/)}' # 8
+
+substr(str,m,n):
+截取子串，从 m 个字符开始，截取 n 位。若 n 不指定，则默认截取到字符串末尾。
+# 截取字符串"I have a dream"的子串，从第四个位置开始，一直到最后
+awk 'BEGIN{str="I have a dream";print substr(str,4)}' # ave a dream
+
+sub(RE,ReqStr,str):
+替换查找到的第一个子串。
+    RE 为正则表达式
+    ReqStr 为要替换的字符串
+    str 为源字符串
+# 替换字符串"I have 123 dream"中第一个数字为$符号
+awk 'BEGIN{str="I have 123 dream";sub(/[0-9]+/,"$",str);print str}' # I have $ dream
+
+gsub(RE,ReqStr,str):
+替换查找到的所有子串
+    RE 为正则表达式
+    ReqStr 为要替换的字符串
+    str 为源字符串
+# 替换字符串"I have 123 dream 456"中第一个数字为$符号
+awk 'BEGIN{str="I have 123 dream 456";gsub(/[0-9]+/,"$",str);print str}' # I have $ dream $
+
+选项 option:
+    -v 参数传递
+    -f 指定脚本文件
+    -F 指定分隔符
+    -V 查看 awk 的版本号
+
+参数传递:
+awk 的 BEGIN 中不能直接使用 shell 中定义的变量，需要通过 -v 参数进行传递
+[root@lion ~]# var=20
+[root@lion ~]# num=30
+[root@lion ~]# awk -v var1="$var" -v var2="$num" 'BEGIN{print var1,var2}'
+20 30
+
+指定脚本文件:
+'BEGIN{}pattern{commands}END{}' 这里的内容可以写在一个独立的文件中，通过 -f 参数来引入。
+# test.awk
+BEGIN{
+  var=30
+  print var
+}
+awk -f test.awk # 输出30
+#这种写法更易于编写和维护，适合复杂 awk 语句。
+
+指定分隔符:
+awk 'BEGIN{FS=":"}{print length($3)}' /etc/passwd
+等同于：
+# awk -F : '{print length($3)}' /etc/passwd
+
+查看 awk 的版本号:
+[root@lion ~]# awk -V
+GNU Awk 4.0.2
+Copyright (C) 1989, 1991-2012 Free Software Foundation.
+
+awk 使用示例:
+# 2020-01-01 00:01:01 1000 Batches: user frank insert 2010 records databases:product table:detail, insert 1000 records successfully,failed 1010 records
+# 2020-01-01 00:01:02 1001 Batches: user lion insert 1030 records databases:product table:detail, insert 989 records successfully,failed 41 records
+# 2020-01-01 00:01:03 1002 Batches: user mike insert 1290 records databases:product table:detail, insert 235 records successfully,failed 1055 records
+# 2020-01-01 00:01:04 1003 Batches: user alan insert 3452 records databases:product table:detail, insert 1257 records successfully,failed 2195 records
+# 2020-01-01 00:01:05 1004 Batches: user ben insert 4353 records databases:product table:detail, insert 2245 records successfully,failed 2108 records
+# 2020-01-01 00:01:06 1005 Batches: user bily insert 5633 records databases:product table:detail, insert 3456 records successfully,failed 2177 records
+# 2020-01-01 00:01:07 1006 Batches: user frank insert 2010 records databases:product table:detail, insert 1000 records successfully,failed 1010 records
+统计每个人员分别插入了多少条 record 进数据库，预期结果：
+# data.awk
+BEGIN{
+    printf "%-10s %-10s\n", "User", "Total Records"
+}
+
+{
+    USER[$6]+=$8 # USER为数组，空格分割后$6这个变量是用户名，$8是records，每次都去数组中取出$6的值进行相加以获取重复用户的总Records
+}
+
+END{
+    for(u in USER) # 遍历USER数组，打印数组每一项
+    {
+        printf "%-10s %-10d\n", u , USER[u]
+    }
+}
+
+# awk 语句
+awk -f data.awk data.txt
+
+# 输出结果
+User       Total Records
+frank      4020      
+mike       1290      
+bily       5633      
+alan       3452      
+lion       1030      
+ben        4353 
+
+

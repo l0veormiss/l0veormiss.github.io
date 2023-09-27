@@ -1,0 +1,321 @@
+1.关机重启:
+shutdown -h now        		立刻关机
+shutdown -h 5          		5分钟后关机
+poweroff               		立刻关机
+shutdown -r now        		立刻重启
+shutdown -r 5          		5分钟后重启
+reboot                 		立刻重启
+
+常用命令:
+pwd		        			查看当前工作目录
+ctrl + l					清除屏幕
+clear 						清除屏幕
+
+
+win + i                     打开windows设置
+shift+空格                  切换终端字体宽度  半角和圆角 
+''                          内容都当做普通字符串
+""                          \n   #!/bin/bash  当做特殊字符
+find                        用于文件搜索
+grep                        用于字符串搜索
+# >                         一个 > 表示 清空文件再写入
+# >>                        两个 >> 表示 追加写入
+cat /etc/shells             查看当前linux的所有shell
+#!/bin/bash                 指定脚本类型为Bash，#!被称为Shabang，linux会根据之后的指令载入解析器
+bash -x hello.sh java c++   以调试模式运行脚本，java c++ 表示脚本参数 $1 $2
+enc                         显示所有环境变量
+echo '123 \n 456'           输出 123 \n 456
+echo -e "123 \n 456"        -e参数解析转义字符  \n换行
+let "a=3"                   声明a可以进行数学运算(shell的声明都是字符串形式)
+grep -io a words.txt        找到文件中所有出现的字母a -o读取文件内容 -i忽略大小写
+wc -l                       统计数据
+unalias hello               删除别名
+netstat -nlap               linux
+netstat -ano                windows
+2>&1 /dev/null              一般用于判断后，将标准输出，标准错误都重定向为空
+# &>/dev/null               简写 同上表达意思
+cut -d ":" -f 2             -d ":" 按:进行分割, -f 2 获取分割好的第 2 部分
+$(())                       数学运算
+$()                         变量替换
+$(date +%j)                 获取今年已经过了多少天
+$(($(date +%j)/7))          $(())数学运算 / 7
+lsof -i:8848                查看端口占用 8848
+python3 -m http.server 8080   搭建临时web服务器  #通过主机地址：端口进行访问
+grep -i bash /etc/passwd    搜索文件中包含 bash 的数据行
+grep -r bash dir1           搜索dir1目录下的所有文件中 包含bash的数据行 -r 递归查找
+sed -n '/python/p' test.txt 打印匹配到的数据行  -n 只打印匹配行  p 打印
+sed -i 's/c++/java/g' test.txt  全局替换文件中  用java替换c++  s 替换 g 全局   -i修改 
+sed -i '/python/d' test.txt   删除匹配行  d 删除
+echo $RANDOM | cksum | cut -c 1-8  生成随机数 13287199
+openssl rand -base64 4 | cksum | cut -c 1-8  生成随机数 22901599
+date +%N | cut -c 1-8       生成随机数
+cut -d ":" -f 2 test.txt    -d 分割以"："   -f 2 取第二段数据  -f 表示定义字段
+cut -c 1-8 test.txt         -c 1-8  取每行的1-8字符   -c 表示字符
+cut -b 1-15 test.txt        -b 1-15 取每行的1-15个字节长度  -b 表示字节
+more < hm.txt:root.txt:$DATA NTFS数据流读取root.txt文件
+vim -r index.php.swp        恢复vim缓存文件
+/bin/sh        遇到错误 不会继续执行
+/bin/bash      遇到错误 继续执行
+/bin/sh  ==  /bin/bash --posix  #开启简易模式，遇到错误，停止继续运行
+
+
+ls -l 各字段的含义:
+第一个字段 文件属性字段:
+-rw-r--r-- 1 root root 762 07-29 18:19 exit  #前面共有10个字母组成
+#第一个字母代表文件类型
+- 普通文件
+d 目录
+l 链接文件
+b 块设备文件，一般在 /dev 目录下
+c 字符设备文件，一般在 /dev 目录下
+p 命令管道文件
+s sock文件
+
+#后面9个字母
+r 表示可读 
+w 表示可写 
+x 表示可执行
+# 前三个表示文件拥有者的权限
+# 中间三个表示文件所属组拥有的权限
+# 后三个表示其他用户拥有的权限
+
+-rw-r--r-- 1 root root 762 07-29 18:19 exit  
+#表示拥有者root对文件有读写权限，其他人（同组用户和其他用户只有读的权限）
+
+# ll /usr/X11R6/bin/XFree86
+-rws--x--x 1 root root 1960262 2003-02-28 /usr/X11R6/bin/XFree86
+# s表示这个是网络接口程序"s"是socket的缩写。该程序在运行过程中会打开一个网络接口。
+其他UNIX类系统如FreeBSD中还有t权限，表示一个临时(temporary)文件
+ls -l /tmp可以看到这样的权限：drwxrwxrwt 它的最后一位是字母"t"
+
+第二个字段 文件硬链接数:
+1  # 如果一个文件不是目录，此时这一个字段表示这个文件所具有的硬链接数
+8  # mybin目录，表示mybin目录下有8个子目录，包含 . 自身目录， .. 上一级目录
+
+第二个字段 文件软链接数: 
+ln -s 源文件 目标链接文件 #文件会增加一个链接数，为 2
+
+第三个字段 文件（目录）拥有者:
+lrwxrwxrwx 1 'root' root 4 08-03 08:27 exit #表示此文件属于那个用户
+# linux类系统都是多用户系统，每个文件都有它的拥有者。只有文件的拥有者才具有改动文件属性的权利。
+# 当然， root用户具有改动任何文件属性的权利。对于一个目录来说，只有拥有该目录的用户，
+# 或者具有写权限的用户才有在目录下创建文件的权利
+
+第四个字段 文件（目录）拥有者所在的组:
+lrwxrwxrwx 1 root 'root' 4 08-03 08:27 exit
+# 一个用户可以加入很多个组，但是其中有一个是主组，就是显示在第4字段的名称。
+# 可以在useradd的时候用-g指定该用户所在的主组，用-G指定其他组
+# 格式如下：Useradd –g 组名 用户名
+
+第五个字段 文件所占用的空间:
+
+第六个字段 文件（目录）的最近修改时间:
+
+第七个字段 文件名:
+
+
+
+
+$$      Shell本身的PID（ProcessID）
+$!      Shell最后运行的后台Process的PID
+$?      最后运行的命令的结束代码（返回值）
+$-      使用Set命令设定的Flag一览
+$*      所有参数列表。如"$*"用「"」括起来的情况、以"$1 $2 … $n"的形式输出所有参数。
+$@      所有参数列表。如"$@"用「"」括起来的情况、以"$1" "$2" … "$n" 的形式输出所有参数。
+$#      添加到Shell的参数个数
+$0      Shell本身的文件名
+$1～$n  添加到Shell的各参数值。$1是第1参数、$2是第2参数…。
+
+-eq     等于
+-ne     不等于
+-le     小于等于
+-ge     大于等于
+-lt     小于
+-gt     大于
+
+cd ~                        当前用户目录
+cd /                        进入根目录
+cd /home                    进入 '/ home' 目录' 
+cd ..                       返回上一级目录 
+cd ../..                    返回上两级目录 
+cd                          进入个人的主目录 
+cd ~user1                   进入个人的主目录 
+cd -                        返回上次所在的目录
+
+ll                          查看当前目录下内容
+ls                          查看目录中的文件 
+ls -F                       查看目录中的文件 
+ls -l                       显示文件和目录的详细资料 
+ls -a                       显示隐藏文件 
+ls *[0-9]*                  显示包含数字的文件名和目录名 
+tree                        显示文件和目录由根目录开始的树形结构
+lstree                      显示文件和目录由根目录开始的树形结构
+
+mkdir dir1                  创建一个叫做 'dir1' 的目录' 
+mkdir dir1 dir2             同时创建两个目录 
+mkdir -p /tmp/dir1/dir2     创建一个目录树
+
+rm -f file1 				删除一个叫做 'file1' 的文件' 
+rmdir dir1 					删除一个叫做 'dir1' 的目录' 
+rm -rf dir1 			    删除一个叫做 'dir1' 的目录并同时删除其内容 
+rm -rf dir1 dir2	 		同时删除两个目录及它们的内容
+rm -r /bbb					普通删除，询问你是否删除每一个文件
+rm -rf /bbb					强制删除/目录下的bbb目录。如果bbb目录中还有子目录，也会被强制删除，不会提示；
+rm -r a.java				删除当前目录下的a.java文件
+rm -rf a.java				强制删除当前目录下的a.java文件
+rm -rf ./a*		    		强制删除当前目录下以a开头的所有文件；
+rm -rf ./*		    		强制删除当前目录下所有文件（慎用）；
+rm -rf dir1					强制删除dir1目录及其目录里面的所有文件
+
+mv dir1 new_dir 			重命名/移动 一个目录 kill
+mv	/aaa /bb				将根目录下的aaa目录，移动到bbb目录下
+mv	bbbb usr/bbb			将当前目录下的bbbb目录，移动到usr目录下，并且修改名称为bbb；
+mv	bbb usr/aaa				将当前目录下的bbbb目录，移动到usr目录下，并且修改名称为aaa；
+
+cp file1 file2 				复制一个文件 
+cp dir/* . 					复制一个目录下的所有文件到当前工作目录 
+cp -a /tmp/dir1 . 			复制一个目录到当前工作目录 
+cp -a dir1 dir2 			复制一个目录 
+cp -r dir1 dir2 			复制一个目录及子目录
+cp /usr/tmp/aaa  /usr   	将/usr/tmp目录下的aaa目录复制到 /usr目录下面
+
+ln -s file1 lnk1 			创建一个指向文件或目录的软链接
+ln file1 lnk1 				创建一个指向文件或目录的物理链接
+touch -t 0712250000 file1   修改一个文件或目录的时间戳 - (YYMMDDhhmm) 
+touch test.txt 				创建文件
+chmod +x test.txt			给文件增加执行权限
+tail -f -n 100 文件名   		读取文件最后的100
+
+其他命令:
+ps -ef    			查看所有正在运行的进程
+kill pid 			结束进程 
+kill -9 pid			强制结束进程
+su - 用户名         切换用户，并且切换目录
+exit                退出当前登录账户
+#注意：su 不接用户名，可以切换到 root ，但是不推荐使用，因为不安全
+/etc/passwd 		是用于保存用户信息的文件
+/usr/bin/passwd  	是用于修改用户密码的程序
+
+网络命令:
+ifconfig 或 ifconfig | more	查看网卡配置
+ifocnfig eth0 up            开启网卡
+netstat -an					查看当前系统端口
+netstat -an | grep 8080		搜索指定端口
+setup						配置网络
+service network restart		重启网络
+命令：chkconfig iptables off
+     iptables -L;
+     iptables -F;
+     service iptables stop	关闭防火墙
+
+清空文件内容:
+cat /dev/null> log.txt  
+cp /dev/null log.txt
+dd if=dev/null of=log.txt
+
+环境变量:
+Bash         没有数据类型的概念，所有的变量值都是字符串。
+BASHPID：    Bash 进程的进程 ID 。
+EDITOR：     默认的文本编辑器。
+HOME：       用户的主目录。
+HOST：       当前主机的名称。
+LANG：       字符集以及语言编码，比如 zh_CN.UTF-8。
+PATH：       由冒号分开的目录列表，当输入可执行程序名后，会搜索这个目录列表。
+PWD：        当前工作目录。
+SHELL：      Shell 的名字。
+TERM：       终端类型名，即终端仿真器所用的协议。
+UID：        当前用户的 ID 编号。
+USER：       当前用户的用户名
+
+#file file1 outputs the mime type of the file as text
+iconv -l 									列出已知的编码 
+iconv -f fromEncoding -t toEncoding inputFile > outputFile 
+#creates a new from the given input file by assuming it is encoded in fromEncoding and
+# converting it to toEncoding. 
+find . -maxdepth 1 -name *.jpg -print -exec convert "{}" -resize 80x60 "thumbs/{}" \; 
+#batch resize files in the current directory and send them to a thumbnails 
+#directory (requires convert from Imagemagick)
+
+
+find文件搜索:
+find / -name 'b'        查询根目录下（包括子目录），名以b的目录和文件； 
+find / -name 'b*'		查询根目录下（包括子目录），名以b开头的目录和文件；
+
+#从 '/' 开始进入根文件系统搜索文件和目录 
+find / -name file1
+
+#搜索属于用户 'user1' 的文件和目录 
+find / -user user1
+
+#在目录 '/ home/user1' 中搜索带有'.bin' 结尾的文件
+find /home/user1 -name \*.bin
+
+#搜索在过去100天内未被使用过的执行文件
+find /usr/bin -type f -atime  + 100
+
+#搜索在10天内被创建或者修改过的文件
+find /usr/bin -type f -mtime -10
+
+#搜索以 '.rpm' 结尾的文件并定义其权限 
+find / -name \*.rpm -exec chmod 755 '{}' \;
+
+#搜索以 '.rpm' 结尾的文件，忽略光驱、捷盘等可移动设备
+find / -xdev -name \*.rpm
+
+#寻找以 '.ps' 结尾的文件 - 先运行 'updatedb' 命令
+locate \*.ps
+
+#显示一个二进制文件、源码或man的位置
+whereis halt
+
+#显示一个二进制文件或可执行文件的完整路径  
+which halt 
+
+
+用户和群组:
+#创建一个新用户组
+groupadd group_name
+
+#删除一个用户组 
+groupdel group_name
+
+#重命名一个用户组 
+groupmod -n new_group_name old_group_name
+
+#创建一个属于 "admin" 用户组的用户 
+useradd -c "Name Surname " -g admin -d /home/user1 -s /bin/bash user1
+
+#创建一个新用户
+useradd user1
+
+#删除一个用户 ( '-r' 排除主目录)
+userdel -r user1
+
+#修改用户属性
+usermod -c "User FTP" -g system -d /ftp/user1 -s /bin/nologin user1
+
+#修改口令
+passwd
+
+#修改一个用户的口令 (只允许root执行) 
+passwd user1	
+
+useradd -d /home/sam -m sam  #添加sam账号 并为其创建一个/home/sam 目录
+
+
+chage -E 2005-12-31 user1  		设置用户口令的失效期限
+pwck 							检查 '/etc/passwd' 的文件格式和语法修正以及存在的用户 
+grpck 							检查 '/etc/passwd' 的文件格式和语法修正以及存在的群组 
+newgrp group_name 				登陆进一个新的群组以改变新创建文件的预设群组 
+
+
+
+
+
+
+
+
+	
+
+
+

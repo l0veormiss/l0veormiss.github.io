@@ -1,0 +1,59 @@
+whoami			  查看当前主机和用户
+systeminfo        查看系统信息
+ipconfig /all	  查看ip详细信息
+arp -a            查看arp缓存表
+mstsc.exe         远程桌面连接
+msconfig          开机启动项
+schtasks.exe /?   查看计划任务帮助  新版本
+at /？            查看计划任务帮助 旧版本
+
+#安装test.msi安装包
+msiexec /quit  /qn /i test.msi   
+#/quiet 安静，不提示   /qn 无GUI    /i 安装 
+#下载地址：https://www.exemsi.com/download/
+
+shutdown -s -t 180 -c "hello"    在指定时间关机并输出文本信息
+dir                              查看目录
+cd                               切换目录
+start  www.baidu.com             打开网页
+start  123.txt                   打开123.txt
+copy  con  c:\123.txt            创建123.txt文件
+ctrl+z                           回车
+md　[目录名]                      创建目录
+rd [文件夹名]                     删除文件夹
+ren [原文件名] [新文件名]          重命名文件名 
+del [文件名]                      删除文件
+copy                             复制文件
+move                             移动文件
+find 	=> 	tasklist | find "chrome"	查找包含chrome的数据行
+find	=>	dir /D | find ".txt"		查找包含.txt后缀的文件
+tree                             树形列出文件夹结构
+type test.txt                    读取文件内容并输出
+cd . > test.txt                  创建空文件
+copy nul test.txt                创建空文件
+type nul > test.txt              创建空文件
+echo a 2>test.txt                创建空文件
+psexec.exe -d -i -s regedit.exe  删除一些普通不能删除的注册表值
+
+FTP的匿名登录一般有三种:
+ftp 10.10.10.77
+账号/密码：anonymous/anonymous
+# 2、 用户名：FTP 密码：FTP或者为空
+# 3、 用户名：USER 密码：pass
+
+
+9.总结:
+如何发现Java反序列化漏洞:
+1.从流量中发现序列化的痕迹，关键字：ac ed 00 05，rO0AB
+2.Java RMI的传输100%基于反序列化，Java RMI的默认端口是1099端口
+3.从源码入手，可以被序列化的类一定实现了Serializable接口
+4.观察反序列化时的readObject()方法是否重写，重写中是否有设计不合理，可以被利用之处
+
+
+attrib          文件名(目录名) 查看某文件（目录）的属性:
+attrib 文件名 -A -R -S -H 或 +A +R +S +H 	
+#去掉(添加)某文件的 存档，只读，系统，隐藏 属性；用＋则是添加为某属性
+
+AES-256  密钥:
+4e 99 06 e8 fc b6 6c c9 fa f4 93 10 62 0f fe e8
+f4 96 e8 06 cc 05 79 90 20 9b 09 a4 33 b6 6c 1b

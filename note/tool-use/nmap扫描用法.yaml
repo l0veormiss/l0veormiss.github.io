@@ -1,0 +1,149 @@
+扫描方式选项:
+	-sS/sT/sA/sW/sM			指定使用 TCP SYN/Connect()/ACK/Window/Maimon scans的方式来对目标主机进行扫描。
+	-sU 					指定使用UDP扫描方式确定目标主机的UDP端口状况。
+	-sN/sF/sX 				指定使用TCP Null, FIN, and Xmas scans秘密扫描方式来协助探测对方的TCP端口状态。
+	--scanflags <flags> 	定制TCP包的flags。
+	-sI <zombiehost[probeport]> 	指定使用idle scan方式来扫描目标主机（前提需要找到合适的zombie host）
+	-sY/sZ 					使用SCTP INIT/COOKIE-ECHO来扫描SCTP协议端口的开放的情况。
+	-sO 					使用IP protocol 扫描确定目标机支持的协议类型。
+	-b <FTP relay host> 	使用FTP bounce scan扫描方式
+
+端口参数与扫描顺序:
+-p <port ranges> 		扫描指定的端口
+#参数选项 
+	-p 22
+	-p 1-65535
+	-p U53,111,137,T21-25,80,139,8080,S9（其中T代表TCP协议、U代表UDP协议、S代表SCTP协议）
+	-F 		Fast mode – 快速模式，仅扫描TOP 100的端口 
+	-r 		不进行端口随机打乱的操作（如无该参数，nmap会将要扫描的端口以随机顺序方式扫描，
+			以让nmap的扫描不易被对方防火墙检测到）。
+--top-ports <number>	扫描开放概率最高的number个端口（nmap的作者曾经做过大规模地互联网扫描，以此统计出网络上各
+						种端口可能开放的概率。以此排列出最有可能开放端口的列表，具体可以参见文件nmap-services。默认情况下，nmap会扫描最有可
+						能的1000个TCP端口）
+--port-ratio <ratio> 	扫描指定频率以上的端口。与上述--top-ports类似，这里以概率作为参数，让概率大于--port-ratio
+						的端口才被扫描。显然参数必须在在0到1之间，具体范围概率情况可以查看nmap-services文件
+
+扫描示例:
+## 全面扫描
+nmap   -A  202.207.236.2	#A全面信息
+nmap -T4 -A -v 10.96.10.246	 #-T4时间模板值为4，1-5  -v详细输出
+
+## 探测指定端口的开放状态
+nmap  -p  80-445  10.96.10.246     	#扫描目标主机的80-445端口的开放情况
+nmap -sS -sU -p T80,U445 10.96.10.246 #以半连接的TCP SYN方式扫描目标主机的80端口，以UDP方式扫描目标主机的445端口
+
+## 探测N个最有可能开放的端口
+nmap -sS -sU --top-ports 100 10.96.10.246   #--top-ports 100表示扫描最有可能开放的100个端口
+
+# 探测端口 以及 使用该端口的软件版本
+nmap -sS -sV -O -v -p 1-1000  192.168.1.4
+
+版本侦测原理:
+## 版本侦测主要分为以下几个步骤
+	1- 首先检查open与open|filtered状态的端口是否在排除端口列表内。如果在排除列表，将该端口剔除。
+	2- 如果是TCP端口，尝试建立TCP连接。尝试等待片刻（通常6秒或更多，具体时间可以查询文件nmap-services-probes中Probe TCP NULL q||对应的totalwaitms）。通常在等待时间内，会接收到目标机发送的“WelcomeBanner”信息。nmap将接收到的Banner与nmap-services-probes中NULL probe中的签名进行对比。查找对应应用程序的名字与版本信息。
+	3- 如果通过“Welcome Banner”无法确定应用程序版本，那么nmap再尝试发送其他的探测包（即从nmap-services-probes中挑选合适的probe），将probe得到回复包与数据库中的签名进行对比。如果反复探测都无法得出具体应用，那么打印出应用返回报文，让用户自行进一步判定。
+	4- 如果是UDP端口，那么直接使用nmap-services-probes中探测包进行探测匹配。根据结果对比分析出UDP应用服务类型。
+	5- 如果探测到应用程序是SSL，那么调用openSSL进一步的侦查运行在SSL之上的具体的应用类型。
+	6- 如果探测到应用程序是SunRPC，那么调用brute-force RPC grinder进一步探测具体服务。
+-sV 							指定让Nmap进行版本侦测
+--version-intensity <level> 	指定版本侦测强度（0-9），默认为7。数值越高，探测出的服务越准确，但是运行时间会比较长。
+--version-light 				指定使用轻量侦测方式 (intensity 2)
+--version-all 					尝试使用所有的probes进行侦测 (intensity 9)
+--version-trace 				显示出详细的版本侦测过程信息
+nmap  -sV  10.96.10.246   		探测各端口使用软件的版本
+
+OS侦测原理:
+	Nmap使用TCP/IP协议栈指纹来识别不同的操作系统和设备。在RFC规范中，有些地方对TCP/IP的实现并没有强制规定，由此不同的TCP/IP方案中可能都有自己的特定方式。Nmap主要是根据这些细节上的差异来判断操作系统的类型的。
+具体实现方式如下
+	1- Nmap内部包含了2600多已知系统的指纹特征（在文件nmap-os-db文件中）。将此指纹数据库作为进行指纹对比的样本库。
+	2- 分别挑选一个open和closed的端口，向其发送经过精心设计的TCP/UDP/ICMP数据包，根据返回的数据包生成一份系统指纹。
+	3- 将探测生成的指纹与nmap-os-db中指纹进行对比，查找匹配的系统。如果无法匹配，以概率形式列举出可能的系统。
+-O 								指定Nmap进行OS侦测。
+--osscan-limit 					限制Nmap只对确定的主机的进行OS探测（至少需确知该主机分别有一个open和closed的端口）。 
+--osscan-guess 					大胆猜测对方的主机的系统类型。由此准确性会下降不少，但会尽可能多为用户提供潜在的操作系统
+nmap -O 10.96.10.246			探测操作系统版本
+
+
+#####################################   高级用法  #########################################
+#####################################   高级用法  #########################################
+绕过与伪装:
+防火墙/IDS规避
+	防火墙与IDS规避为用于绕开防火墙与IDS的检测与屏蔽，以便能够更加详细地发现目标主机的状况。nmap提供了多种规避技巧通常可以从两个方面考虑规避方式数据包的变换(Packet Change)和时序变换(Timing Change)
+
+分片
+	将可疑的探测包进行分片处理(例如将TCP包拆分成多个IP包发送过去)，某些简单的防火墙为了加快处理速度可能不会进行重组检查，以此避开其检查
+
+IP诱骗(IP decoys)
+	在进行扫描时，将真实IP地址在和其他主机的IP地址混合使用(其他主机需要在线，否则目标主机将回复大量数据包到不存在的数主机，从而实质构成了DOS攻击)，以此让目标主机的防火墙或IDS追踪大量的不同IP地址的数据包，降低其追查到自身的概率。但是，某些高级的IDS系统通过统计分析仍然可以追踪出扫描者真实的IP地址
+
+IP伪装
+	IP伪装就是将自己发送的数据包中的IP地址伪装成其他主机的地址，从而目标机认为是其他主机与之通信。需要注意的是，如果希望接收到目标主机的回复包，那么伪装的IP需要位于统一局域网内。另外，如果既希望隐蔽自己的IP地址，又希望收到目标主机的回复包，那么可以尝试使用idle scan 或匿名代理等网络技术
+
+指定源端口
+	某些目标主机只允许来自特定端口的数据包通过防火墙。例如，FTP服务器的配置为允许源端口为21号的TCP包通过防火墙与FTP服务器通信，但是源端口为其他的数据包被屏蔽。所以，在此类情况下，可以指定数据包的源端口
+
+扫描延时
+	某些防火墙针对发送过于频繁的数据包会进行严格的侦查，而且某些系统限制错误报文产生的频率。所以，我们可以降低发包的频率和发包延时以此降低目标主机的审查强度
+
+其他技术
+	nmap还提供其他多种规避技巧，比如指定使用某个网络接口来发送数据包、指定发送包的最小长度、指定发包的MTU、指定TTL、指定伪装的MAC地址，使用错误检查。
+
+#常用参数
+	-f; --mtu <val> 				指定使用分片、指定数据包的 MTU.
+	-D <decoy1,decoy2[,ME],...> 	用一组 IP 地址掩盖真实地址，其中 ME 填入自己的 IP 地址。
+	-S <IP_Address> 				伪装成其他 IP 地址
+	-e <iface> 					使用特定的网络接口
+	-g/--source-port <portnum> 	使用指定源端口
+	--data-length <num> 			填充随机数据让数据包长度达到 Num。
+	--ip-options <options> 		使用指定的 IP 选项来发送数据包。
+	--ttl <val> 					设置 time-to-live 时间。
+	--spoof-mac <mac address/prefix/vendor name> 			伪装 MAC 地址
+	--badsum 						使用错误的checksum来发送数据包（正常情况下，
+									该类数据包被抛弃，如果收到回复，说明回复来自防火墙或 IDS/IPS）
+## 用法示例
+nmap -F -Pn -D 10.96.10.100,10.96.10.110,ME  -e eth0  -g 5555 202.207.236.3
+# -F  参数表示快速扫描100个端口，
+# -Pn 不进行ping扫描，
+# -D  表示使用ip诱骗方式掩饰真实ip，使用的是10.96.10.100和10.96.10.110，
+# ME  表示自己真实的ip，这里是10.96.10.234，
+# -e 	参数指定eth0网卡发送数据包，
+# -g  参数指定发送的端口号
+
+
+NSE脚本引擎:
+	Auth		负责处理鉴权证书(绕过鉴权)的脚本
+	Broadcast	在局域网内探查更多服务去开启情况，如DHCP/DNS等
+	Brute		针对常见的应用提供暴力破解方式，如HTTP/HTTPS
+	Default		使用-sC或-A选项扫描时默认的脚本，提供基本的脚本扫描能力
+	Discovery	对网络进行更多的信息搜集，如SMB枚举，SNMP查询等
+	Dos 		用于进行拒绝服务攻击
+	Exploit		利用已知的漏洞入侵系统
+	External	利用第三方的数据库或资源 。如，进行whois解析
+	Fuzzer		模糊测试脚本，发送异常的包到目标机，探测出潜在漏洞
+	Intrusive 	入侵性的脚本，此类脚本可能引发对方的IDS/IPS的记录或屏蔽
+	Malware		探测目标是否感染了病毒，开启后门等
+	Safe 		与Intrusive相反，属于安全性脚本
+	Version 	负责增强服务与版本扫描功能的脚本
+	Vuln 		负责检查目标机是否有常见漏洞，如MS08-067
+
+#用法示例
+#例如：
+nmap -script   smb-vuln-ms17-010  192.168.10.34     #可以探测该主机是否存在ms17_010漏洞
+nmap --max-parallelism 800 --script http-slowloris scanme.nmap.org  #可以探测该主机是否存在http拒绝服务攻击漏洞
+nmap -script http-iis-short-name-brute 192.168.10.34  #探测是否存在IIS短文件名漏洞
+nmap -script mysql-empty-password 192.168.10.34       #验证mysql匿名访问
+nmap -p 443 -script ssl-ccs-injection 192.168.10.34   #验证是否存在openssl CCS注入漏洞
+ 
+--script=http-waf-detect            #验证主机是否存在WAF
+--script=http-waf-fingerprint       #验证主机是否存在WAF
+ 
+nmap --script-brute 192.168.1.1     #nmap可对数据库、SMB、SNMP等进行简单密码的暴力破解
+nmap --script-vuln  192.168.1.1     #扫描是否有常见漏洞
+ 
+--script-updatedb         #更新脚本数据库
+--script-help             #输入脚本对应的使用方法
+
+## 使用示例2
+#Slow comprehensive scan（慢速全面扫描）
+nmap -sS -sU -T4 -A -v -PE -PP -PS80,443,-PA3389,PU40125 -PY -g 53 --script all

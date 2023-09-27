@@ -1,0 +1,119 @@
+主要内容:
+  IP地址发现
+  域/子域发现
+  电子邮件发现
+  网络/端口扫描
+  商业通信基础架构发现
+  源代码聚合器/搜索-信息发现
+  云基础架构发现
+  公司信息和协会
+  互联网调查数据
+  社交媒体/员工概况
+  数据泄漏
+  互联网扫描/存档信息
+
+网络资产发现 和 指纹识别:
+Goby  一体化自动识别网络资产 端口 漏洞 协议等 
+fofa.info     网络资产发现 网页
+EHole(棱洞)    网络资产发现和指纹识别 调用 fofa API
+ShuiZe(水泽)   信息收集自动化工具
+
+↑ IP地址发现:
+Mxtoolbox：  批量域/ IP查找工具
+Domaintoipconverter：    批量域到IP转换器
+Massdns：用   于批量查找的DNS解析器实用程序
+Googleapps Dig：   Google的在线挖掘工具
+DataSploit（IP地址模块）：   OSINT框架，用于执行各种侦查技术
+域档案：    调查域和IP地址
+Bgpview：    搜索ASN，IPv4 / IPv6或资源名称
+Hurricane Electric BGP工具包：  ASN查找的关键字
+Viewdns：    多个域/ IP工具
+Ultratools ipv6Info：    与IPv6地址有关的多种信息
+Whois：    命令行实用程序，通常用于查找有关Internet资源的注册用户/受让人的信息。
+ICANN互联网名称与数字地址分配机构（ICANN）Whois：互联网公司的互联网名称与数字地址分配服务（ICANN）
+Nslookup Linux / Windows：   命令行实用程序，通常用于查询DNS记录
+
+↑域/子域发现:
+SubFinder：SubFinder是一个子域发现工具，可发现网站的有效子域。设计为被动框架，可用于漏洞赏金和安全的渗透测试。
+Amass：子域枚举实用程序
+Sublist3r：具有多个源的子域枚举工具
+Aiodnsbrute：异步DNS暴力实用程序
+LDNS：一个用于DNS工具编程的DNS库
+Dns-nsec3-enum：用于NSEC3漫游的Nmap NSE脚本
+Nsec3map：NSEC和NSEC3漫游的工具
+Crt.sh：域证书搜索
+Ct-exposer：通过搜索证书透明度日志来发现子域的工具
+Certgraph：用于爬网证书备用名称图的工具
+Appsecco-子域枚举的艺术：“子域枚举的艺术”一书的补充材料
+SSLScrape：一种扫描工具，可从SSL证书中刮取主机名
+Wolframalpha：计算知识引擎
+Sonar项目：转发DNS数据
+Sonar项目：反向DNS数据
+
+↑电子邮件发现:
+Hunter：通过电子邮件搜索域
+Skrapp：浏览器插件，可在Linkedin上查找电子邮件
+电子邮件提取器：Chrome扩展程序，可从网页提取电子邮件
+Convertcsv：在线工具，用于提取文本，网页，数据文件等中的电子邮件地址。
+
+↑网络/端口扫描:
+Zmap：专用于Internet范围内的网络调查的快速网络扫描仪
+Masscan：异步TCP端口扫描程序
+ZMapv6：具有IPv6支持的Zmap的修改版本。
+Nmap：用于网络发现的免费开源工具。最受欢迎的端口扫描器。
+
+↑商业通信基础架构发现:
+Mxtoolbox：用于检查邮件交换器（MX）记录的在线工具
+MicroBurst：基于PowerShell的Azure安全评估脚本
+Lyncsmash：枚举和攻击自托管的Lync / Skype for Business的工具
+枚举即服务：用于通过DNS查询进行枚举的SaaS脚本
+
+↑源代码聚合器/搜索-信息发现:
+Github：Github高级搜索
+Bitbucket：使用Google进行Bitbucket搜索
+Gitrob：GitHub组织的侦察工具
+Gitlab：搜索Gitlab项目
+Publicwww：源码搜索引擎
+
+↑云基础架构发现:
+CloudScraper：蜘蛛网站的工具来获取云资源（S3存储桶，Azure Blob，DigitalOcean存储空间）
+InSp3ctor：AWS S3存储桶/对象查找器
+储存桶Grayhatwarfare：搜寻Open Amazon s3储存桶及其内容
+Spaces-finder：一种寻找可公开访问的DigitalOcean Spaces的工具
+GCPBucketBrute：Google存储桶枚举脚本
+CloudStorageFinder：在云存储系统中查找公共数据的工具
+
+↑公司信息和协会:
+Crunchbase：有关公司（资金，收购，合并等）及其背后人员的信息
+Companieshouse：英国公司注册处
+海外注册机构：位于世界各地的公司注册机构列表
+Opencorporates：全球公司的开放数据库
+
+↑互联网调查数据:
+Sonar项目：Rapid7的跨互联网的跨不同服务和协议的调查数据
+Scans.io：ZMap团队托管的Internet范围扫描数据存储库
+Portradar：通过packet.tel进行免费和开放的端口扫描数据
+
+↑社交媒体/员工概况:
+LinkedInt：用于侦察的LinkedIn刮板
+Glassdoor：公司评论和评分搜索
+SocialBlade：跟踪不同平台（包括YouTube和Twitter）的用户统计信息
+社交搜索者：社交媒体搜索引擎
+Checkuser ]：社会存在检查器
+
+↑数据泄漏:
+密码转储：密码数据转储
+粘贴搜索工具：用于粘贴搜索的Custome搜索引擎
+Dumpmon：一个Twitter机器人，它监视多个粘贴站点的密码转储和其他敏感信息
+Pastebin_scraper：自动化工具，用于监视pastebin中的有趣信息
+清道夫：粘贴网站搜寻器（机器人）以查找泄漏的凭据
+Pwnbin：基于Python的Pastebin搜寻器，用于关键字。
+PwnedOrNot：查找受感染帐户密码的工具
+
+↑互联网扫描/存档信息:
+Cachedviews：来自多个来源的Internet页面的缓存视图
+Wayback Machine：互联网存档
+Shodan：用于连接互联网的设备的搜索引擎
+Censys：另一个用于连接互联网的设备的搜索引擎
+Zoomeye：网络空间搜索引擎
+

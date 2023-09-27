@@ -1,0 +1,154 @@
+RPM 包 - （Fedora, Redhat及类似系统）: 
+rpm -ivh package.rpm   								安装一个rpm包
+rpm -ivh --nodeeps package.rpm        安装一个rpm包而忽略依赖关系警告
+rpm -U package.rpm     								更新一个rpm包但不改变其配置文件 
+rpm -F package.rpm 									  更新一个确定已经安装的rpm包
+rpm -e package_name.rpm 							删除一个rpm包
+rpm -qa   														显示系统中所有已经安装的rpm包
+rpm -qa | grep httpd  								显示所有名称中包含 "httpd" 字样的rpm包 
+rpm -qi package_name  								获取一个已安装包的特殊信息
+rpm -qg "System/Daemons" 							显示一个组件的rpm包 
+rpm -ql package_name 									显示一个已经安装的rpm包提供的文件列表
+rpm -qc package_name									显示一个已经安装的rpm包提供的配置文件列表
+rpm -q package_name --whatrequires 		显示与一个rpm包存在依赖关系的列表
+rpm -q package_name --whatprovides 		显示一个rpm包所占的体积
+rpm -q package_name --scripts  				显示在安装/删除期间所执行的脚本
+rpm -q package_name --changelog 			显示一个rpm包的修改历史
+rpm -qf /etc/httpd/conf/httpd.conf 	 	确认所给的文件由哪个rpm包所提供
+rpm -qp package.rpm -l 								显示由一个尚未安装的rpm包提供的文件列表
+rpm --checksig package.rpm 						确认一个rpm包的完整性
+rpm -qa gpg-pubkey 										确认已安装的所有rpm包的完整性
+rpm -V package_name										检查文件尺寸、 许可、类型、所有者、群组、MD5检查以及最后修改时间
+rpm -Va																检查系统中所有已安装的rpm包- 小心使用
+rpm -Vp package.rpm 									确认一个rpm包还未安装
+
+#导入公钥数字证书
+rpm --import /media/cdrom/RPM-GPG-KEY
+
+#从一个rpm包运行可执行文件 
+rpm2cpio package.rpm | cpio --extract --make-directories *bin*
+
+#从一个rpm源码安装一个构建好的包
+rpm -ivh /usr/src/redhat/RPMS/`arch`/package.rpm
+
+#从一个rpm源码构建一个 rpm 包
+rpmbuild --rebuild package_name.src.rpm 
+
+
+==  yum常用命令    -y  表示默认回答 肯定    repo 存储库的意思:
+yum install packet          安装包
+yum install packet -y       安装包 但是所有不需要用户操作，默认所有命令都回答 是
+yum check_update            校验更新
+yum update packet -y        更新包 默认回答 是 
+yum localinstall packet     本地安装包
+yum remove packet           移除包
+yum reinstall packet -y     重新安装包  默认回答是
+yum repolist                查看存储库列表
+yum repolist all            查看存储库列表  包括禁用的存储库
+yum repoinfo  CentOS        查看CentOS存储库的更多信息
+yum --enablerepo=disabled-repo  install packet-example      将以前被禁用的 disabled-repo 启用,  然后安装 packet
+yum --disablerepo=enabled-repo install packet-example       跟上面相反
+yum search php              在存储库搜索PHP相关的软件包
+yum history                 查看历史
+yum history info 15         查看15号的历史信息
+yum clean all               清除所有信息
+yum grouplist               组列表
+yum groupinfo  "web server"       查看所有组中包含 web server 的信息
+yum groupinstall "web server" -y  使用组安装命令安装这个组
+yum update --security             只更新  安全更新   不更新所有的组件包
+yum remove packet -y -R 2         设置等待时间  2分钟
+yum install packet -y -q          隐藏安装信息 安静模式
+yum remove packet -y -v           故障排除  显示详细信息
+
+==  yum  参数选项:
+-h，--help												显示此帮助消息并退出
+-t，--tolerant										容忍错误
+-C，-cacheonly										完全从系统缓存中运行，不更新缓存
+-q，-安静的											安静操作
+-v，--verbose										详细操作
+-y，--assumeyes									对所有问题回答是
+--version												显示Yum版本并退出
+--showduplicates								在清单/搜索命令中以回购形式显示重复项
+--installroot = [路径]						设置安装根目录
+--enablerepo = [repo]						启用一个或多个存储库（允许使用通配符）
+--disablerepo = [repo]					禁用一个或多个存储库（允许使用通配符）
+--obsoletes    									启用更新期间的过时处理
+--noplugins											禁用Yum插件
+--nogpgcheck										禁用gpg签名检查
+--disableplugin = [插件]					按名称禁用插件
+--enableplugin = [插件]					按名称启用插件
+--skip-breaking									带有解散问题的跳过软件包
+--color = COLOR									控制是否使用颜色
+--releasever 										释放在yum配置和回购文件中设置$ releasever的值
+--setopt = SETOPTS							设置任意配置和回购选项
+-c [配置文件]，--config = [配置文件]							配置文件位置
+-R [分钟]，--randomwait = [分钟]									最大命令等待时间
+-d [debug level]，-debuglevel = [debug level]		调试输出级别
+-e [错误级别]，-errorlevel = [错误级别]						错误输出级别
+--rpmverbosity = [调试级别名称] 									rpm的调试输出级别
+-x [package]，-exclude = [package]								按名称或glob排除软件包
+--disableexcludes = [repo] 											禁用从main排除，用于回购或用于一切
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+rpm全名是[redhat package manager]，缩写则为rpm。
+它的最大特点就是将你要安装的软件先编译过，并且打包成为RPM机制的文件，通过打包好的软件里面默认的数据库，
+记录这个软件要安装的时候必须具备的依赖属性软件。
+
+特点:
+	由于已经编译完成并且打包完毕，所以软件传输与安装上很方便（不需要再重新编译）；
+	由于软件的信息都已经记录在Linux主机的数据上，很方便查询、升级与反安装；
+	软件安装的环境必须与打包时的环境需求一致或相当；
+	需要满足软件的依赖属性需求；
+	反安装时需要特别小心，最底层的软件不可先删除，否则可能造成整个系统的问题；
+
+格式:
+	rpm [--setgids] [package]+
+
+安装:
+	 -i 							install安装的意思；
+	 -v 							查看详细的安装信息；
+	 -h 							显示安装进度；
+	 --nodeps 				强制安装，而不考虑软件的属性依赖；
+	 --replacefiles 	将已经存在的文件进行覆盖安装；
+	 --replacepkgs 		重新安装某个已经安装过的软件；
+	 --force 					强制性；
+	 --test 					测试是否可以被安装到当前环境而不真的进行安装；
+	 --nosignature 		跳过签名验证；
+	 --prefix 				将软件安装到指定的目录下，后面跟路径名；
+	 --noscripts 			不想让该软件在安装过程中自行执行某些系统命令，例如初始化设置；
+升级:
+	 -Uvh 		后面接的软件即使没有安装过，则系统将予以直接安装；若后面接的软件有安装过旧版，则系统自动更新至新版；
+	 -Fvh 		如果后面阶段软件并未安装到系统上，则该软件不会被安装；即只有已经安装在系统上的软件才会被升级；
+查询:
+	 -q 		仅查询，后面接的软件名称是否有安装；
+	 -qa 		列出已经安装的所有软件名称；
+	 -qi 		列出软件的详细信息（information），包含开发商，版本与说明等；
+	 -ql 		列出该软件所有的文件与目录所在的完整文件名（list）；
+	 -qc 		列出该软件的所有配置文件（找出在/etc/下面的文件名而已）；
+	 -qd 		列出该软件的所有说明文件（找出与man有关的文件而已）；
+	 -qR 		列出与该软件有关的依赖软件所含的文件；
+	 -qf 		由后面接的文件名，找出该文件属于哪一个已安装的软件；
+	 -q --scripts 		列出是否含有安装后需要执行的脚本文件；
+	 -qp[icdlR] 			后面接的所有参数与上面的说明一致，但用途仅在于找出某个RPM文件内的信息，而非已经安装的软件信息
+验证:
+	 -V 		后面跟软件名，若该软件所含的文件被修改过才会显示；
+	 -Va 		列出目前系统上面所有可能被修改过的文；
+	 -Vp 		后面跟文件名，列出该软件内可能被修改过的文件；
+	 -Vf 		显示某个文件是否被修改过；
+
+反安装:
+     -e 	卸载删除；
+

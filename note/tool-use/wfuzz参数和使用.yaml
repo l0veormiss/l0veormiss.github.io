@@ -1,0 +1,110 @@
+查看有效载荷:
+wfuzz -e payloads
+wfuzz -e encoders
+
+使用切片过滤器查看详细视图:
+wfuzz -z help --slice "list"
+
+子域模糊测试:
+wfuzz -c -Z -w subdomains.txt http://FUZZ.vulnweb.com
+# -c 对输出响应代码进行颜色编码
+# -Z 指定要在扫描模式下输入的 URL，并忽略任何连接错误
+# -w 指定在子域暴力破解时使用的密码字典列表
+
+使用 wfuzz 枚举目录:
+wfuzz -w wordlist/general/common.txt http://testphp.vulnweb.com/FUZZ
+
+基本密码字典列表过滤器:
+wfuzz -z file --zD wordlist/general/common.txt --sc 200,301 http://testphp.vulnweb.com/FUZZ
+# 某些子参数可以在 -z 或 -w 过滤器之前进行更多操作。这些过滤器是：
+# –zP <params>： 指定有效负载的参数
+# -zD <default>：指定payload的默认参数
+# –zE <encoder>：指定有效载荷的编码器
+
+要隐藏 HTTP 响应代码 404，可以像这样获得相同的结果:
+wfuzz -z file --zD wordlist/general/common.txt --hc 404 http://testphp.vulnweb.com/FUZZ
+
+双重模糊测试:
+wfuzz -w wordlist/general/common.txt -w wordlist/general/common.txt --hc 404 http://testphp.vulnweb.com/FUZZ/FUZ2Z
+# 就像可以使用关键字“FUZZ”对有效载荷中的参数进行模糊测试一样，也可以通过指定关键字进行多次模糊测试：
+# FUZ2Z – 第二个参数
+# FUZ3Z – 第三个参数
+# FUZ4Z – 第 4 个参数
+# 并且可以为每个参数分配自己的密码字典。第一个“-w”代表第一个 FUZZ。第二个“-w”适用于第二个 FUZ2Z，依此类推
+
+暴力破解:
+# -d 参数指定要与请求一起发送的 post 数据
+wfuzz -z file,wordlist/others/common_pass.txt -d "uname=FUZZ&pass=FUZZ"  --hc 302 http://testphp.vulnweb.com/userinfo.php
+
+同样可以通过为用户名和密码提供不同的文件来完成:
+wfuzz -z file,users.txt -z file,pass.txt --sc 200 -d "uname=FUZZ&pass=FUZ2Z" http://testphp.vulnweb.com/userinfo.php
+# -c 是对可以跳过的输出响应进行颜色编码
+
+Cookie 模糊测试:
+#要将自定义 cookie 与请求一起发送到不同的模糊目录，我们可以使用“-b”插件。这会在发送的 HTTP 请求中添加一个 cookie。
+以下场景有用：
+    cookie中毒
+    会话劫持
+    权限提升
+wfuzz -z file,wordlist/general/common.txt -b cookie=secureadmin -b cookie2=value2 --hc 404 http://testphp.vulnweb.com/FUZZ
+
+对 cookie 参数进行模糊测试:
+wfuzz -z file,wordlist/general/common.txt -b cookie=FUZZ http://testphp.vulnweb.com/
+
+标头模糊测试:
+HTTP 标头注入
+SQL 注入
+主机头注入
+wfuzz -z file,wordlist/general/common.txt -H "X-Forwarded-By: 127.0.0.1" -H "User-Agent: Firefox" http://testphp.vulnweb.com/FUZZ
+
+HTTP OPTIONS 模糊测试:
+# 可以使用“-X”标志指定各种可用的 HTTP 请求/选项方法。在以下示例中，我们在名为 options.txt 的文本文件中插入了以下选项
+wfuzz -c -w options.txt --sc 200 -X FUZZ “http://testphp.vulnweb.com”
+
+可以使用“list”有效负载内联输入相同的内容:
+wfuzz -z list,GET-HEAD-POST-TRACE-OPTIONS -X FUZZ http://testphp.vulnwaeb.com/
+
+通过代理进行模糊测试:
+# Wfuzz 还可以通过代理路由请求。在以下示例中，Burp 代理在端口 8080 上处于活动状态，并且您可以看到在 burp 拦截中拦截的请求
+wfuzz -z file,wordlist/general/common.txt -p localhost:8080 http://testphp.vulnweb.com/FUZZ
+
+身份验证模糊:
+–basic：提供基本的用户名和密码验证
+–ntlm：Windows 身份验证
+–digest：通过摘要访问进行网络服务器协商
+# Wfuzz 还可以设置身份验证标头并提供通过 HTTP 请求进行身份验证的方法
+wfuzz -z list,nonvalid-httpwatch --basic FUZZ:FUZZ https://www.httpwatch.com/httpgallery/authentication/authenticatedimage/default.aspx
+
+递归模糊:
+# R 开关可以在模糊测试目录或参数时指定递归级别。简单来说，递归意味着在多个不同级别的目录上进行模糊测试，例如 /dir/dir/dir 等
+# 在下面的例子中，我们在第 1 层递归，内联列表包含 3 个目录：admin、CVS 和 cgi-bin。请注意如何以内联方式提供名称中带有 – 的目录
+
+打印和输出:
+# wfuzz 中的打印是指可以处理有效负载输出的所有格式。可以使用 -e 通过打印参数成功查看。此外，“-o”标志也可以指定输出的格式
+wfuzz -e printers
+  wfuzz -o json -w wordlist/general/common.txt http://testphp.vulnweb.com/FUZZ
+
+使用 MD5 输出来模糊测试网站的目录:
+wfuzz -z file,wordlist/general/common.txt,md5 http://testphp.vulnweb.com/FUZZ  
+
+从配方中存储和恢复fuzz:
+#为了简化扫描，wfuzz 可以使用“–dump-recipe”和“–recipe”标志保存和恢复会话
+wfuzz -w wordlist/general/common.txt --dump-recipe /tmp/recipe --sc 200,301 http://testphp.vulnweb.com/FUZZ
+wfuzz --recipe /tmp/recipe
+
+忽略异常和错误:
+# 常在进行模糊测试时，网站可能会抛出各种错误和异常。“-Z”选项可以让wfuzz忽略这些错误和异常。首先，我们运行一个普通的子域模糊测试程序，然后使用 -Z 选项
+wfuzz -z list,support-web-none http://FUZZ.google.com/
+wfuzz -z list,support-web-none -Z http://FUZZ.google.com/
+
+
+
+
+
+
+
+
+
+
+
+

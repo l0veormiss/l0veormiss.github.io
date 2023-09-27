@@ -1,0 +1,77 @@
+                                                    Linux（CentOS 7）:
+1.系统版本信息:
+uname -a
+hostnamectl
+
+2.系统环境变量:
+cat /etc/profile 
+cat /etc/bashrc 
+cat .bash_profile
+cat .bashrc 
+cat .bash_logout 
+env 
+set
+
+3.服务、网络连接以及进程:
+ps -aux               #进程
+top
+cat /etc/services
+systemctl status ssh #查看某个服务是否在运行
+chkconfig --list     #查看所有的服务状态
+netstat -aunplt      #网络连接
+arp -e
+route
+
+4.查看安装程序:
+rpm -qa
+yum list installed
+
+5.常见配置、敏感文件:
+find / -name *.conf
+cat /etc/my.conf      #mysql数据库
+cat /etc/httpd/conf/httpd.conf  #apache
+tomcat-users.xml       #tomcat
+/etc/samba/smb.conf    #samba
+cat /etc/resolv.conf   #DNS域名解析
+cat /etc/sysconfig/network
+cat /etc/hosts
+cat /var/apache2/config.inc 
+cat /var/lib/mysql/mysql/user.MYD 
+cat /root/anaconda-ks.cfg
+/etc/sysconfig/iptables  #iptables规则
+
+6.查看任务计划:
+crontab -l         #查看任务计划,有部分恶意任务计划需要crontab -e 编辑才能看到
+#查看anacron异步定时任务：cat/etc/anacrontab
+cat /var/log/cron    #查看任务计划日志
+cat /etc/crontab
+cat /etc/cron.d/
+cat /etc/cron.daily/
+cat /etc/cron.hourly/
+cat /etc/cron.weekly/
+cat /etc/cron.monthly/
+cat /var/spool/cron/
+service cron status  #通过任务计划执行的服务
+
+7.可能有哪些纯文本用户名和密码:
+grep -i user [filename] 
+grep -i pass [filename] 
+grep -C 5 "password" [filename] 
+find . -name "*.php" -print0 | xargs -0 grep -i -n "var $password"  #Joomla
+
+8.用户信息:
+cat /etc/passwd
+cat /etc/shadow
+ls /home   #家目录
+last   #录成功用户
+cat /etc/sudoers
+ls -alh /var/mail/
+
+9.历史记录  history:
+cat /root/.viminfo //vim使用记录
+cat .bash_history 
+cat .nano_history 
+cat .atftp_history 
+cat .mysql_history 
+cat .php_history
+cat .python_history

