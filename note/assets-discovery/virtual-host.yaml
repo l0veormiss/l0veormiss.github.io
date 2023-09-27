@@ -1,0 +1,103 @@
+虚拟主机:
+# 如果你找到一个包含一个或多个网页的IP地址，属于子域名，你可以尝试通过在OSINT来源中查找IP中的域名或通
+# 过暴力破解虚拟主机域名来找到该IP中的其他子域名。
+
+暴力破解:
+# ffuf -c -w /path/to/wordlist -u http://victim.com -H "Host: FUZZ.victim.com"
+
+gobuster vhost -u https://mysite.com -t 50 -w subdomains.txt
+
+# wfuzz -c -w /usr/share/wordlists/SecLists/Discovery/DNS/subdomains-top1million-20000.txt --hc 400,404,403 -H "Host: FUZZ.example.com" -u http://example.com -t 100
+
+# #From https://github.com/allyshka/vhostbrute
+# vhostbrute.py --url="example.com" --remoteip="10.1.1.15" --base="www.example.com" --vhosts="vhosts_full.list"
+
+# #https://github.com/codingo/VHostScan
+VHostScan -t example.com
+
+CORS暴力破解:
+# 有时，您会发现只有在_Origin头中设置了有效的域名/子域名时，页面才会返回Access-Control-Allow-Origin_头。在这种情况下，您可以滥用这种行为来发现新的子域名。
+# ffuf -w subdomains-top1million-5000.txt -u http://10.10.10.208 -H 'Origin: http://FUZZ.crossfit.htb' -mr "Access-Control-Allow-Origin" -ignore-body
+
+IP地址:
+# 在初始步骤中，您可能已经找到了一些IP范围、域和子域。
+# 现在是时候收集这些范围内的所有IP和**域名/子域名（DNS查询）**了。
+# 使用以下免费API服务，您还可以找到域名和子域名使用过的先前IP地址。这些IP地址可能仍然属
+# 于客户（并可能允许您找到CloudFlare绕过）。
+https://securitytrails.com/
+
+Web服务器搜索:
+# 我们已经找到了所有公司及其资产，并且我们知道范围内的IP范围、域和子域。现在是搜索Web服务器的时候了。
+
+# 在之前的步骤中，您可能已经对发现的IP和域进行了一些侦察，因此您可能已经找到了所有可能的Web服务器。但是，
+# 如果您还没有找到，我们现在将看到一些快速搜索Web服务器的技巧。
+
+# 请注意，这将是面向Web应用程序发现的，因此您还应该进行漏洞和端口扫描（如果范围允许）。
+
+# 使用masscan可以找到此处的快速方法，以发现与Web服务器相关的打开端口。
+# 另一个友好的工具是httprobe、fprobe和httpx。您只需传递一个域名列表，它将尝试连接到端口80（http）和443（
+# https）。此外，您还可以指示尝试其他端口：
+cat /tmp/domains.txt | httprobe #Test all domains inside the file for port 80 and 443
+cat /tmp/domains.txt | httprobe -p http:8080 -p https:8443 #Check port 80, 443 and 8080 and 8443
+
+公共云资产:
+# 为了找到可能属于公司的云资产，您应该从一个能够识别该公司的关键字列表开始。例如，对于加密货币公司，
+# 您可以使用诸如："crypto"、"wallet"、"dao"、"<domain_name>"、<"subdomain_names">等词语。
+# 您还需要包含常用桶词的词表：
+https://raw.githubusercontent.com/cujanovic/goaltdns/master/words.txt
+https://raw.githubusercontent.com/infosec-au/altdns/master/words.txt
+https://raw.githubusercontent.com/jordanpotti/AWSBucketDump/master/BucketNames.txt
+
+# 然后，您可以使用这些词语生成排列组合（有关更多信息，请查看第二轮DNS暴力破解）。
+# 使用生成的词表，您可以使用工具，如cloud_enum、CloudScraper、cloudlist或S3Scanner**。
+# 请记住，在寻找云资产时，您应该不仅仅寻找AWS中的桶。
+
+电子邮件:
+# 有了范围内的域名和子域名，您基本上已经具备了开始搜索电子邮件的一切所需。以下是我找到公司电子邮件的最佳API和
+# 工具：
+theHarvester - 使用API
+https://hunter.io/的API（免费版）
+https://app.snov.io/的API（免费版）
+https://minelead.io/的API（免费版）
+
+# 稍后，电子邮件将对暴力破解网页登录和身份验证服务（如SSH）非常有用。此外，它们还用于钓鱼。此外，这些API还
+# 将为您提供有关电子邮件背后的个人信息，这对于钓鱼活动非常有用
+
+凭据泄露:
+# 有了域名、子域名和电子邮件，您可以开始搜索过去泄露的与这些电子邮件相关的凭据：
+https://leak-lookup.com
+https://www.dehashed.com/
+
+机密信息泄露:
+# 凭据泄露与公司遭受的泄露并出售敏感信息的黑客攻击有关。然而，公司可能受到其他泄露的影响，这些泄露的信息
+# 不在这些数据库中：
+
+Github泄露
+# 凭据和API可能会泄露在公司的公共存储库或github公司的用户的存储库中。
+# 您可以使用Leakos工具（https://github.com/carlospolop/Leakos）自动下载一个组织及其开发人员的所
+# 有公共存储库，然后自动运行gitleaks（https://github.com/zricethezav/gitleaks）。
+
+Leakos
+# 还可以用于对传递给它的URL提供的所有文本运行gitleaks，因为有时网页也包含机密信息。
+
+Github Dorks
+# 还可以检查此页面，以查找您攻击的组织中可能的github dorks。
+
+Pastes泄漏:
+# 有时，攻击者或工作人员会在粘贴网站上发布公司内容。这可能包含或不包含敏感信息，但搜索它非常有趣。
+# 您可以使用Pastos工具（https://github.com/carlospolop/Pastos）同时在80多个粘贴网站上进行搜索。
+
+Google Dorks:
+# 虽然老旧，但黄金谷歌dorks始终有助于找到不应存在的公开信息。唯一的问题是，google-hacking-database包含
+# 数千个可能的查询，您无法手动运行。因此，您可以选择您最喜欢的10个查询，或者您可以使用Gorks等工具运行它们。
+
+# 请注意，期望使用常规Google浏览器运行整个数据库的工具将永远无法结束，因为Google会很快阻止您。
+
+公开代码漏洞:
+# 如果你发现公司有开源代码，你可以分析它并搜索其中的漏洞。
+# 根据不同的编程语言，有不同的工具可以使用：
+SAST tools
+snyk
+
+
+

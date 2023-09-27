@@ -1,0 +1,160 @@
+资产发现 Assets discovery:
+    # 这个阶段的目标是获取主要公司拥有的所有子公司，然后获取这些公司的资产。为此，我们将执行以下操作：
+    
+    # 找到主要公司的收购情况，这将给我们提供范围内的公司。
+    # 找到每个公司的 ASN（如果有），这将给我们提供每个公司拥有的 IP 范围。
+    # 使用反向 whois 查询来搜索与第一个查询相关的其他条目（组织名称、域名等）（可以递归执行此操作）。
+    # 使用其他技术，如 shodan 的 org 和 ssl 过滤器来搜索其他资产（ssl 技巧可以递归执行）。
+
+收购情况 Acquisitions:
+    # 首先，我们需要知道主要公司收购的其他公司。
+    # 一种选择是访问 https://www.crunchbase.com/，搜索主要公司，并点击“acquisitions”。在那里，
+    # 你将看到主要公司收购的其他公司。
+    
+    # 另一种选择是访问主要公司的维基百科页面并搜索“acquisitions”。
+    # 好的，此时你应该知道范围内的所有公司。让我们弄清楚如何找到它们的资产。
+
+ASNs:
+    # 自治系统号（ASN）是由互联网分配号码管理局（IANA）分配给自治系统（AS）的唯一号码。
+    # 一个AS由IP 地址块组成，这些块具有明确定义的访问外部网络的策略，并由单个组织管理，但可能由多个运营商组成。
+    
+    # 找出公司是否分配了任何 ASN 是有趣的，以找到其IP 范围。对范围内的所有主机执行漏洞测试，并查找这些 IP 
+    # 内的域名是很有意义的。
+    
+    # 你可以在 https://bgp.he.net/ 中按公司名称、IP 或 域名 进行搜索。
+    # 根据公司所在地区，这些链接可能对收集更多数据有用：AFRINIC （非洲），Arin （北美），APNIC 
+    # （亚洲），LACNIC （拉丁美洲），RIPE NCC （欧洲）。无论如何，第一个链接中可能已经包含了所有有用的信息
+    # （IP 范围和 Whois）。
+
+    #You can try "automate" this with amass, but it's not very recommended
+    amass intel -org tesla
+    amass intel -asn 8911,50313,394161
+
+    #此外，BBOT的子域名枚举会在扫描结束时自动汇总和总结ASNs。
+    bbot -t tesla.com -f subdomain-enum
+    # [INFO] bbot.modules.asn: | AS394161 | 8.244.131.0/24      | 5            | TESLA          | Tesla Motors, Inc.         | US  
+    # [INFO] bbot.modules.asn: | AS3356   | 8.0.0.0/9           | 1            | LEVEL3         | Level 3 Parent, LLC        | US   
+
+    # 你可以使用http://asnlookup.com/（它有免费的API）来查找组织的IP范围。
+    # 你可以使用http://ipv4info.com/来查找域名的IP和ASN。
+
+寻找漏洞 Looking for exploits:
+    # 此时，我们已经知道了范围内的所有资产，所以如果允许的话，你可以使用一些漏洞扫描工具（如Nessus、OpenVAS）
+    # 对所有主机进行扫描。
+    
+    # 此外，你还可以进行一些端口扫描 或使用像 shodan 这样的服务来查找开放的端口**，根据你找到的内容，
+    # 你应该在本书中查找如何对可能运行的多个服务进行渗透测试的方法。
+    
+    # 另外，值得一提的是，你还可以准备一些默认的用户名和密码**列表，并尝试
+    # 使用https://github.com/x90skysn3k/brutespray对服务进行暴力破解。
+
+域名 Domians:
+    # 我们知道范围内的所有公司及其资产，现在是时候找出范围内的域名了。
+    # 请注意，在下面提供的技术中，你还可以找到子域名，这些信息不应被低估。
+    # 首先，你应该寻找每个公司的主域名。例如，对于_Tesla Inc.，主域名将是_tesla.com。
+
+反向DNS Reverse DNS:
+    # 当你找到域名的所有IP范围后，你可以尝试对这些IP进行反向DNS查找，以找到范围内的更多域名。
+    # 尝试使用受害者的某个DNS服务器或一些知名的DNS服务器（1.1.1.1、8.8.8.8）。
+
+    dnsrecon -r <DNS Range> -n <IP_DNS>   #DNS reverse of all of the addresses
+    dnsrecon -d facebook.com -r 157.240.221.35/24 #Using facebooks dns
+    dnsrecon -r 157.240.221.35/24 -n 1.1.1.1 #Using cloudflares dns
+    dnsrecon -r 157.240.221.35/24 -n 8.8.8.8 #Using google dns
+
+    # 为了使此功能正常工作，管理员必须手动启用PTR。
+    # 您还可以使用在线工具获取此信息：http://ptrarchive.com/
+
+反向Whois 循环:
+    # 在whois中，您可以找到许多有趣的信息，如组织名称、地址、电子邮件、电话号码等。但更有趣的是，如果您通过这些字段之一执行反向Whois查找（例如，其他whois注册表中出现相同的电子邮件），您可以找到与该公司相关的更多资产。
+    
+    # 您可以使用在线工具，例如：
+    # https://viewdns.info/reversewhois/ - 免费
+    # https://domaineye.com/reverse-whois - 免费
+    # https://www.reversewhois.io/ - 免费
+    # https://www.whoxy.com/ - 免费 网页，不免费API。
+    # http://reversewhois.domaintools.com/ - 不免费
+    # https://drs.whoisxmlapi.com/reverse-whois-search - 不免费（仅限100次免费搜索）
+    # https://www.domainiq.com/ - 不免费
+    
+    # 您可以使用DomLink （需要whoxy API密钥）自动化此任务。
+    # 您还可以使用amass执行一些自动反向Whois发现：amass intel -d tesla.com -whois
+    # 请注意，每次发现新域时，您都可以使用此技术发现更多域名。
+
+跟踪器 Trickers:
+    # 如果在2个不同页面中找到相同跟踪器的相同ID，则可以假设两个页面都是由同一团队管理的。
+    # 例如，如果您在多个页面上看到相同的Google Analytics ID或相同的Adsense ID。
+    # 有一些页面和工具可以让您通过这些跟踪器进行搜索：
+    #     Udon
+    #     BuiltWith
+    #     Sitesleuth
+    #     Publicwww
+    #     SpyOnWeb
+
+Favicon:
+    # 您知道我们可以通过查找相同的favicon图标哈希来找到与我们的目标相关的域名和子域名吗？
+    # 这正是@m4ll0k2制作的favihash.py工具的用途。以下是如何使用它：
+    cat my_targets.txt | xargs -I %% bash -c 'echo "http://%%/favicon.ico"' > targets.txt
+    python3 favihash.py -f https://target/favicon.ico -t targets.txt -s
+
+    # 简单来说，favihash将允许我们发现与我们的目标具有相同favicon图标哈希的域名。
+    # 此外，您还可以使用favicon哈希来搜索技术，如此博文中所述。这意味着如果您知道易受攻击版本的Web技术的
+    # favicon哈希，您可以在shodan中搜索并找到更多易受攻击的地方：
+    shodan search org:"Target" http.favicon.hash:116323821 
+        --fields ip_str,port --separator " " | awk '{print $1":"$2}'
+
+    # 这是如何计算网页的favicon哈希值的方法：
+        # import mmh3
+        # import requests
+        # import codecs
+
+        # def fav_hash(url):
+        # response = requests.get(url)
+        # favicon = codecs.encode(response.content,"base64")
+        # fhash = mmh3.hash(favicon)
+        # print(f"{url} : {fhash}")
+        # return fhash
+
+版权 / 唯一字符串:
+    # 在网页中搜索可能在同一组织的不同网站之间共享的字符串。版权字符串可能是一个很好的例子。然后在Google、
+    # 其他浏览器甚至Shodan中搜索该字符串：shodan search http.html:"版权字符串"
+
+CRT时间:
+    # 通常会有一个类似于的定时任务
+    # /etc/crontab
+    37 13 */10 * * certbot renew --post-hook "systemctl reload nginx"
+
+更新服务器上的所有域名证书:
+    # 这意味着即使用于此操作的CA在有效期内没有设置生成时间，也可以在证书透明日志中找到属于同一公司的域名。
+
+被动接管:
+    # 显然，人们常常将子域名分配给属于云提供商的IP，并在某些时候失去该IP地址，但忘记删除DNS记录。因此，
+    # 只需在云中（如Digital Ocean）生成一个虚拟机，实际上就可以接管一些子域名。
+    
+    # 这篇文章讲述了一个相关的故事，并提出了一个脚本，在DigitalOcean中生成一个虚拟机，获取新机器的IPv4
+    # 地址，并在Virustotal中搜索指向该地址的子域名记录。
+
+其他方法:
+    # 请注意，每当发现一个新的域名时，您都可以使用此技术来发现更多的域名。
+    
+    # Shodan
+    # 由于您已经知道拥有IP空间的组织的名称，您可以在shodan中使用以下数据进行搜索：org:"Tesla, Inc."，
+    # 检查找到的主机是否有新的意外域名在TLS证书中。
+    
+    # 您可以访问主网页的TLS证书，获取组织名称，然后在shodan已知的所有网页的TLS证书中搜索该名称，
+    # 使用过滤器：ssl:"Tesla Motors"
+
+    # Assetfinder
+    # Assetfinder是一个查找与主域名相关的域名和它们的子域名的工具，非常强大。
+
+寻找漏洞:
+    # 检查是否存在域接管。也许某个公司正在使用某个域名，但他们失去了所有权。只需注册它（如果便宜），并让公司知道。
+
+    # 如果您发现任何与已发现的资产发现中的IP不同的域名，应进行基本的漏洞扫描（使用Nessus或OpenVAS）和一些端
+    # 口扫描，使用nmap/masscan/shodan。根据运行的服务，您可以在本书中找到一些攻击它们的技巧。
+
+    # 请注意，有时域名托管在客户无法控制的IP中，因此不在范围内，请小心。
+
+
+
+

